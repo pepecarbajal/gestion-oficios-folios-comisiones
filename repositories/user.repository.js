@@ -1,7 +1,9 @@
 import bcrypt from 'bcrypt'
-import { User } from '../models/user.model.js'
+import { db } from '../db.js'
 import { Validation } from '../validations/user.validation.js'
 import { SALT_ROUND } from '../config.js'
+
+const USERS_COLLECTION = 'users'
 
 export class UserRepository {
   static async create ({ username, email, password, role, administrativeUnitId = null }) {
@@ -10,27 +12,52 @@ export class UserRepository {
     Validation.password(password)
     Validation.role(role)
 
-    const existingUser = await User.findOne({ email }).lean()
-    if (existingUser) throw new Error(`The email "${email}" is already registered`)
+    const firestore = db()
+
+    const existingUser = await firestore
+      .collection(USERS_COLLECTION)
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+
+    if (!existingUser.empty) {
+      throw new Error(`El email "${email}" ya está registrado`)
+    }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUND)
-    const user = new User({ username, email, password: hashedPassword, role, administrativeUnitId })
-    await user.save()
 
-    return user._id
+    const userRef = await firestore.collection(USERS_COLLECTION).add({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+      administrativeUnitId
+    })
+
+    return userRef.id
   }
 
   static async login ({ email, password }) {
     Validation.email(email)
     Validation.password(password)
 
-    const user = await User.findOne({ email }).lean()
-    if (!user) throw new Error('User not found')
+    const firestore = db()
 
-    const isValid = await bcrypt.compare(password, user.password)
+    const snapshot = await firestore
+      .collection(USERS_COLLECTION)
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+
+    if (snapshot.empty) throw new Error('User not found')
+
+    const userDoc = snapshot.docs[0]
+    const userData = userDoc.data()
+
+    const isValid = await bcrypt.compare(password, userData.password)
     if (!isValid) throw new Error('Invalid password')
 
-    const { password: _, ...publicUser } = user
-    return publicUser
+    const { password: _, ...publicUser } = userData
+    return { _id: userDoc.id, ...publicUser }
   }
 }

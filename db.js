@@ -1,12 +1,19 @@
-import mongoose from 'mongoose'
-import { MONGODB_URI } from './config.js'
+import admin from 'firebase-admin'
+import { createRequire } from 'module'
 
-export const connectDB = async () => {
+const require = createRequire(import.meta.url)
+const serviceAccount = require('./serviceAccountKey.json')
+
+export const initFirebase = () => {
   try {
-    await mongoose.connect(MONGODB_URI)
-    console.log('MongoDB')
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    })
+    console.log('Firebase conectado correctamente')
   } catch (error) {
-    console.error('MongoDB error:', error.message)
+    console.error('Error al conectar Firebase:', error.message)
     process.exit(1)
   }
 }
+
+export const db = () => admin.firestore()

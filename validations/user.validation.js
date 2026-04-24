@@ -1,4 +1,4 @@
-const VALID_ROLES = ['ADM', 'TIT', 'AOF', 'AFL', 'UAD', 'ACO', 'USR']
+const VALID_ROLES = ['ADM', 'AOF', 'UAD', 'USR']
 
 export class Validation {
   static username (username) {

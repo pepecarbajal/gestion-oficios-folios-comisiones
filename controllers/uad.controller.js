@@ -11,3 +11,12 @@ export const registeruad = async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 }
+
+export const getUads = async (req, res) => {
+  try {
+    const unidades = await UADRepository.getAll()
+    res.json(unidades)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}

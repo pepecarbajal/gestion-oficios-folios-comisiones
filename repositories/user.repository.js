@@ -6,7 +6,7 @@ import { SALT_ROUND } from '../config.js'
 const USERS_COLLECTION = 'users'
 
 export class UserRepository {
-  static async create ({ username, email, password, role, administrativeUnitId = null }) {
+  static async create({ username, email, password, role, administrativeUnitId = null }) {
     Validation.username(username)
     Validation.email(email)
     Validation.password(password)
@@ -37,7 +37,7 @@ export class UserRepository {
     return userRef.id
   }
 
-  static async login ({ email, password }) {
+  static async login({ email, password }) {
     Validation.email(email)
     Validation.password(password)
 
@@ -59,5 +59,30 @@ export class UserRepository {
 
     const { password: _, ...publicUser } = userData
     return { _id: userDoc.id, ...publicUser }
+  }
+
+  static async getAll() {
+    const firestore = db()
+    const snapshot = await firestore.collection(USERS_COLLECTION).get()
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  }
+
+  static async update(id, { username, email, role, administrativeUnitId, estatus }) {
+    const firestore = db()
+
+    const userRef = firestore.collection(USERS_COLLECTION).doc(id)
+    const userDoc = await userRef.get()
+
+    if (!userDoc.exists) throw new Error('Usuario no encontrado')
+
+    await userRef.update({
+      username,
+      email,
+      role,
+      administrativeUnitId,
+      estatus
+    })
+
+    return id
   }
 }

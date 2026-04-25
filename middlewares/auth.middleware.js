@@ -3,7 +3,7 @@ import { SECRET_JWT_KEY } from '../config.js'
 
 export const authMiddleware = (req, res, next) => {
   const token = req.cookies?.access_token
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+  if (!token) return res.redirect('/login')
 
   try {
     const decoded = jwt.verify(token, SECRET_JWT_KEY)

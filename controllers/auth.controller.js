@@ -16,7 +16,7 @@ export const login = async (req, res) => {
   const { email, password } = req.body
   try {
     const user = await UserRepository.login({ email, password })
-    const token = jwt.sign(user, SECRET_JWT_KEY, { expiresIn: '1h' })
+    const token = jwt.sign({ id: user.id, role: user.role }, SECRET_JWT_KEY, { expiresIn: '1h' })
 
     res
       .cookie('access_token', token, {
@@ -25,12 +25,12 @@ export const login = async (req, res) => {
         sameSite: 'strict',
         maxAge: 1000 * 60 * 60 // 1 hora
       })
-      .json({ message: 'Login successful', user })
+      .redirect('/dashboard')
   } catch (error) {
     res.status(401).json({ error: error.message })
   }
 }
 
 export const logout = (req, res) => {
-  res.clearCookie('access_token').json({ message: 'Logout successful' })
+  res.clearCookie('access_token').redirect('/login')
 }

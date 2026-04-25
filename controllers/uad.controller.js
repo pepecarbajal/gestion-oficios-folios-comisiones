@@ -20,3 +20,14 @@ export const getUads = async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 }
+
+export const updateUad = async (req, res) => {
+  const { id } = req.params
+  const { uadname, alias } = req.body
+  try {
+    await UADRepository.update(id, { uadname, alias })
+    res.json({ message: 'Unidad actualizada correctamente' })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+}

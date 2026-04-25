@@ -35,15 +35,18 @@ const renderADM = async (req, res) => {
       const usuarios = await usersRes.json()
       const unidades = await uadsRes.json()
 
-      const usuariosMapeados = usuarios.map(u => ({
-        ...u,
-        nombre: u.username,
-        correo: u.email,
-        rol: u.role,
-        unidad: unidad ? unidad.alias : '—',
-        estatus: u.estatus || 'Activo',
-        initials: u.username?.slice(0, 2).toUpperCase()
-      }))
+      const usuariosMapeados = usuarios.map(u => {
+        const unidad = unidades.find(und => und.id === u.administrativeUnitId)
+        return {
+          ...u,
+          nombre: u.username,
+          correo: u.email,
+          rol: u.role,
+          unidad: unidad ? unidad.alias : '—',
+          estatus: u.estatus || 'Activo',
+          initials: u.username?.slice(0, 2).toUpperCase()
+        }
+      })
 
       const unidadesMapeadas = unidades.map(u => ({ ...u, nombre: u.uadname }))
 
@@ -57,11 +60,12 @@ const renderADM = async (req, res) => {
       const unidades = await response.json()
       const unidadesMapeadas = unidades.map(u => ({
         ...u,
-        nombre: u.uadname
+        nombre: u.uadname,
+        alias: u.alias
       }))
       return res.render('dashboardadm', { section, unidades: unidadesMapeadas, usuarios: [] })
     }
   } catch (error) {
-    res.status(500).render('error', { mensaje: error.message })
+    res.status(500).send(`Error: ${error.message}`)
   }
 }

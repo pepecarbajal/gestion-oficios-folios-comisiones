@@ -67,22 +67,20 @@ export class UserRepository {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   }
 
-  static async update(id, { username, email, role, administrativeUnitId, estatus }) {
+  static async update(id, { username, email, role, administrativeUnitId, estatus, password }) {
     const firestore = db()
-
     const userRef = firestore.collection(USERS_COLLECTION).doc(id)
     const userDoc = await userRef.get()
 
     if (!userDoc.exists) throw new Error('Usuario no encontrado')
 
-    await userRef.update({
-      username,
-      email,
-      role,
-      administrativeUnitId,
-      estatus
-    })
+    const updateData = { username, email, role, administrativeUnitId, estatus }
 
+    if (password && password.trim() !== '') {
+      updateData.password = await bcrypt.hash(password, SALT_ROUND)
+    }
+
+    await userRef.update(updateData)
     return id
   }
 }

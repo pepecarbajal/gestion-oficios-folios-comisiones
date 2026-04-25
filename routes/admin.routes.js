@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { register, login, logout } from '../controllers/auth.controller.js'
-import { registeruad, getUads } from '../controllers/uad.controller.js'
+import { registeruad, getUads, updateUad } from '../controllers/uad.controller.js'
 import { getUsuarios } from '../controllers/users.controller.js'
 import { authMiddleware, requireAdm } from '../middlewares/auth.middleware.js'
 import { dashboard } from '../controllers/dashboard.controller.js'
@@ -13,6 +13,7 @@ router.post('/logout', logout)
 
 router.post('/register', authMiddleware, requireAdm, register)
 router.post('/registeruad', authMiddleware, requireAdm, registeruad)
+router.put('/updateuad/:id', authMiddleware, requireAdm, updateUad)
 
 router.get('/users', authMiddleware, requireAdm, getUsuarios)
 router.get('/uads', authMiddleware, requireAdm, getUads)

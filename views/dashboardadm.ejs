@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Dashboard Administrador</title>
   <link rel="stylesheet" href="/styles-dashboardadm.css">
 </head>
+
 <body>
   <div class="layout">
 
@@ -25,9 +27,9 @@
         <a href="/logout" class="logout">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Salir
         </a>
@@ -38,219 +40,381 @@
     <main class="main">
 
       <!-- SECCIÓN USUARIOS -->
-      <% if (section === 'usuarios') { %>
-      <div class="content-card">
-        <div class="card-header">
-          <div></div>
-          <button class="btn-primary" id="btnNuevoUsuario">+ Nuevo Usuario</button>
+      <% if (section==='usuarios' ) { %>
+        <div class="content-card">
+          <div class="card-header">
+            <div></div>
+            <button class="btn-primary" id="btnNuevoUsuario">+ Nuevo Usuario</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Unidad</th>
+                <th>Estatus</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% usuarios.forEach(u=> { %>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar">
+                        <%= u.initials %>
+                      </div>
+                      <strong>
+                        <%= u.nombre %>
+                      </strong>
+                    </div>
+                  </td>
+                  <td>
+                    <%= u.correo %>
+                  </td>
+                  <td>
+                    <%= u.rol %>
+                  </td>
+                  <td>
+                    <%= u.unidad %>
+                  </td>
+                  <td>
+                    <span class="badge <%= u.estatus === 'Activo' ? 'badge-active' : 'badge-inactive' %>">
+                      <%= u.estatus %>
+                    </span>
+                  </td>
+                  <td>
+                    <button class="icon-btn btn-editar" title="Editar" data-id="<%= u.id %>"
+                      data-nombre="<%= u.nombre %>" data-correo="<%= u.correo %>" data-rol="<%= u.rol %>"
+                      data-unidad="<%= u.administrativeUnitId %>" data-estatus="<%= u.estatus %>">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                <% }) %>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <span>Mostrando 01-<%= usuarios.length %> de <%= usuarios.length %></span>
+            <div class="page-controls">
+              <button class="page-btn">&lt;</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">&gt;</button>
+            </div>
+          </div>
         </div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Correo</th>
-              <th>Rol</th>
-              <th>Unidad</th>
-              <th>Estatus</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% usuarios.forEach(u => { %>
-            <tr>
-              <td>
-                <div class="user-cell">
-                  <div class="avatar"><%= u.initials %></div>
-                  <strong><%= u.nombre %></strong>
+
+        <!-- MODAL NUEVO USUARIO -->
+        <div class="modal-overlay" id="modalOverlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Nuevo Usuario</h3>
+              <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p class="modal-error" id="modalError"></p>
+              <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="inputNombre" placeholder="Nombre completo">
+              </div>
+              <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="inputCorreo" placeholder="correo@ejemplo.com">
+              </div>
+              <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="inputPassword" placeholder="••••••••">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Rol</label>
+                  <select id="inputRol">
+                    <option value="" disabled selected>Seleccionar</option>
+                    <option value="ADM">Administrador</option>
+                    <option value="AOF">Asistente de Folios</option>
+                    <option value="UAD">Unidad Administrativa</option>
+                  </select>
                 </div>
-              </td>
-              <td><%= u.correo %></td>
-              <td><%= u.rol %></td>
-              <td><%= u.unidad %></td>
-              <td>
-                <span class="badge <%= u.estatus === 'Activo' ? 'badge-active' : 'badge-inactive' %>">
-                  <%= u.estatus %>
-                </span>
-              </td>
-              <td>
-                <button
-                  class="icon-btn btn-editar"
-                  title="Editar"
-                  data-id="<%= u.id %>"
-                  data-nombre="<%= u.nombre %>"
-                  data-correo="<%= u.correo %>"
-                  data-rol="<%= u.rol %>"
-                  data-unidad="<%= u.administrativeUnitId %>"
-                  data-estatus="<%= u.estatus %>"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
-        <div class="pagination">
-          <span>Mostrando 01-<%= usuarios.length %> de <%= usuarios.length %></span>
-          <div class="page-controls">
-            <button class="page-btn">&lt;</button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">&gt;</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- MODAL NUEVO USUARIO -->
-      <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Nuevo Usuario</h3>
-            <button class="modal-close" id="modalClose">&times;</button>
-          </div>
-          <div class="modal-body">
-            <p class="modal-error" id="modalError"></p>
-            <div class="form-group">
-              <label>Nombre</label>
-              <input type="text" id="inputNombre" placeholder="Nombre completo">
-            </div>
-            <div class="form-group">
-              <label>Correo</label>
-              <input type="email" id="inputCorreo" placeholder="correo@ejemplo.com">
-            </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input type="password" id="inputPassword" placeholder="••••••••">
-            </div>
-            <div class="form-row">
+                <div class="form-group">
+                  <label>Estatus</label>
+                  <select id="inputEstatus">
+                    <option value="" disabled selected>Seleccionar</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
               <div class="form-group">
-                <label>Rol</label>
-                <select id="inputRol">
+                <label>Unidad</label>
+                <select id="inputUnidad">
                   <option value="" disabled selected>Seleccionar</option>
-                  <option value="ADM">Administrador</option>
-                  <option value="AOF">Asistente de Folios</option>
-                  <option value="UAD">Unidad Administrativa</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Estatus</label>
-                <select id="inputEstatus">
-                  <option value="" disabled selected>Seleccionar</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                  <% unidades.forEach(u=> { %>
+                    <option value="<%= u.id %>">
+                      <%= u.nombre %>
+                    </option>
+                    <% }) %>
                 </select>
               </div>
             </div>
-            <div class="form-group">
-              <label>Unidad</label>
-              <select id="inputUnidad">
-                <option value="" disabled selected>Seleccionar</option>
-                <% unidades.forEach(u => { %>
-                <option value="<%= u.id %>"><%= u.nombre %></option>
-                <% }) %>
-              </select>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="btnCancelar">Cancelar</button>
+              <button class="btn-primary" id="btnAgregar">Agregar</button>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-cancel" id="btnCancelar">Cancelar</button>
-            <button class="btn-primary" id="btnAgregar">Agregar</button>
           </div>
         </div>
-      </div>
 
-      <!-- MODAL EDITAR USUARIO -->
-      <div class="modal-overlay" id="modalEditOverlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Editar Usuario</h3>
-            <button class="modal-close" id="modalEditClose">&times;</button>
-          </div>
-          <div class="modal-body">
-            <p class="modal-error" id="modalEditError"></p>
-            <div class="form-group">
-              <label>Nombre</label>
-              <input type="text" id="editNombre" placeholder="Nombre completo">
+        <!-- MODAL EDITAR USUARIO -->
+        <div class="modal-overlay" id="modalEditOverlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Editar Usuario</h3>
+              <button class="modal-close" id="modalEditClose">&times;</button>
             </div>
-            <div class="form-group">
-              <label>Correo</label>
-              <input type="email" id="editCorreo" placeholder="correo@ejemplo.com">
-            </div>
-            <div class="form-row">
+            <div class="modal-body">
+              <p class="modal-error" id="modalEditError"></p>
               <div class="form-group">
-                <label>Rol</label>
-                <select id="editRol">
+                <label>Nombre</label>
+                <input type="text" id="editNombre" placeholder="Nombre completo">
+              </div>
+              <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="editCorreo" placeholder="correo@ejemplo.com">
+              </div>
+              <div class="form-group">
+                <label>Nueva contraseña <span style="color:#9ca3af;font-weight:400">(dejar vacío para no
+                    cambiar)</span></label>
+                <input type="password" id="editPassword" placeholder="••••••••">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Rol</label>
+                  <select id="editRol">
+                    <option value="" disabled>Seleccionar</option>
+                    <option value="ADM">Administrador</option>
+                    <option value="AOF">Asistente de Folios</option>
+                    <option value="UAD">Unidad Administrativa</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Estatus</label>
+                  <select id="editEstatus">
+                    <option value="" disabled>Seleccionar</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Unidad</label>
+                <select id="editUnidad">
                   <option value="" disabled>Seleccionar</option>
-                  <option value="ADM">Administrador</option>
-                  <option value="AOF">Asistente de Folios</option>
-                  <option value="UAD">Unidad Administrativa</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Estatus</label>
-                <select id="editEstatus">
-                  <option value="" disabled>Seleccionar</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                  <% unidades.forEach(u=> { %>
+                    <option value="<%= u.id %>">
+                      <%= u.nombre %>
+                    </option>
+                    <% }) %>
                 </select>
               </div>
             </div>
-            <div class="form-group">
-              <label>Unidad</label>
-              <select id="editUnidad">
-                <option value="" disabled>Seleccionar</option>
-                <% unidades.forEach(u => { %>
-                <option value="<%= u.id %>"><%= u.nombre %></option>
-                <% }) %>
-              </select>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="btnEditCancelar">Cancelar</button>
+              <button class="btn-primary" id="btnGuardar">Guardar</button>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn-cancel" id="btnEditCancelar">Cancelar</button>
-            <button class="btn-primary" id="btnGuardar">Guardar</button>
-          </div>
         </div>
-      </div>
 
-      <% } %>
+        <% } %>
+          <% if (section==='unidades' ) { %>
+            <div class="content-card">
+              <div class="card-header">
+                <h2 class="section-title">Unidades (<%= unidades.length %>)</h2>
+                <button class="btn-primary" id="btnNuevaUnidad">+ Nueva Unidad</button>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre completo</th>
+                    <th>Alias</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% unidades.forEach(u=> { %>
+                    <tr>
+                      <td class="id-cell">
+                        <%= u.id %>
+                      </td>
+                      <td><strong>
+                          <%= u.nombre %>
+                        </strong></td>
+                      <td>
+                        <%= u.alias %>
+                      </td>
+                      <td>
+                        <button class="icon-btn btn-editar-uad" title="Editar" data-id="<%= u.id %>"
+                          data-nombre="<%= u.nombre %>" data-alias="<%= u.alias %>">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+              </table>
+            </div>
 
-      <!-- SECCIÓN UNIDADES -->
-      <% if (section === 'unidades') { %>
-      <div class="content-card">
-        <div class="card-header">
-          <h2 class="section-title">Unidades (<%= unidades.length %>)</h2>
-          <a href="/unidades/nueva" class="btn-primary">+ Nueva Unidad</a>
-        </div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% unidades.forEach((u, i) => { %>
-            <tr>
-              <td class="id-cell">#<%= String(i + 1).padStart(3, '0') %></td>
-              <td><strong><%= u.nombre %></strong></td>
-              <td>
-                <a href="/unidades/<%= u.id %>/editar" class="icon-btn" title="Editar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </a>
-              </td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-      <% } %>
+            <!-- MODAL NUEVA UNIDAD -->
+            <div class="modal-overlay" id="modalUadOverlay">
+              <div class="modal">
+                <div class="modal-header">
+                  <h3>Nueva Unidad Administrativa</h3>
+                  <button class="modal-close" id="modalUadClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <p class="modal-error" id="modalUadError"></p>
+                  <div class="form-group">
+                    <label>Nombre completo</label>
+                    <input type="text" id="inputUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
+                  </div>
+                  <div class="form-group">
+                    <label>Alias</label>
+                    <input type="text" id="inputUadAlias" placeholder="Ej. DRH">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn-cancel" id="btnUadCancelar">Cancelar</button>
+                  <button class="btn-primary" id="btnUadAgregar">Agregar</button>
+                </div>
+              </div>
+            </div>
 
+            <!-- MODAL EDITAR UNIDAD -->
+            <div class="modal-overlay" id="modalUadEditOverlay">
+              <div class="modal">
+                <div class="modal-header">
+                  <h3>Editar Unidad Administrativa</h3>
+                  <button class="modal-close" id="modalUadEditClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <p class="modal-error" id="modalUadEditError"></p>
+                  <div class="form-group">
+                    <label>Nombre completo</label>
+                    <input type="text" id="editUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
+                  </div>
+                  <div class="form-group">
+                    <label>Alias</label>
+                    <input type="text" id="editUadAlias" placeholder="Ej. DRH">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn-cancel" id="btnUadEditCancelar">Cancelar</button>
+                  <button class="btn-primary" id="btnUadGuardar">Guardar</button>
+                </div>
+              </div>
+            </div>
+
+            <script>
+              // ── MODAL NUEVA UNIDAD ──
+              const uadOverlay = document.getElementById('modalUadOverlay')
+              const btnNuevaUad = document.getElementById('btnNuevaUnidad')
+              const modalUadError = document.getElementById('modalUadError')
+
+              const abrirUadModal = () => uadOverlay.classList.add('active')
+              const cerrarUadModal = () => {
+                uadOverlay.classList.remove('active')
+                modalUadError.textContent = ''
+                document.getElementById('inputUadNombre').value = ''
+                document.getElementById('inputUadAlias').value = ''
+              }
+
+              btnNuevaUad?.addEventListener('click', abrirUadModal)
+              document.getElementById('modalUadClose')?.addEventListener('click', cerrarUadModal)
+              document.getElementById('btnUadCancelar')?.addEventListener('click', cerrarUadModal)
+              uadOverlay?.addEventListener('click', e => { if (e.target === uadOverlay) cerrarUadModal() })
+
+              document.getElementById('btnUadAgregar')?.addEventListener('click', async () => {
+                const uadname = document.getElementById('inputUadNombre').value.trim()
+                const alias = document.getElementById('inputUadAlias').value.trim()
+
+                if (!uadname || !alias) {
+                  modalUadError.textContent = 'Todos los campos son obligatorios.'
+                  return
+                }
+
+                try {
+                  const res = await fetch('/registeruad', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uadname, alias })
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { modalUadError.textContent = data.error || 'Error al registrar unidad.'; return }
+                  cerrarUadModal()
+                  window.location.reload()
+                } catch {
+                  modalUadError.textContent = 'Error de conexión.'
+                }
+              })
+
+              // ── MODAL EDITAR UNIDAD ──
+              const uadEditOverlay = document.getElementById('modalUadEditOverlay')
+              const modalUadEditError = document.getElementById('modalUadEditError')
+              let uadEditandoId = null
+
+              const cerrarUadEditModal = () => {
+                uadEditOverlay.classList.remove('active')
+                modalUadEditError.textContent = ''
+                uadEditandoId = null
+              }
+
+              document.getElementById('modalUadEditClose')?.addEventListener('click', cerrarUadEditModal)
+              document.getElementById('btnUadEditCancelar')?.addEventListener('click', cerrarUadEditModal)
+              uadEditOverlay?.addEventListener('click', e => { if (e.target === uadEditOverlay) cerrarUadEditModal() })
+
+              document.querySelectorAll('.btn-editar-uad').forEach(btn => {
+                btn.addEventListener('click', () => {
+                  uadEditandoId = btn.dataset.id
+                  document.getElementById('editUadNombre').value = btn.dataset.nombre
+                  document.getElementById('editUadAlias').value = btn.dataset.alias
+                  uadEditOverlay.classList.add('active')
+                })
+              })
+
+              document.getElementById('btnUadGuardar')?.addEventListener('click', async () => {
+                const uadname = document.getElementById('editUadNombre').value.trim()
+                const alias = document.getElementById('editUadAlias').value.trim()
+
+                if (!uadname || !alias) {
+                  modalUadEditError.textContent = 'Todos los campos son obligatorios.'
+                  return
+                }
+
+                try {
+                  const res = await fetch(`/uads/${uadEditandoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uadname, alias })
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; return }
+                  cerrarUadEditModal()
+                  window.location.reload()
+                } catch {
+                  modalUadEditError.textContent = 'Error de conexión.'
+                }
+              })
+            </script>
+            <% } %>
     </main>
   </div>
 
@@ -338,6 +502,7 @@
       const role = document.getElementById('editRol').value
       const estatus = document.getElementById('editEstatus').value
       const administrativeUnitId = document.getElementById('editUnidad').value
+      const password = document.getElementById('editPassword').value.trim()
 
       if (!username || !email || !role || !estatus) {
         modalEditError.textContent = 'Todos los campos son obligatorios.'
@@ -348,7 +513,7 @@
         const res = await fetch(`/users/${usuarioEditandoId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, role, administrativeUnitId, estatus })
+          body: JSON.stringify({ username, email, role, administrativeUnitId, estatus, password })
         })
         const data = await res.json()
         if (!res.ok) { modalEditError.textContent = data.error || 'Error al actualizar usuario.'; return }
@@ -360,4 +525,5 @@
     })
   </script>
 </body>
+
 </html>

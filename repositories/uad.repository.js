@@ -52,4 +52,28 @@ export class UADRepository {
     const snapshot = await firestore.collection(UADS_COLLECTION).get()
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   }
+
+  static async update(id, { uadname, alias }) {
+    Validation.uadname(uadname)
+    Validation.alias(alias)
+
+    const firestore = db()
+    const ref = firestore.collection(UADS_COLLECTION).doc(id)
+    const doc = await ref.get()
+
+    if (!doc.exists) throw new Error('Unidad no encontrada')
+
+    const existing = await firestore
+      .collection(UADS_COLLECTION)
+      .where('alias', '==', alias)
+      .limit(1)
+      .get()
+
+    if (!existing.empty && existing.docs[0].id !== id) {
+      throw new Error(`El alias "${alias}" ya está en uso`)
+    }
+
+    await ref.update({ uadname, alias })
+    return id
+  }
 }

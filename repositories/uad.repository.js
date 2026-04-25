@@ -5,7 +5,7 @@ import { Validation } from '../validations/uad.validation.js'
 const UADS_COLLECTION = 'unidadesAdministrativas'
 
 export class UADRepository {
-  static async create ({ uadname, alias}) {
+  static async create({ uadname, alias }) {
     Validation.uadname(uadname)
     Validation.alias(alias)
 
@@ -29,7 +29,7 @@ export class UADRepository {
     return userRef.id
   }
 
-  static async registeruad ({ uadname, alias }) {
+  static async registeruad({ uadname, alias }) {
     Validation.uadname(uadname)
     Validation.alias(alias)
 
@@ -45,5 +45,11 @@ export class UADRepository {
 
     const userDoc = snapshot.docs[0]
     const userData = userDoc.data()
+  }
+
+  static async getAll() {
+    const firestore = db()
+    const snapshot = await firestore.collection(UADS_COLLECTION).get()
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   }
 }

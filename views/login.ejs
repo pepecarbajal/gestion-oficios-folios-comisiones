@@ -9,9 +9,16 @@
   <div class="container">
     <h2>Iniciar sesión</h2>
 
-    <!-- EJS muestra el error si existe -->
     <% if (error) { %>
       <p class="error"><%= error %></p>
+    <% } %>
+
+    <%
+      // Mostrar mensaje si fue redirigido por cuenta inactiva
+      const razon = typeof query !== 'undefined' ? query?.razon : null
+    %>
+    <% if (razon === 'cuenta_inactiva') { %>
+      <p class="error">Tu cuenta ha sido desactivada. Contacta al administrador.</p>
     <% } %>
 
     <form method="POST" action="/login">

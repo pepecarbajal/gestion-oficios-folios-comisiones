@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Unidad Administrativa</title>
+  <link rel="stylesheet" href="/styles-base.css">
+  <link rel="stylesheet" href="/styles-dashboarduad.css">
+</head>
+<body>
+  <script>
+      ;(function () {
+        function getCookie (name) {
+          const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+          return match ? decodeURIComponent(match[1]) : null
+        }
+
+        const originalFetch = window.fetch
+        window.fetch = function (input, init = {}) {
+          const csrfToken = getCookie('csrf_token')
+          if (csrfToken) {
+            init.headers = init.headers || {}
+            if (init.headers instanceof Headers) {
+              if (!init.headers.has('X-CSRF-Token')) {
+                init.headers.set('X-CSRF-Token', csrfToken)
+              }
+            } else {
+              init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
+            }
+          }
+          return originalFetch.call(this, input, init)
+        }
+      })()
+    </script>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <nav class="nav">
+          <a href="#" class="nav-item active" id="navPendientes" onclick="cambiarTab('pendientes', event)">
+            Oficios
+          </a>
+          <a href="#" class="nav-item" id="navAtendidos" onclick="cambiarTab('atendidos', event)">
+            Atendidos
+          </a>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="rol-label"><%= unidadAlias || 'Unidad Administrativa' %></span>
+        <form action="/logout" method="POST" style="margin:0" id="formLogout">
+          <input type="hidden" name="_csrf" id="csrfLogout">
+          <button type="submit" class="logout">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Salir
+          </button>
+        </form>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="tabPendientes" class="content-card tab-panel">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="searchPendientes" placeholder="Buscar..." class="search-input">
+            </div>
+            <select id="filterEstatusPend" class="filter-select">
+              <option value="">Todos</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Vencido">Vencido</option>
+            </select>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Remitente</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+              <th>Límite</th>
+              <th>Prioridad</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPendientes">
+            <%
+              const ahora = new Date();
+              const hoyBase = new Date(); hoyBase.setHours(0,0,0,0);
+
+              const oficiosPendRaw = oficios.filter(o => {
+                const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+                if (limite) limite.setHours(23,59,59,999);
+                const vencido = limite && limite < ahora && o.estatus === 'Pendiente';
+                return o.estatus === 'Pendiente' || vencido;
+              });
+
+              // Calcular prioridad: 0=vencido, 1=urgente(<=6 días), 2=en tiempo
+              function calcPrioridad(o) {
+                if (!o.fechaLimite) return 2;
+                const limite = new Date(o.fechaLimite); limite.setHours(23,59,59,999);
+                if (limite < ahora) return 0;
+                const diasRestantes = (limite - ahora) / (1000 * 60 * 60 * 24);
+                return diasRestantes <= 6 ? 1 : 2;
+              }
+
+              // Ordenar: vencidos primero, luego urgentes, luego en tiempo; dentro de cada grupo por fecha límite asc
+              const oficiosPend = oficiosPendRaw.slice().sort((a, b) => {
+                const pa = calcPrioridad(a), pb = calcPrioridad(b);
+                if (pa !== pb) return pa - pb;
+                const la = a.fechaLimite ? new Date(a.fechaLimite) : new Date('9999-12-31');
+                const lb = b.fechaLimite ? new Date(b.fechaLimite) : new Date('9999-12-31');
+                return la - lb;
+              });
+            %>
+            <% if (oficiosPend.length === 0) { %>
+              <tr><td colspan="7" class="empty-state">No tienes oficios pendientes.</td></tr>
+            <% } %>
+            <% oficiosPend.forEach(o => {
+              const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+              if (limite) limite.setHours(23,59,59,999);
+              const vencido = limite && limite < ahora;
+              const diasRestantes = limite ? (limite - ahora) / (1000 * 60 * 60 * 24) : null;
+              const urgente = !vencido && diasRestantes !== null && diasRestantes <= 6;
+              const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
+              const estatusGlobal = vencido ? 'Vencido' : o.estatus;
+              const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+              const respuestas = o.respuestas || [];
+              const miRespuesta = respuestas.find(r => r.unidadId === unidadId);
+              const yaRespondio = !!miRespuesta;
+              // Formatear fecha límite para mostrar (sin resetear horas para el cálculo ya hecho)
+              const limiteDisplay = o.fechaLimite ? new Date(o.fechaLimite) : null;
+            %>
+              <tr class="oficio-row pend-row"
+                data-estatus="<%= estatusGlobal %>"
+                data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>">
+                <td class="no-cell"><%= o.noOficio %></td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar"><%= initials %></div>
+                    <div>
+                      <strong><%= o.remitente %></strong>
+                      <span class="sub"><%= o.cargo || '' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
+                <td>
+                  <%= o.fechaOficio
+                    ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'})
+                    : '—' %>
+                </td>
+                <td>
+                  <% if (limiteDisplay) { %>
+                    <span class="fecha-limite-cell <%= vencido ? 'vencida' : '' %>">
+                      <%= limiteDisplay.toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                    </span>
+                  <% } else { %>
+                    <span class="text-muted">—</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (prioridad === 'vencido') { %>
+                    <span class="badge badge-prioridad badge-vencido-p">Vencido</span>
+                  <% } else if (prioridad === 'urgente') { %>
+                    <span class="badge badge-prioridad badge-urgente">Urgente</span>
+                  <% } else { %>
+                    <span class="badge badge-prioridad badge-en-tiempo">En tiempo</span>
+                  <% } %>
+                </td>
+                                <td class="actions-cell">
+                  <% if (o.archivoUrl) { %>
+                    <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver oficio PDF">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </a>
+                  <% } %>
+                  <button class="icon-btn btn-responder"
+                    title="<%= yaRespondio ? 'Editar respuesta' : 'Responder' %>"
+                    data-id="<%= o.id %>"
+                    data-comentario="<%= yaRespondio ? (miRespuesta.comentario || '').replace(/"/g, '&quot;') : '' %>"
+                    data-archivos="<%= yaRespondio ? JSON.stringify(miRespuesta.archivos || []).replace(/"/g, '&quot;') : '[]' %>"
+                    data-ya="<%= yaRespondio %>">
+                    <% if (yaRespondio) { %>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    <% } else { %>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                      </svg>
+                    <% } %>
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoPend">Mostrando <%= oficiosPend.length %> de <%= oficiosPend.length %></span>
+        </div>
+      </div>
+
+      <div id="tabAtendidos" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="searchAtendidos" placeholder="Buscar..." class="search-input">
+            </div>
+          </div>
+        </div>
+
+        <%
+          const oficiosAtend = oficios.filter(o => {
+            const respuestas = o.respuestas || [];
+            return respuestas.some(r => r.unidadId === unidadId);
+          });
+        %>
+
+        <% if (oficiosAtend.length === 0) { %>
+          <div class="empty-state-full">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            <p>Aún no has respondido ningún oficio.</p>
+          </div>
+        <% } else { %>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Remitente</th>
+                <th>Asunto</th>
+                <th>Fecha oficio</th>
+                <th>Respondido</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyAtendidos">
+              <% oficiosAtend.forEach(o => {
+                const miRespuesta = (o.respuestas || []).find(r => r.unidadId === unidadId);
+                const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                const archivos = miRespuesta.archivos || [];
+              %>
+                <tr class="atendido-row atend-row"
+                  data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                  data-id="<%= o.id %>">
+                  <td class="no-cell"><%= o.noOficio %></td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar"><%= initials %></div>
+                      <div>
+                        <strong><%= o.remitente %></strong>
+                        <% if (o.cargo) { %><span class="sub"><%= o.cargo %></span><% } %>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
+                  <td class="fecha-cell">
+                    <%= o.fechaOficio
+                      ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'})
+                      : '—' %>
+                  </td>
+                  <td class="fecha-cell">
+                    <span class="fecha-respuesta">
+                      <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                    </span>
+                    <% if (miRespuesta.comentario) { %>
+                      <span class="fecha-limite" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario.length > 30 ? miRespuesta.comentario.slice(0,30) + '…' : miRespuesta.comentario %>"</span>
+                    <% } %>
+                  </td>
+                                    <td class="actions-cell">
+                    <% if (o.archivoUrl) { %>
+                      <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver oficio PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </a>
+                    <% } %>
+                    <% if (archivos.length > 0) { %>
+                      <button class="icon-btn btn-ver-evidencias" title="Ver evidencias (<%= archivos.length %> archivo<%= archivos.length > 1 ? 's' : '' %>)"
+                        data-oficio-id="<%= o.id %>"
+                        onclick="abrirEvidencias(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                      </button>
+                      <script type="application/json" id="evid-data-<%= o.id %>"><%- JSON.stringify(archivos).replace(/<\/script>/gi,'<\/script>') %></script>
+                      <script>
+                        window.__evidencias = window.__evidencias || {};
+                        window.__evidencias['<%= o.id %>'] = JSON.parse(document.getElementById('evid-data-<%= o.id %>').textContent);
+                      </script>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <span id="paginacionInfoAtend">Mostrando <%= oficiosAtend.length %> de <%= oficiosAtend.length %></span>
+          </div>
+        <% } %>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalRespuestaOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalRespuestaTitulo">Responder Oficio</h3>
+        <button class="modal-close" id="modalRespuestaClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalRespuestaError"></p>
+        <div class="form-group">
+          <label>Comentario <span class="label-hint">(opcional)</span></label>
+          <textarea id="inputComentario" placeholder="Describa brevemente cómo fue atendido el oficio..." rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Evidencias <span class="label-hint">(PDF e imágenes, múltiples archivos)</span></label>
+          <div class="file-drop-multi" id="fileDropMulti">
+            <input type="file" id="inputEvidencias" accept="application/pdf,image/*" multiple hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+            <span id="fileLabelMulti">Arrastra archivos aquí o haz clic para seleccionar</span>
+          </div>
+          <div id="listaArchivos" class="lista-archivos"></div>
+        </div>
+        <div id="archivosExistentes" class="archivos-existentes" style="display:none">
+          <p class="archivos-existentes-label">Archivos ya subidos:</p>
+          <div id="listaArchivosExistentes"></div>
+          <p class="archivos-existentes-hint">Los nuevos archivos que subas se agregarán a los existentes.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnRespuestaCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnRespuestaGuardar">
+          <span id="btnGuardarText">Guardar</span>
+          <span id="btnGuardarLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalEvidenciasOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Evidencias</h3>
+        <button class="modal-close" id="modalEvidenciasClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="listaEvidenciasModal" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnEvidenciasCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modalEvidOverlay = document.getElementById('modalEvidenciasOverlay')
+    const listaEvidModal = document.getElementById('listaEvidenciasModal')
+    const iconoTipoEv = tipo => tipo === 'application/pdf'
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+
+    function abrirEvidencias(btn) {
+      const id = btn.dataset.oficioId
+      const archivos = (window.__evidencias && window.__evidencias[id]) || []
+      listaEvidModal.innerHTML = archivos.length
+        ? archivos.map(a => `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipoEv(a.tipo)} ${a.nombre}</a>`).join('')
+        : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>'
+      modalEvidOverlay.classList.add('active')
+    }
+
+    document.getElementById('modalEvidenciasClose').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
+    document.getElementById('btnEvidenciasCerrar').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
+    modalEvidOverlay.addEventListener('click', e => { if (e.target === modalEvidOverlay) modalEvidOverlay.classList.remove('active') })
+
+    function cambiarTab(tab, e) {
+      if (e) e.preventDefault()
+      const esPend = tab === 'pendientes'
+      document.getElementById('tabPendientes').style.display = esPend ? '' : 'none'
+      document.getElementById('tabAtendidos').style.display = esPend ? 'none' : ''
+      document.getElementById('navPendientes').classList.toggle('active', esPend)
+      document.getElementById('navAtendidos').classList.toggle('active', !esPend)
+    }
+
+    const searchPend = document.getElementById('searchPendientes')
+    const filterEstatusPend = document.getElementById('filterEstatusPend')
+
+    function filtrarPendientes() {
+      const texto = searchPend.value.toLowerCase()
+      const estatus = filterEstatusPend.value
+      let visibles = 0
+      document.querySelectorAll('.pend-row').forEach(row => {
+        const matchTexto = !texto || row.dataset.search.includes(texto)
+        const matchEstatus = !estatus || row.dataset.estatus === estatus
+        const visible = matchTexto && matchEstatus
+        row.style.display = visible ? '' : 'none'
+        if (visible) visibles++
+      })
+      const total = document.querySelectorAll('.pend-row').length
+      const info = document.getElementById('paginacionInfoPend')
+      if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+    }
+
+    searchPend.addEventListener('input', filtrarPendientes)
+    filterEstatusPend.addEventListener('change', filtrarPendientes)
+    const searchAtend = document.getElementById('searchAtendidos')
+    if (searchAtend) {
+      searchAtend.addEventListener('input', () => {
+        const texto = searchAtend.value.toLowerCase()
+        let visibles = 0
+        document.querySelectorAll('.atend-row').forEach(card => {
+          const visible = !texto || card.dataset.search.includes(texto)
+          card.style.display = visible ? '' : 'none'
+          if (visible) visibles++
+        })
+        const total = document.querySelectorAll('.atend-row').length
+        const info = document.getElementById('paginacionInfoAtend')
+        if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+      })
+    }
+
+    const modalOverlay = document.getElementById('modalRespuestaOverlay')
+    const inputEvidencias = document.getElementById('inputEvidencias')
+    const fileDropMulti = document.getElementById('fileDropMulti')
+    const fileLabelMulti = document.getElementById('fileLabelMulti')
+    const listaArchivos = document.getElementById('listaArchivos')
+    let oficioRespId = null
+    let archivosSeleccionados = []
+
+    const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const iconoTipo = tipo => tipo === 'application/pdf'
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+
+    function renderListaArchivos() {
+      listaArchivos.innerHTML = ''
+      archivosSeleccionados.forEach((file, i) => {
+        const chip = document.createElement('div')
+        chip.className = 'archivo-chip-selected'
+        chip.innerHTML = `${iconoTipo(file.type)}<span>${file.name}</span><button class="chip-remove" data-i="${i}">&times;</button>`
+        listaArchivos.appendChild(chip)
+      })
+      listaArchivos.querySelectorAll('.chip-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          archivosSeleccionados.splice(Number(btn.dataset.i), 1)
+          renderListaArchivos()
+        })
+      })
+      fileLabelMulti.textContent = archivosSeleccionados.length > 0
+        ? `${archivosSeleccionados.length} archivo(s) seleccionado(s)`
+        : 'Arrastra archivos aquí o haz clic para seleccionar'
+    }
+
+    function agregarArchivos(nuevos) {
+      const errorEl = document.getElementById('modalRespuestaError')
+      for (const file of nuevos) {
+        if (!tiposPermitidos.includes(file.type)) {
+          errorEl.textContent = `Tipo no permitido: ${file.name}. Solo PDF e imágenes.`
+          continue
+        }
+        if (!archivosSeleccionados.find(f => f.name === file.name)) {
+          archivosSeleccionados.push(file)
+        }
+      }
+      renderListaArchivos()
+    }
+
+    fileDropMulti.addEventListener('click', () => inputEvidencias.click())
+    inputEvidencias.addEventListener('change', () => {
+      agregarArchivos(Array.from(inputEvidencias.files))
+      inputEvidencias.value = ''
+    })
+    fileDropMulti.addEventListener('dragover', e => { e.preventDefault(); fileDropMulti.classList.add('drag-over') })
+    fileDropMulti.addEventListener('dragleave', () => fileDropMulti.classList.remove('drag-over'))
+    fileDropMulti.addEventListener('drop', e => {
+      e.preventDefault()
+      fileDropMulti.classList.remove('drag-over')
+      agregarArchivos(Array.from(e.dataTransfer.files))
+    })
+
+    const cerrarModal = () => {
+      modalOverlay.classList.remove('active')
+      oficioRespId = null
+      archivosSeleccionados = []
+      document.getElementById('inputComentario').value = ''
+      document.getElementById('modalRespuestaError').textContent = ''
+      document.getElementById('archivosExistentes').style.display = 'none'
+      document.getElementById('listaArchivosExistentes').innerHTML = ''
+      renderListaArchivos()
+    }
+
+    document.getElementById('modalRespuestaClose').addEventListener('click', cerrarModal)
+    document.getElementById('btnRespuestaCancelar').addEventListener('click', cerrarModal)
+    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) cerrarModal() })
+
+    document.querySelectorAll('.btn-responder').forEach(btn => {
+      btn.addEventListener('click', () => {
+        oficioRespId = btn.dataset.id
+        const yaRespondio = btn.dataset.ya === 'true'
+        document.getElementById('modalRespuestaTitulo').textContent = yaRespondio ? 'Editar Respuesta' : 'Responder Oficio'
+        document.getElementById('inputComentario').value = btn.dataset.comentario || ''
+        archivosSeleccionados = []
+        renderListaArchivos()
+
+        const existentesPanel = document.getElementById('archivosExistentes')
+        const existentesList = document.getElementById('listaArchivosExistentes')
+        if (yaRespondio) {
+          try {
+            const arch = JSON.parse(btn.dataset.archivos || '[]')
+            if (arch.length > 0) {
+              existentesList.innerHTML = arch.map(a =>
+                `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipo(a.tipo)} ${a.nombre}</a>`
+              ).join('')
+              existentesPanel.style.display = 'block'
+            }
+          } catch (_) {}
+        }
+        modalOverlay.classList.add('active')
+      })
+    })
+
+    document.getElementById('btnRespuestaGuardar').addEventListener('click', async () => {
+      const comentario = document.getElementById('inputComentario').value.trim()
+      const errorEl = document.getElementById('modalRespuestaError')
+      if (!comentario && archivosSeleccionados.length === 0) {
+        errorEl.textContent = 'Debes agregar un comentario o al menos un archivo.'
+        return
+      }
+      document.getElementById('btnGuardarText').style.display = 'none'
+      document.getElementById('btnGuardarLoader').style.display = 'inline-block'
+      errorEl.textContent = ''
+      try {
+        const formData = new FormData()
+        formData.append('comentario', comentario)
+        archivosSeleccionados.forEach(file => formData.append('archivos', file))
+        const res = await fetch(`/oficios/${oficioRespId}/respuesta`, { method: 'POST', body: formData })
+        const data = await res.json()
+        if (!res.ok) { errorEl.textContent = data.error || 'Error al guardar respuesta.'; return }
+        cerrarModal()
+        window.location.reload()
+      } catch {
+        errorEl.textContent = 'Error de conexión.'
+      } finally {
+        document.getElementById('btnGuardarText').style.display = ''
+        document.getElementById('btnGuardarLoader').style.display = 'none'
+      }
+    })
+  </script>
+  <script>
+    ;(function () {
+      function getCsrf () {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        return m ? decodeURIComponent(m[1]) : ''
+      }
+      const form = document.getElementById('formLogout')
+      if (form) {
+        form.addEventListener('submit', function () {
+          document.getElementById('csrfLogout').value = getCsrf()
+        })
+      }
+    })()
+  </script>
+</body>
+</html>

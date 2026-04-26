@@ -31,7 +31,8 @@ export class UserRepository {
       email,
       password: hashedPassword,
       role,
-      administrativeUnitId
+      administrativeUnitId,
+      estatus: 'Activo'
     })
 
     return userRef.id
@@ -49,16 +50,29 @@ export class UserRepository {
       .limit(1)
       .get()
 
-    if (snapshot.empty) throw new Error('User not found')
+    if (snapshot.empty) throw new Error('Credenciales incorrectas')
 
     const userDoc = snapshot.docs[0]
     const userData = userDoc.data()
 
+    // Bloquear login directo si la cuenta está inactiva
+    if (userData.estatus === 'Inactivo') {
+      throw new Error('La cuenta está desactivada. Contacta al administrador.')
+    }
+
     const isValid = await bcrypt.compare(password, userData.password)
-    if (!isValid) throw new Error('Invalid password')
+    if (!isValid) throw new Error('Credenciales incorrectas')
 
     const { password: _, ...publicUser } = userData
     return { _id: userDoc.id, ...publicUser }
+  }
+
+  static async getById(id) {
+    const firestore = db()
+    const doc = await firestore.collection(USERS_COLLECTION).doc(id).get()
+    if (!doc.exists) return null
+    const { password: _, ...data } = doc.data()
+    return { id: doc.id, ...data }
   }
 
   static async getAll() {
@@ -68,6 +82,11 @@ export class UserRepository {
   }
 
   static async update(id, { username, email, role, administrativeUnitId, estatus, password }) {
+    const VALID_ESTATUS = ['Activo', 'Inactivo']
+    if (estatus && !VALID_ESTATUS.includes(estatus)) {
+      throw new Error(`Estatus inválido. Los valores permitidos son: ${VALID_ESTATUS.join(', ')}`)
+    }
+
     const firestore = db()
     const userRef = firestore.collection(USERS_COLLECTION).doc(id)
     const userDoc = await userRef.get()

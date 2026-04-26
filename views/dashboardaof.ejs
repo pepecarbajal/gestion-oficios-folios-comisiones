@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Asistente de Oficios</title>
+  <link rel="stylesheet" href="/styles-base.css">
+  <link rel="stylesheet" href="/styles-dashboardaof.css">
+</head>
+<body>
+  <script>
+      ;(function () {
+        function getCookie (name) {
+          const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+          return match ? decodeURIComponent(match[1]) : null
+        }
+
+        const originalFetch = window.fetch
+        window.fetch = function (input, init = {}) {
+          const csrfToken = getCookie('csrf_token')
+          if (csrfToken) {
+            init.headers = init.headers || {}
+            if (init.headers instanceof Headers) {
+              if (!init.headers.has('X-CSRF-Token')) {
+                init.headers.set('X-CSRF-Token', csrfToken)
+              }
+            } else {
+              init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
+            }
+          }
+          return originalFetch.call(this, input, init)
+        }
+      })()
+    </script>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <nav class="nav">
+          <a href="#" class="nav-item active" id="navOficios" onclick="cambiarTab('oficios', event)">
+            Oficios
+          </a>
+          <a href="#" class="nav-item" id="navAtendidos" onclick="cambiarTab('atendidos', event)">
+            Atendidos
+          </a>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="rol-label">Asistente de Folios</span>
+        <form action="/logout" method="POST" style="margin:0" id="formLogout">
+          <input type="hidden" name="_csrf" id="csrfLogout">
+          <button type="submit" class="logout">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Salir
+          </button>
+        </form>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="tabOficios" class="content-card tab-panel">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="searchOficios" placeholder="Buscar..." class="search-input">
+            </div>
+            <select id="filterEstatusOf" class="filter-select">
+              <option value="">Todos</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Vencido">Vencido</option>
+            </select>
+            <select id="filterUnidadOf" class="filter-select">
+              <option value="">Todas las unidades</option>
+              <option value="TODAS">TODAS</option>
+              <% unidades.forEach(u => { %>
+                <option value="<%= u.alias %>"><%= u.alias %></option>
+              <% }) %>
+            </select>
+          </div>
+          <button class="btn-primary" id="btnNuevoOficio">+ Registrar</button>
+        </div>
+
+        <table class="table" id="tablaOficios">
+          <thead>
+            <tr>
+              <th>No. Oficio</th>
+              <th>Remitente</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+              <th>Unidad</th>
+              <th>Prioridad</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyOficios">
+            <%
+              const ahoraAOF = new Date();
+
+              const oficiosPendRaw = oficios.filter(o => {
+                const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+                if (limite) limite.setHours(23,59,59,999);
+                const vencido = limite && limite < ahoraAOF && o.estatus === 'Pendiente';
+                return o.estatus === 'Pendiente' || vencido;
+              });
+
+              function calcPrioridadAOF(o) {
+                if (!o.fechaLimite) return 2;
+                const limite = new Date(o.fechaLimite); limite.setHours(23,59,59,999);
+                if (limite < ahoraAOF) return 0;
+                const dias = (limite - ahoraAOF) / (1000 * 60 * 60 * 24);
+                return dias <= 6 ? 1 : 2;
+              }
+
+              const oficiosPend = oficiosPendRaw.slice().sort((a, b) => {
+                const pa = calcPrioridadAOF(a), pb = calcPrioridadAOF(b);
+                if (pa !== pb) return pa - pb;
+                const la = a.fechaLimite ? new Date(a.fechaLimite) : new Date('9999-12-31');
+                const lb = b.fechaLimite ? new Date(b.fechaLimite) : new Date('9999-12-31');
+                return la - lb;
+              });
+            %>
+            <% if (oficiosPend.length === 0) { %>
+              <tr><td colspan="8" class="empty-state">No hay oficios pendientes.</td></tr>
+            <% } %>
+            <% oficiosPend.forEach(o => {
+              const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+              if (limite) limite.setHours(23,59,59,999);
+              const vencido = limite && limite < ahoraAOF;
+              const diasRestantes = limite ? (limite - ahoraAOF) / (1000 * 60 * 60 * 24) : null;
+              const urgente = !vencido && diasRestantes !== null && diasRestantes <= 6;
+              const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
+              const estatus = vencido ? 'Vencido' : o.estatus;
+              const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+              const respuestas = o.respuestas || [];
+              const totalResp = respuestas.length;
+              const limiteDisplay = o.fechaLimite ? new Date(o.fechaLimite) : null;
+            %>
+              <tr class="oficio-row of-row"
+                data-estatus="<%= estatus %>"
+                data-unidad="<%= o.unidadAlias || '' %>"
+                data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                data-id="<%= o.id %>">
+                <td class="no-cell"><%= o.noOficio %></td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar"><%= initials %></div>
+                    <div>
+                      <strong><%= o.remitente %></strong>
+                      <span class="sub"><%= o.cargo || '' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
+                <td class="fecha-cell">
+                  <%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
+                  <% if (limiteDisplay) { %>
+                    <span class="fecha-limite <%= vencido ? 'vencida' : '' %>">
+                      Límite: <%= limiteDisplay.toLocaleDateString('es-MX', {day:'2-digit',month:'short'}) %>
+                    </span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (o.unidadId === 'TODAS') { %>
+                    <%= o.unidadAlias || 'TODAS' %>
+                  <% } else { %>
+                    <%= o.unidadAlias || '—' %>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (prioridad === 'vencido') { %>
+                    <span class="badge badge-prioridad badge-vencido-p">Vencido</span>
+                  <% } else if (prioridad === 'urgente') { %>
+                    <span class="badge badge-prioridad badge-urgente">Urgente</span>
+                  <% } else { %>
+                    <span class="badge badge-prioridad badge-en-tiempo">En tiempo</span>
+                  <% } %>
+                </td>
+                                <td class="actions-cell">
+                  <% if (o.archivoUrl) { %>
+                    <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver PDF original">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </a>
+                  <% } %>
+                  <% if (respuestas.length > 0) { %>
+                    <button class="icon-btn" title="Ver respuestas"
+                      data-oficio-id="<%= o.id %>" onclick="abrirModalRespuestas(this)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </button>
+                  <% } %>
+                  <button class="icon-btn btn-cambiar-estatus" title="Cambiar estatus"
+                    data-id="<%= o.id %>" data-estatus="<%= o.estatus %>">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="respuestas-row" id="resp-<%= o.id %>" style="display:none">
+                <td colspan="7">
+                  <div class="respuestas-panel">
+                    <% respuestas.forEach(r => { %>
+                      <div class="respuesta-item">
+                        <div class="respuesta-body">
+                          <div class="respuesta-header">
+                            <span class="resp-alias"><%= r.unidadAlias %></span>
+                            <span class="resp-fecha">Atendido: <%= new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric', hour:'2-digit', minute:'2-digit'}) %></span>
+                          </div>
+                          <% if (r.comentario || (r.archivos && r.archivos.length > 0)) { %>
+                            <div class="respuesta-divider"></div>
+                          <% } %>
+                          <% if (r.comentario) { %>
+                            <p class="resp-comentario">"<%= r.comentario %>"</p>
+                          <% } %>
+                          <% if (r.archivos && r.archivos.length > 0) { %>
+                            <div class="resp-archivos">
+                              <% r.archivos.forEach(a => { %>
+                                <a href="<%= a.url %>" target="_blank" class="archivo-chip">
+                                  <% if (a.tipo === 'application/pdf') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                      <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                  <% } else { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                                      <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                  <% } %>
+                                  <%= a.nombre %>
+                                </a>
+                              <% }) %>
+                            </div>
+                          <% } %>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoOf">Mostrando <%= oficiosPend.length %> de <%= oficiosPend.length %></span>
+        </div>
+      </div>
+      <div id="tabAtendidos" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="searchAtendidos" placeholder="Buscar..." class="search-input">
+            </div>
+            <select id="filterUnidadAt" class="filter-select">
+              <option value="">Todas las unidades</option>
+              <option value="TODAS">TODAS</option>
+              <% unidades.forEach(u => { %>
+                <option value="<%= u.alias %>"><%= u.alias %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <%
+          const oficiosAt = oficios.filter(o => o.estatus === 'Atendido' && (o.respuestas || []).length > 0);
+        %>
+
+        <table class="table" id="tablaAtendidos">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Remitente</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+              <th>Unidad</th>
+              <th>Respuestas</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAtendidos">
+            <% if (oficiosAt.length === 0) { %>
+              <tr><td colspan="7" class="empty-state">No hay oficios atendidos aún.</td></tr>
+            <% } %>
+            <% oficiosAt.forEach(o => {
+              const respuestas = o.respuestas || [];
+              const totalResp = respuestas.length;
+              const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+              const todasEvidencias = respuestas.flatMap(r => r.archivos || []);
+            %>
+              <tr class="oficio-row at-row"
+                data-unidad="<%= o.unidadAlias || '' %>"
+                data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto + ' ' + (o.unidadAlias || '')).toLowerCase() %>"
+                data-id="<%= o.id %>">
+                <td class="no-cell"><%= o.noOficio %></td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar"><%= initials %></div>
+                    <div>
+                      <strong><%= o.remitente %></strong>
+                      <span class="sub"><%= o.cargo || '' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
+                <td class="fecha-cell">
+                  <%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
+                </td>
+                <td>
+                  <% if (o.unidadId === 'TODAS') { %>
+                    <%= o.unidadAlias || 'TODAS' %>
+                  <% } else { %>
+                    <%= o.unidadAlias || '—' %>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="resp-label"><%= totalResp %> respuesta<%= totalResp !== 1 ? 's' : '' %></span>
+                  <script type="application/json" id="resp-data-<%= o.id %>"><%- JSON.stringify(respuestas).replace(/<\/script>/gi,'<\/script>') %></script>
+                  <script>
+                    window.__respuestas = window.__respuestas || {};
+                    window.__respuestas['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-<%= o.id %>').textContent);
+                  </script>
+                </td>
+                                <td class="actions-cell">
+                  <% if (o.archivoUrl) { %>
+                    <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver oficio original">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </a>
+                  <% } %>
+                  <button class="icon-btn" title="Ver respuestas"
+                    data-oficio-id="<%= o.id %>" onclick="abrirModalRespuestas(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="respuestas-row" id="resp-at-<%= o.id %>" style="display:none">
+                <td colspan="7">
+                  <div class="respuestas-panel">
+                    <% respuestas.forEach(r => { %>
+                      <div class="respuesta-item">
+                        <div class="respuesta-body">
+                          <div class="respuesta-header">
+                            <span class="resp-alias"><%= r.unidadAlias %></span>
+                            <span class="resp-fecha">Atendido: <%= new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric', hour:'2-digit', minute:'2-digit'}) %></span>
+                          </div>
+                          <% if (r.comentario || (r.archivos && r.archivos.length > 0)) { %>
+                            <div class="respuesta-divider"></div>
+                          <% } %>
+                          <% if (r.comentario) { %>
+                            <p class="resp-comentario">"<%= r.comentario %>"</p>
+                          <% } %>
+                          <% if (r.archivos && r.archivos.length > 0) { %>
+                            <div class="resp-archivos">
+                              <% r.archivos.forEach(a => { %>
+                                <a href="<%= a.url %>" target="_blank" class="archivo-chip">
+                                  <% if (a.tipo === 'application/pdf') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                      <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                  <% } else { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                                      <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                  <% } %>
+                                  <%= a.nombre %>
+                                </a>
+                              <% }) %>
+                            </div>
+                          <% } %>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoAt">Mostrando <%= oficiosAt.length %> de <%= oficiosAt.length %></span>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOficioOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Registrar Oficio</h3>
+        <button class="modal-close" id="modalOficioClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalOficioError"></p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>No. Oficio</label>
+            <input type="text" id="inputNoOficio" placeholder="OF-2024-005">
+          </div>
+          <div class="form-group">
+            <label>Fecha del Oficio</label>
+            <input type="date" id="inputFechaOficio">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Recibo</label>
+            <input type="date" id="inputFechaRecibo">
+          </div>
+          <div class="form-group">
+            <label>Fecha Límite</label>
+            <input type="date" id="inputFechaLimite">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <textarea id="inputAsunto" placeholder="Describa brevemente el asunto" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Remitente</label>
+            <input type="text" id="inputRemitente" placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" id="inputCargo" placeholder="Cargo del remitente">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dependencia</label>
+            <input type="text" id="inputDependencia" placeholder="Dependencia de origen">
+          </div>
+          <div class="form-group">
+            <label>Unidad a Turnar</label>
+            <select id="inputUnidadTurnar">
+              <option value="" disabled selected>Seleccionar</option>
+              <option value="TODAS" data-alias="TODAS">— Todas las unidades —</option>
+              <% unidades.forEach(u => { %>
+                <option value="<%= u.id %>" data-alias="<%= u.alias %>"><%= u.uadname %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Adjuntar Oficio <span class="label-hint">(PDF, opcional)</span></label>
+          <div class="file-drop" id="fileDrop">
+            <input type="file" id="inputArchivo" accept="application/pdf" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+            <span id="fileLabel">Seleccionar archivo PDF</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnOficioCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnOficioRegistrar">
+          <span id="btnRegistrarText">Registrar</span>
+          <span id="btnRegistrarLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CAMBIAR ESTATUS -->
+  <div class="modal-overlay" id="modalEstatusOverlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Cambiar Estatus</h3>
+        <button class="modal-close" id="modalEstatusClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalEstatusError"></p>
+        <div class="form-group">
+          <label>Nuevo Estatus</label>
+          <select id="selectNuevoEstatus">
+            <option value="Pendiente">Pendiente</option>
+            <option value="Atendido">Atendido</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnEstatusCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnEstatusGuardar">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RESPUESTAS (cards por unidad) -->
+  <div class="modal-overlay" id="modalRespuestasOverlay">
+    <div class="modal modal-respuestas">
+      <div class="modal-header">
+        <h3 id="modalRespuestasTitulo">Respuestas</h3>
+        <button class="modal-close" id="modalRespuestasClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="listaRespuestasModal"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnRespuestasCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modalRespOverlay = document.getElementById('modalRespuestasOverlay')
+    const listaRespModal = document.getElementById('listaRespuestasModal')
+
+    const iconoArchivoModal = tipo => tipo === 'application/pdf'
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+
+    function renderCardRespuesta(r) {
+      const fecha = new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})
+      const comentario = r.comentario
+        ? `<p class="resp-comentario">"${r.comentario}"</p>`
+        : ''
+      const archivos = (r.archivos || []).length > 0
+        ? `<div class="resp-archivos">${(r.archivos).map(a =>
+            `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoArchivoModal(a.tipo)} ${a.nombre}</a>`
+          ).join('')}</div>`
+        : ''
+      const hasCuerpo = r.comentario || (r.archivos && r.archivos.length > 0)
+      return `
+        <div class="respuesta-item">
+          <div class="respuesta-body">
+            <div class="respuesta-header">
+              <span class="resp-alias">${r.unidadAlias || '—'}</span>
+              <span class="resp-fecha">Atendido: ${fecha}</span>
+            </div>
+            ${hasCuerpo ? '<div class="respuesta-divider"></div>' : ''}
+            ${comentario}
+            ${archivos}
+          </div>
+        </div>`
+    }
+
+    function abrirModalRespuestas(btn) {
+      const id = btn.dataset.oficioId
+      const respuestas = (window.__respuestas && window.__respuestas[id]) || []
+      listaRespModal.innerHTML = respuestas.length
+        ? `<div class="modal-respuestas-grid">${respuestas.map(renderCardRespuesta).join('')}</div>`
+        : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic;text-align:center;padding:20px 0">Sin respuestas registradas.</p>'
+      modalRespOverlay.classList.add('active')
+    }
+
+    document.getElementById('modalRespuestasClose').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
+    document.getElementById('btnRespuestasCerrar').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
+    modalRespOverlay.addEventListener('click', e => { if (e.target === modalRespOverlay) modalRespOverlay.classList.remove('active') })
+
+    function cambiarTab(tab, e) {
+      if (e) e.preventDefault()
+      const esOf = tab === 'oficios'
+      document.getElementById('tabOficios').style.display = esOf ? '' : 'none'
+      document.getElementById('tabAtendidos').style.display = esOf ? 'none' : ''
+      document.getElementById('navOficios').classList.toggle('active', esOf)
+      document.getElementById('navAtendidos').classList.toggle('active', !esOf)
+    }
+
+    const searchOf = document.getElementById('searchOficios')
+    const filterEstatusOf = document.getElementById('filterEstatusOf')
+    const filterUnidadOf = document.getElementById('filterUnidadOf')
+
+    function filtrarOficios() {
+      const texto = searchOf.value.toLowerCase()
+      const estatus = filterEstatusOf.value
+      const unidad = filterUnidadOf.value
+      let visibles = 0
+      document.querySelectorAll('.of-row').forEach(row => {
+        const matchTexto = !texto || row.dataset.search.includes(texto)
+        const matchEstatus = !estatus || row.dataset.estatus === estatus
+        const matchUnidad = !unidad || row.dataset.unidad === unidad
+        const visible = matchTexto && matchEstatus && matchUnidad
+        row.style.display = visible ? '' : 'none'
+        const respRow = document.getElementById(`resp-${row.dataset.id}`)
+        if (respRow && !visible) respRow.style.display = 'none'
+        if (visible) visibles++
+      })
+      const total = document.querySelectorAll('.of-row').length
+      const info = document.getElementById('paginacionInfoOf')
+      if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+    }
+
+    searchOf.addEventListener('input', filtrarOficios)
+    filterEstatusOf.addEventListener('change', filtrarOficios)
+    filterUnidadOf.addEventListener('change', filtrarOficios)
+
+    const searchAt = document.getElementById('searchAtendidos')
+    const filterUnidadAt = document.getElementById('filterUnidadAt')
+
+    function filtrarAtendidos() {
+      const texto = searchAt ? searchAt.value.toLowerCase() : ''
+      const unidad = filterUnidadAt ? filterUnidadAt.value : ''
+      let visibles = 0
+      document.querySelectorAll('.at-row').forEach(card => {
+        const matchTexto = !texto || card.dataset.search.includes(texto)
+        const matchUnidad = !unidad || card.dataset.unidad === unidad
+        const visible = matchTexto && matchUnidad
+        card.style.display = visible ? '' : 'none'
+        if (visible) visibles++
+      })
+      const total = document.querySelectorAll('.at-row').length
+      const info = document.getElementById('paginacionInfoAt')
+      if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+    }
+
+    if (searchAt) searchAt.addEventListener('input', filtrarAtendidos)
+    if (filterUnidadAt) filterUnidadAt.addEventListener('change', filtrarAtendidos)
+
+    const modalOverlay = document.getElementById('modalOficioOverlay')
+    const fileDrop = document.getElementById('fileDrop')
+    const inputArchivo = document.getElementById('inputArchivo')
+    const fileLabel = document.getElementById('fileLabel')
+
+    const cerrarModal = () => {
+      modalOverlay.classList.remove('active')
+      document.getElementById('modalOficioError').textContent = ''
+      ;['inputNoOficio','inputFechaOficio','inputFechaRecibo','inputFechaLimite',
+        'inputAsunto','inputRemitente','inputCargo','inputDependencia'].forEach(id => {
+        document.getElementById(id).value = ''
+      })
+      document.getElementById('inputUnidadTurnar').value = ''
+      inputArchivo.value = ''
+      fileLabel.textContent = 'Seleccionar archivo PDF'
+      fileDrop.classList.remove('has-file')
+    }
+
+    document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
+    document.getElementById('modalOficioClose').addEventListener('click', cerrarModal)
+    document.getElementById('btnOficioCancelar').addEventListener('click', cerrarModal)
+    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) cerrarModal() })
+
+    fileDrop.addEventListener('click', () => inputArchivo.click())
+    inputArchivo.addEventListener('change', () => {
+      const file = inputArchivo.files[0]
+      if (file) { fileLabel.textContent = file.name; fileDrop.classList.add('has-file') }
+    })
+    fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over') })
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'))
+    fileDrop.addEventListener('drop', e => {
+      e.preventDefault()
+      fileDrop.classList.remove('drag-over')
+      const file = e.dataTransfer.files[0]
+      if (file && file.type === 'application/pdf') {
+        const dt = new DataTransfer(); dt.items.add(file); inputArchivo.files = dt.files
+        fileLabel.textContent = file.name; fileDrop.classList.add('has-file')
+      }
+    })
+
+    document.getElementById('btnOficioRegistrar').addEventListener('click', async () => {
+      const noOficio = document.getElementById('inputNoOficio').value.trim()
+      const fechaOficio = document.getElementById('inputFechaOficio').value
+      const fechaRecibo = document.getElementById('inputFechaRecibo').value
+      const fechaLimite = document.getElementById('inputFechaLimite').value
+      const asunto = document.getElementById('inputAsunto').value.trim()
+      const remitente = document.getElementById('inputRemitente').value.trim()
+      const cargo = document.getElementById('inputCargo').value.trim()
+      const dependencia = document.getElementById('inputDependencia').value.trim()
+      const unidadSelect = document.getElementById('inputUnidadTurnar')
+      const unidadId = unidadSelect.value
+      const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+      const archivo = inputArchivo.files[0]
+      const errorEl = document.getElementById('modalOficioError')
+
+      if (!noOficio || !fechaOficio || !asunto || !remitente || !unidadId) {
+        errorEl.textContent = 'No. oficio, fecha, asunto, remitente y unidad son obligatorios.'
+        return
+      }
+
+      document.getElementById('btnRegistrarText').style.display = 'none'
+      document.getElementById('btnRegistrarLoader').style.display = 'inline-block'
+      errorEl.textContent = ''
+
+      try {
+        const formData = new FormData()
+        formData.append('noOficio', noOficio)
+        formData.append('fechaOficio', fechaOficio)
+        formData.append('fechaRecibo', fechaRecibo)
+        formData.append('fechaLimite', fechaLimite)
+        formData.append('asunto', asunto)
+        formData.append('remitente', remitente)
+        formData.append('cargo', cargo)
+        formData.append('dependencia', dependencia)
+        formData.append('unidadId', unidadId)
+        formData.append('unidadAlias', unidadAlias)
+        if (archivo) formData.append('archivo', archivo)
+
+        const res = await fetch('/oficios', { method: 'POST', body: formData })
+        const data = await res.json()
+        if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar oficio.'; return }
+        cerrarModal()
+        window.location.reload()
+      } catch {
+        errorEl.textContent = 'Error de conexión.'
+      } finally {
+        document.getElementById('btnRegistrarText').style.display = ''
+        document.getElementById('btnRegistrarLoader').style.display = 'none'
+      }
+    })
+
+    const modalEstatusOverlay = document.getElementById('modalEstatusOverlay')
+    let oficioEditandoId = null
+
+    const cerrarModalEstatus = () => {
+      modalEstatusOverlay.classList.remove('active')
+      oficioEditandoId = null
+      document.getElementById('modalEstatusError').textContent = ''
+    }
+
+    document.getElementById('modalEstatusClose').addEventListener('click', cerrarModalEstatus)
+    document.getElementById('btnEstatusCancelar').addEventListener('click', cerrarModalEstatus)
+    modalEstatusOverlay.addEventListener('click', e => { if (e.target === modalEstatusOverlay) cerrarModalEstatus() })
+
+    document.querySelectorAll('.btn-cambiar-estatus').forEach(btn => {
+      btn.addEventListener('click', () => {
+        oficioEditandoId = btn.dataset.id
+        document.getElementById('selectNuevoEstatus').value = btn.dataset.estatus || 'Pendiente'
+        modalEstatusOverlay.classList.add('active')
+      })
+    })
+
+    document.getElementById('btnEstatusGuardar').addEventListener('click', async () => {
+      const estatus = document.getElementById('selectNuevoEstatus').value
+      const errorEl = document.getElementById('modalEstatusError')
+      try {
+        const res = await fetch(`/oficios/${oficioEditandoId}/estatus`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estatus })
+        })
+        const data = await res.json()
+        if (!res.ok) { errorEl.textContent = data.error || 'Error.'; return }
+        cerrarModalEstatus()
+        window.location.reload()
+      } catch {
+        errorEl.textContent = 'Error de conexión.'
+      }
+    })
+  </script>
+  <script>
+    ;(function () {
+      function getCsrf () {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        return m ? decodeURIComponent(m[1]) : ''
+      }
+      const form = document.getElementById('formLogout')
+      if (form) {
+        form.addEventListener('submit', function () {
+          document.getElementById('csrfLogout').value = getCsrf()
+        })
+      }
+    })()
+  </script>
+</body>
+</html>

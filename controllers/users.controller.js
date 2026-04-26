@@ -1,4 +1,8 @@
 import { UserRepository } from '../repositories/user.repository.js'
+import { AuditRepository } from '../repositories/audit.repository.js'
+
+const getIp = (req) =>
+  req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || null
 
 export const getUsuarios = async (req, res) => {
   try {
@@ -15,6 +19,21 @@ export const updateUsuario = async (req, res) => {
 
   try {
     await UserRepository.update(id, { username, email, role, administrativeUnitId, estatus, password })
+
+    await AuditRepository.registrar({
+      accion: 'USUARIO_EDITADO',
+      usuarioId: req.user?.id,
+      usuarioEmail: null,
+      rol: req.user?.role,
+      detalle: {
+        usuarioEditadoId: id,
+        nuevoRol: role,
+        nuevoEstatus: estatus,
+        cambioPassword: !!(password && password.trim() !== '')
+      },
+      ip: getIp(req)
+    })
+
     res.json({ message: 'Usuario actualizado correctamente' })
   } catch (error) {
     res.status(400).json({ error: error.message })

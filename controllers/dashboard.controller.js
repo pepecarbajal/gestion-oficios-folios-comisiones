@@ -1,20 +1,21 @@
-import { UserRepository } from '../repositories/user.repository.js'
 import { UADRepository } from '../repositories/uad.repository.js'
+import { OficioRepository } from '../repositories/oficio.repository.js'
+import { UserRepository } from '../repositories/user.repository.js'
 
 export const dashboard = async (req, res) => {
   const { role } = req.user
 
   const vistas = {
     ADM: () => renderADM(req, res),
-    AOF: () => res.render('dashboardaof'),
-    UAD: () => res.render('dashboarduad'),
+    AOF: () => renderAOF(req, res),
+    UAD: () => renderUAD(req, res)
   }
 
   const renderVista = vistas[role]
   if (renderVista) {
     renderVista()
   } else {
-    res.status(403).render('error', { mensaje: 'Rol no autorizado' })
+    res.status(403).send('Rol no autorizado')
   }
 }
 
@@ -23,17 +24,10 @@ const renderADM = async (req, res) => {
 
   try {
     if (section === 'usuarios') {
-      const [usersRes, uadsRes] = await Promise.all([
-        fetch(`http://localhost:${process.env.PORT}/users`, {
-          headers: { Cookie: `access_token=${req.cookies.access_token}` }
-        }),
-        fetch(`http://localhost:${process.env.PORT}/uads`, {
-          headers: { Cookie: `access_token=${req.cookies.access_token}` }
-        })
+      const [usuarios, unidades] = await Promise.all([
+        UserRepository.getAll(),
+        UADRepository.getAll()
       ])
-
-      const usuarios = await usersRes.json()
-      const unidades = await uadsRes.json()
 
       const usuariosMapeados = usuarios.map(u => {
         const unidad = unidades.find(und => und.id === u.administrativeUnitId)
@@ -49,23 +43,46 @@ const renderADM = async (req, res) => {
       })
 
       const unidadesMapeadas = unidades.map(u => ({ ...u, nombre: u.uadname }))
-
       return res.render('dashboardadm', { section, usuarios: usuariosMapeados, unidades: unidadesMapeadas })
     }
 
     if (section === 'unidades') {
-      const response = await fetch(`http://localhost:${process.env.PORT}/uads`, {
-        headers: { Cookie: `access_token=${req.cookies.access_token}` }
-      })
-      const unidades = await response.json()
-      const unidadesMapeadas = unidades.map(u => ({
-        ...u,
-        nombre: u.uadname,
-        alias: u.alias
-      }))
+      const unidades = await UADRepository.getAll()
+      const unidadesMapeadas = unidades.map(u => ({ ...u, nombre: u.uadname, alias: u.alias }))
       return res.render('dashboardadm', { section, unidades: unidadesMapeadas, usuarios: [] })
     }
   } catch (error) {
-    res.status(500).send(`Error: ${error.message}`)
+    console.error('[renderADM]', error)
+    res.status(500).send('Error interno del servidor')
+  }
+}
+
+const renderAOF = async (req, res) => {
+  try {
+    const [oficios, unidades] = await Promise.all([
+      OficioRepository.getAll(),
+      UADRepository.getAll()
+    ])
+    res.render('dashboardaof', { oficios, unidades })
+  } catch (error) {
+    console.error('[renderAOF]', error)
+    res.status(500).send('Error interno del servidor')
+  }
+}
+
+const renderUAD = async (req, res) => {
+  try {
+    const unidadId = req.user.unidadId
+    const unidadAlias = req.user.unidadAlias || ''
+
+    if (!unidadId) {
+      return res.status(403).send('Tu usuario no tiene una unidad administrativa asignada.')
+    }
+
+    const oficios = await OficioRepository.getByUnidad(unidadId)
+    res.render('dashboarduad', { oficios, unidadId, unidadAlias })
+  } catch (error) {
+    console.error('[renderUAD]', error)
+    res.status(500).send('Error interno del servidor')
   }
 }

@@ -4,13 +4,37 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard Administrador</title>
+  <link rel="stylesheet" href="/styles-base.css">
   <link rel="stylesheet" href="/styles-dashboardadm.css">
 </head>
 
 <body>
+  <script>
+      ;(function () {
+        function getCookie (name) {
+          const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+          return match ? decodeURIComponent(match[1]) : null
+        }
+
+        const originalFetch = window.fetch
+        window.fetch = function (input, init = {}) {
+          const csrfToken = getCookie('csrf_token')
+          if (csrfToken) {
+            init.headers = init.headers || {}
+            if (init.headers instanceof Headers) {
+              if (!init.headers.has('X-CSRF-Token')) {
+                init.headers.set('X-CSRF-Token', csrfToken)
+              }
+            } else {
+              init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
+            }
+          }
+          return originalFetch.call(this, input, init)
+        }
+      })()
+    </script>
   <div class="layout">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-top">
         <nav class="nav">
@@ -24,22 +48,22 @@
       </div>
       <div class="sidebar-bottom">
         <span class="rol-label">Administrador</span>
-        <a href="/logout" class="logout">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Salir
-        </a>
+        <form action="/logout" method="POST" style="margin:0" id="formLogout">
+          <input type="hidden" name="_csrf" id="csrfLogout">
+          <button type="submit" class="logout">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Salir
+          </button>
+        </form>
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main">
-
-      <!-- SECCIÓN USUARIOS -->
       <% if (section==='usuarios' ) { %>
         <div class="content-card">
           <div class="card-header">
@@ -109,8 +133,6 @@
             </div>
           </div>
         </div>
-
-        <!-- MODAL NUEVO USUARIO -->
         <div class="modal-overlay" id="modalOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -168,8 +190,6 @@
             </div>
           </div>
         </div>
-
-        <!-- MODAL EDITAR USUARIO -->
         <div class="modal-overlay" id="modalEditOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -273,7 +293,6 @@
               </table>
             </div>
 
-            <!-- MODAL NUEVA UNIDAD -->
             <div class="modal-overlay" id="modalUadOverlay">
               <div class="modal">
                 <div class="modal-header">
@@ -298,7 +317,6 @@
               </div>
             </div>
 
-            <!-- MODAL EDITAR UNIDAD -->
             <div class="modal-overlay" id="modalUadEditOverlay">
               <div class="modal">
                 <div class="modal-header">
@@ -324,7 +342,6 @@
             </div>
 
             <script>
-              // ── MODAL NUEVA UNIDAD ──
               const uadOverlay = document.getElementById('modalUadOverlay')
               const btnNuevaUad = document.getElementById('btnNuevaUnidad')
               const modalUadError = document.getElementById('modalUadError')
@@ -419,7 +436,6 @@
   </div>
 
   <script>
-    // ── MODAL NUEVO ──
     const overlay = document.getElementById('modalOverlay')
     const btnNuevo = document.getElementById('btnNuevoUsuario')
     const btnClose = document.getElementById('modalClose')
@@ -446,7 +462,7 @@
       const estatus = document.getElementById('inputEstatus').value
       const administrativeUnitId = document.getElementById('inputUnidad').value
 
-      if (!username || !email || !password || !role || !estatus || !administrativeUnitId) {
+      if (!username || !email || !password || !role || !estatus) {
         modalError.textContent = 'Todos los campos son obligatorios.'
         return
       }
@@ -466,7 +482,6 @@
       }
     })
 
-    // ── MODAL EDITAR ──
     const editOverlay = document.getElementById('modalEditOverlay')
     const btnEditClose = document.getElementById('modalEditClose')
     const btnEditCancelar = document.getElementById('btnEditCancelar')
@@ -523,6 +538,20 @@
         modalEditError.textContent = 'Error de conexión.'
       }
     })
+  </script>
+  <script>
+    ;(function () {
+      function getCsrf () {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        return m ? decodeURIComponent(m[1]) : ''
+      }
+      const form = document.getElementById('formLogout')
+      if (form) {
+        form.addEventListener('submit', function () {
+          document.getElementById('csrfLogout').value = getCsrf()
+        })
+      }
+    })()
   </script>
 </body>
 

@@ -1,0 +1,98 @@
+/* styles-dashboardaof.css — importa estilos compartidos */
+/* En el HTML: <link rel="stylesheet" href="/styles-base.css"> antes de este archivo */
+
+/* ── TABLA OFICIOS ── */
+.table tr.oficio-row:last-of-type td { border-bottom: none; }
+.table tr.oficio-row:hover td { background: #fafafa; }
+.table tr.oficio-row:has(+ .respuestas-row) td { border-bottom: none; }
+
+.fecha-cell { font-size: 0.875rem; }
+
+.fecha-limite {
+  display: block;
+  font-size: 0.74rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.fecha-limite.vencida { color: #dc2626; font-weight: 600; }
+
+/* ── RESPUESTAS ── */
+.resp-label { font-size: 0.82rem; font-weight: 600; color: #059669; }
+
+/* ── MODAL RESPUESTAS ── */
+.modal-respuestas { max-width: 680px; }
+
+.modal-respuestas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+/* ── PANEL EXPANDIBLE DE RESPUESTAS ── */
+.respuestas-row td { padding: 0 !important; border-bottom: none !important; }
+
+.respuestas-panel {
+  background: #f4f6f9;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 20px 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.sin-resp-panel {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 10px 0;
+  grid-column: 1 / -1;
+}
+
+/* ── TARJETA DE RESPUESTA ── */
+.respuesta-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px #e9ecef;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.18s;
+}
+.respuesta-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1), 0 0 0 1px #d8dbe0; }
+.respuesta-item::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  flex-shrink: 0;
+}
+
+.respuesta-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.respuesta-header { display: flex; flex-direction: column; gap: 2px; }
+.resp-alias { font-size: 0.92rem; font-weight: 700; color: #1a1a2e; letter-spacing: -0.01em; }
+.resp-fecha { font-size: 0.74rem; color: #9ca3af; font-weight: 400; }
+.respuesta-divider { height: 1px; background: #f0f0f0; }
+.resp-comentario { font-size: 0.83rem; color: #4b5563; font-style: italic; line-height: 1.5; }
+.resp-archivos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+
+/* ── FILE DROP ── */
+.file-drop {
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 22px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  text-align: center;
+  background: #f9fafb;
+}
+.file-drop:hover,
+.file-drop.drag-over { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+.file-drop.has-file  { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }

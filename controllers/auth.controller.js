@@ -8,9 +8,9 @@ const getIp = (req) =>
   req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || null
 
 export const register = async (req, res) => {
-  const { username, email, password, role, administrativeUnitId } = req.body
+  const { username, email, password, role } = req.body
   try {
-    const userId = await UserRepository.create({ username, email, password, role, administrativeUnitId })
+    const userId = await UserRepository.create({ username, email, password, role })
 
     await AuditRepository.registrar({
       accion: 'USUARIO_CREADO',
@@ -34,19 +34,23 @@ export const login = async (req, res) => {
   try {
     const user = await UserRepository.login({ email, password })
 
+    let unidadId = null
     let unidadAlias = ''
-    if (user.role === 'UAD' && user.administrativeUnitId) {
+
+    if (user.role === 'UAD') {
       try {
-        const unidades = await UADRepository.getAll()
-        const unidad = unidades.find(u => u.id === user.administrativeUnitId)
-        unidadAlias = unidad?.alias || ''
+        const unidad = await UADRepository.getByTitularId(user._id)
+        if (unidad) {
+          unidadId = unidad.id
+          unidadAlias = unidad.alias || ''
+        }
       } catch (_) {}
     }
 
     const tokenPayload = {
       id: user._id,
       role: user.role,
-      unidadId: user.administrativeUnitId || null,
+      unidadId,
       unidadAlias
     }
 

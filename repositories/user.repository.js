@@ -6,7 +6,7 @@ import { SALT_ROUND } from '../config.js'
 const USERS_COLLECTION = 'users'
 
 export class UserRepository {
-  static async create({ username, email, password, role, administrativeUnitId = null }) {
+  static async create ({ username, email, password, role }) {
     Validation.username(username)
     Validation.email(email)
     Validation.password(password)
@@ -31,14 +31,13 @@ export class UserRepository {
       email,
       password: hashedPassword,
       role,
-      administrativeUnitId,
       estatus: 'Activo'
     })
 
     return userRef.id
   }
 
-  static async login({ email, password }) {
+  static async login ({ email, password }) {
     Validation.email(email)
     Validation.password(password)
 
@@ -55,7 +54,6 @@ export class UserRepository {
     const userDoc = snapshot.docs[0]
     const userData = userDoc.data()
 
-    // Bloquear login directo si la cuenta está inactiva
     if (userData.estatus === 'Inactivo') {
       throw new Error('La cuenta está desactivada. Contacta al administrador.')
     }
@@ -67,7 +65,7 @@ export class UserRepository {
     return { _id: userDoc.id, ...publicUser }
   }
 
-  static async getById(id) {
+  static async getById (id) {
     const firestore = db()
     const doc = await firestore.collection(USERS_COLLECTION).doc(id).get()
     if (!doc.exists) return null
@@ -75,13 +73,13 @@ export class UserRepository {
     return { id: doc.id, ...data }
   }
 
-  static async getAll() {
+  static async getAll () {
     const firestore = db()
     const snapshot = await firestore.collection(USERS_COLLECTION).get()
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   }
 
-  static async update(id, { username, email, role, administrativeUnitId, estatus, password }) {
+  static async update (id, { username, email, role, estatus, password }) {
     const VALID_ESTATUS = ['Activo', 'Inactivo']
     if (estatus && !VALID_ESTATUS.includes(estatus)) {
       throw new Error(`Estatus inválido. Los valores permitidos son: ${VALID_ESTATUS.join(', ')}`)
@@ -93,7 +91,7 @@ export class UserRepository {
 
     if (!userDoc.exists) throw new Error('Usuario no encontrado')
 
-    const updateData = { username, email, role, administrativeUnitId, estatus }
+    const updateData = { username, email, role, estatus }
 
     if (password && password.trim() !== '') {
       updateData.password = await bcrypt.hash(password, SALT_ROUND)

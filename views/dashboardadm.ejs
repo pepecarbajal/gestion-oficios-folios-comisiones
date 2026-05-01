@@ -10,31 +10,28 @@
 
 <body>
   <script>
-      ;(function () {
-        function getCookie (name) {
-          const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
-          return match ? decodeURIComponent(match[1]) : null
-        }
-
-        const originalFetch = window.fetch
-        window.fetch = function (input, init = {}) {
-          const csrfToken = getCookie('csrf_token')
-          if (csrfToken) {
-            init.headers = init.headers || {}
-            if (init.headers instanceof Headers) {
-              if (!init.headers.has('X-CSRF-Token')) {
-                init.headers.set('X-CSRF-Token', csrfToken)
-              }
-            } else {
-              init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
-            }
+    ;(function () {
+      function getCookie (name) {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+        return match ? decodeURIComponent(match[1]) : null
+      }
+      const originalFetch = window.fetch
+      window.fetch = function (input, init = {}) {
+        const csrfToken = getCookie('csrf_token')
+        if (csrfToken) {
+          init.headers = init.headers || {}
+          if (init.headers instanceof Headers) {
+            if (!init.headers.has('X-CSRF-Token')) init.headers.set('X-CSRF-Token', csrfToken)
+          } else {
+            init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
           }
-          return originalFetch.call(this, input, init)
         }
-      })()
-    </script>
-  <div class="layout">
+        return originalFetch.call(this, input, init)
+      }
+    })()
+  </script>
 
+  <div class="layout">
     <aside class="sidebar">
       <div class="sidebar-top">
         <nav class="nav">
@@ -53,9 +50,9 @@
           <button type="submit" class="logout">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
             Salir
           </button>
@@ -64,7 +61,9 @@
     </aside>
 
     <main class="main">
-      <% if (section==='usuarios' ) { %>
+
+      <%# ══════════════ SECCIÓN USUARIOS ══════════════ %>
+      <% if (section === 'usuarios') { %>
         <div class="content-card">
           <div class="card-header">
             <div></div>
@@ -76,52 +75,44 @@
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Rol</th>
-                <th>Unidad</th>
+                <th>Unidad asignada</th>
                 <th>Estatus</th>
                 <th>Acción</th>
               </tr>
             </thead>
             <tbody>
-              <% usuarios.forEach(u=> { %>
+              <% usuarios.forEach(u => { %>
                 <tr>
                   <td>
                     <div class="user-cell">
-                      <div class="avatar">
-                        <%= u.initials %>
-                      </div>
-                      <strong>
-                        <%= u.nombre %>
-                      </strong>
+                      <div class="avatar"><%= u.initials %></div>
+                      <strong><%= u.nombre %></strong>
                     </div>
                   </td>
-                  <td>
-                    <%= u.correo %>
-                  </td>
-                  <td>
-                    <%= u.rol %>
-                  </td>
-                  <td>
-                    <%= u.unidad %>
-                  </td>
+                  <td><%= u.correo %></td>
+                  <td><%= u.rol %></td>
+                  <td><%= u.unidad %></td>
                   <td>
                     <span class="badge <%= u.estatus === 'Activo' ? 'badge-active' : 'badge-inactive' %>">
                       <%= u.estatus %>
                     </span>
                   </td>
                   <td>
-                    <button class="icon-btn btn-editar" title="Editar" data-id="<%= u.id %>"
-                      data-nombre="<%= u.nombre %>" data-correo="<%= u.correo %>" data-rol="<%= u.rol %>"
-                      data-unidad="<%= u.administrativeUnitId %>" data-estatus="<%= u.estatus %>">
+                    <button class="icon-btn btn-editar" title="Editar"
+                      data-id="<%= u.id %>"
+                      data-nombre="<%= u.nombre %>"
+                      data-correo="<%= u.correo %>"
+                      data-rol="<%= u.rol %>"
+                      data-estatus="<%= u.estatus %>">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3" />
-                        <path
-                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                       </svg>
                     </button>
                   </td>
                 </tr>
-                <% }) %>
+              <% }) %>
             </tbody>
           </table>
           <div class="pagination">
@@ -133,6 +124,8 @@
             </div>
           </div>
         </div>
+
+        <%# Modal nuevo usuario (sin campo unidad) %>
         <div class="modal-overlay" id="modalOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -172,17 +165,6 @@
                   </select>
                 </div>
               </div>
-              <div class="form-group">
-                <label>Unidad</label>
-                <select id="inputUnidad">
-                  <option value="" disabled selected>Seleccionar</option>
-                  <% unidades.forEach(u=> { %>
-                    <option value="<%= u.id %>">
-                      <%= u.nombre %>
-                    </option>
-                    <% }) %>
-                </select>
-              </div>
             </div>
             <div class="modal-footer">
               <button class="btn-cancel" id="btnCancelar">Cancelar</button>
@@ -190,6 +172,8 @@
             </div>
           </div>
         </div>
+
+        <%# Modal editar usuario (sin campo unidad) %>
         <div class="modal-overlay" id="modalEditOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -207,8 +191,7 @@
                 <input type="email" id="editCorreo" placeholder="correo@ejemplo.com">
               </div>
               <div class="form-group">
-                <label>Nueva contraseña <span style="color:#9ca3af;font-weight:400">(dejar vacío para no
-                    cambiar)</span></label>
+                <label>Nueva contraseña <span style="color:#9ca3af;font-weight:400">(dejar vacío para no cambiar)</span></label>
                 <input type="password" id="editPassword" placeholder="••••••••">
               </div>
               <div class="form-row">
@@ -230,17 +213,6 @@
                   </select>
                 </div>
               </div>
-              <div class="form-group">
-                <label>Unidad</label>
-                <select id="editUnidad">
-                  <option value="" disabled>Seleccionar</option>
-                  <% unidades.forEach(u=> { %>
-                    <option value="<%= u.id %>">
-                      <%= u.nombre %>
-                    </option>
-                    <% }) %>
-                </select>
-              </div>
             </div>
             <div class="modal-footer">
               <button class="btn-cancel" id="btnEditCancelar">Cancelar</button>
@@ -249,296 +221,313 @@
           </div>
         </div>
 
-        <% } %>
-          <% if (section==='unidades' ) { %>
-            <div class="content-card">
-              <div class="card-header">
-                <h2 class="section-title">Unidades (<%= unidades.length %>)</h2>
-                <button class="btn-primary" id="btnNuevaUnidad">+ Nueva Unidad</button>
-              </div>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre completo</th>
-                    <th>Alias</th>
-                    <th>Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% unidades.forEach(u=> { %>
-                    <tr>
-                      <td class="id-cell">
-                        <%= u.id %>
-                      </td>
-                      <td><strong>
-                          <%= u.nombre %>
-                        </strong></td>
-                      <td>
-                        <%= u.alias %>
-                      </td>
-                      <td>
-                        <button class="icon-btn btn-editar-uad" title="Editar" data-id="<%= u.id %>"
-                          data-nombre="<%= u.nombre %>" data-alias="<%= u.alias %>">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                    <% }) %>
-                </tbody>
-              </table>
+        <script>
+          // ── Modal nuevo usuario ──
+          const overlay = document.getElementById('modalOverlay')
+          const modalError = document.getElementById('modalError')
+
+          const cerrarModal = () => { overlay.classList.remove('active'); modalError.textContent = '' }
+
+          document.getElementById('btnNuevoUsuario').addEventListener('click', () => overlay.classList.add('active'))
+          document.getElementById('modalClose').addEventListener('click', cerrarModal)
+          document.getElementById('btnCancelar').addEventListener('click', cerrarModal)
+          overlay.addEventListener('click', e => { if (e.target === overlay) cerrarModal() })
+
+          document.getElementById('btnAgregar').addEventListener('click', async () => {
+            const username = document.getElementById('inputNombre').value.trim()
+            const email    = document.getElementById('inputCorreo').value.trim()
+            const password = document.getElementById('inputPassword').value.trim()
+            const role     = document.getElementById('inputRol').value
+            const estatus  = document.getElementById('inputEstatus').value
+
+            if (!username || !email || !password || !role || !estatus) {
+              modalError.textContent = 'Todos los campos son obligatorios.'
+              return
+            }
+            try {
+              const res  = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password, role })
+              })
+              const data = await res.json()
+              if (!res.ok) { modalError.textContent = data.error || 'Error al registrar usuario.'; return }
+              cerrarModal()
+              window.location.reload()
+            } catch { modalError.textContent = 'Error de conexión.' }
+          })
+
+          // ── Modal editar usuario ──
+          const editOverlay   = document.getElementById('modalEditOverlay')
+          const modalEditError = document.getElementById('modalEditError')
+          let usuarioEditandoId = null
+
+          const cerrarModalEdit = () => {
+            editOverlay.classList.remove('active')
+            modalEditError.textContent = ''
+            usuarioEditandoId = null
+          }
+
+          document.getElementById('modalEditClose').addEventListener('click', cerrarModalEdit)
+          document.getElementById('btnEditCancelar').addEventListener('click', cerrarModalEdit)
+          editOverlay.addEventListener('click', e => { if (e.target === editOverlay) cerrarModalEdit() })
+
+          document.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', () => {
+              usuarioEditandoId = btn.dataset.id
+              document.getElementById('editNombre').value  = btn.dataset.nombre
+              document.getElementById('editCorreo').value  = btn.dataset.correo
+              document.getElementById('editRol').value     = btn.dataset.rol
+              document.getElementById('editEstatus').value = btn.dataset.estatus
+              editOverlay.classList.add('active')
+            })
+          })
+
+          document.getElementById('btnGuardar').addEventListener('click', async () => {
+            const username = document.getElementById('editNombre').value.trim()
+            const email    = document.getElementById('editCorreo').value.trim()
+            const role     = document.getElementById('editRol').value
+            const estatus  = document.getElementById('editEstatus').value
+            const password = document.getElementById('editPassword').value.trim()
+
+            if (!username || !email || !role || !estatus) {
+              modalEditError.textContent = 'Todos los campos son obligatorios.'
+              return
+            }
+            try {
+              const res  = await fetch(`/users/${usuarioEditandoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, role, estatus, password })
+              })
+              const data = await res.json()
+              if (!res.ok) { modalEditError.textContent = data.error || 'Error al actualizar usuario.'; return }
+              cerrarModalEdit()
+              window.location.reload()
+            } catch { modalEditError.textContent = 'Error de conexión.' }
+          })
+        </script>
+      <% } %>
+
+      <%# ══════════════ SECCIÓN UNIDADES ══════════════ %>
+      <% if (section === 'unidades') { %>
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="section-title">Unidades (<%= unidades.length %>)</h2>
+            <button class="btn-primary" id="btnNuevaUnidad">+ Nueva Unidad</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre completo</th>
+                <th>Alias</th>
+                <th>Titular asignado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% unidades.forEach(u => { %>
+                <tr>
+                  <td class="id-cell"><%= u.id %></td>
+                  <td><strong><%= u.nombre %></strong></td>
+                  <td><%= u.alias %></td>
+                  <td><%= u.titular %></td>
+                  <td>
+                    <button class="icon-btn btn-editar-uad" title="Editar"
+                      data-id="<%= u.id %>"
+                      data-nombre="<%= u.nombre %>"
+                      data-alias="<%= u.alias %>"
+                      data-titular="<%= u.titularId %>"
+                      data-titular-nombre="<%= u.titular %>">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# Modal nueva unidad (con selector de titular) %>
+        <div class="modal-overlay" id="modalUadOverlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Nueva Unidad Administrativa</h3>
+              <button class="modal-close" id="modalUadClose">&times;</button>
             </div>
-
-            <div class="modal-overlay" id="modalUadOverlay">
-              <div class="modal">
-                <div class="modal-header">
-                  <h3>Nueva Unidad Administrativa</h3>
-                  <button class="modal-close" id="modalUadClose">&times;</button>
-                </div>
-                <div class="modal-body">
-                  <p class="modal-error" id="modalUadError"></p>
-                  <div class="form-group">
-                    <label>Nombre completo</label>
-                    <input type="text" id="inputUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
-                  </div>
-                  <div class="form-group">
-                    <label>Alias</label>
-                    <input type="text" id="inputUadAlias" placeholder="Ej. DRH">
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn-cancel" id="btnUadCancelar">Cancelar</button>
-                  <button class="btn-primary" id="btnUadAgregar">Agregar</button>
-                </div>
+            <div class="modal-body">
+              <p class="modal-error" id="modalUadError"></p>
+              <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="inputUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
+              </div>
+              <div class="form-group">
+                <label>Alias</label>
+                <input type="text" id="inputUadAlias" placeholder="Ej. DRH">
+              </div>
+              <div class="form-group">
+                <label>Titular <span style="color:#9ca3af;font-weight:400">(opcional)</span></label>
+                <select id="inputUadTitular">
+                  <option value="">— Sin asignar —</option>
+                  <% usuarios.forEach(u => { %>
+                    <option value="<%= u.id %>"><%= u.nombre %></option>
+                  <% }) %>
+                </select>
               </div>
             </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="btnUadCancelar">Cancelar</button>
+              <button class="btn-primary" id="btnUadAgregar">Agregar</button>
+            </div>
+          </div>
+        </div>
 
-            <div class="modal-overlay" id="modalUadEditOverlay">
-              <div class="modal">
-                <div class="modal-header">
-                  <h3>Editar Unidad Administrativa</h3>
-                  <button class="modal-close" id="modalUadEditClose">&times;</button>
-                </div>
-                <div class="modal-body">
-                  <p class="modal-error" id="modalUadEditError"></p>
-                  <div class="form-group">
-                    <label>Nombre completo</label>
-                    <input type="text" id="editUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
-                  </div>
-                  <div class="form-group">
-                    <label>Alias</label>
-                    <input type="text" id="editUadAlias" placeholder="Ej. DRH">
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn-cancel" id="btnUadEditCancelar">Cancelar</button>
-                  <button class="btn-primary" id="btnUadGuardar">Guardar</button>
-                </div>
+        <%# Modal editar unidad (con selector de titular) %>
+        <div class="modal-overlay" id="modalUadEditOverlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Editar Unidad Administrativa</h3>
+              <button class="modal-close" id="modalUadEditClose">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p class="modal-error" id="modalUadEditError"></p>
+              <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="editUadNombre" placeholder="Ej. Dirección de Recursos Humanos">
+              </div>
+              <div class="form-group">
+                <label>Alias</label>
+                <input type="text" id="editUadAlias" placeholder="Ej. DRH">
+              </div>
+              <div class="form-group">
+                <label>Titular <span style="color:#9ca3af;font-weight:400">(opcional)</span></label>
+                <select id="editUadTitular">
+                  <option value="">— Sin asignar —</option>
+                  <% usuarios.forEach(u => { %>
+                    <option value="<%= u.id %>"><%= u.nombre %></option>
+                  <% }) %>
+                </select>
               </div>
             </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="btnUadEditCancelar">Cancelar</button>
+              <button class="btn-primary" id="btnUadGuardar">Guardar</button>
+            </div>
+          </div>
+        </div>
 
-            <script>
-              const uadOverlay = document.getElementById('modalUadOverlay')
-              const btnNuevaUad = document.getElementById('btnNuevaUnidad')
-              const modalUadError = document.getElementById('modalUadError')
+        <script>
+          // ── Modal nueva UAD ──
+          const uadOverlay    = document.getElementById('modalUadOverlay')
+          const modalUadError = document.getElementById('modalUadError')
 
-              const abrirUadModal = () => uadOverlay.classList.add('active')
-              const cerrarUadModal = () => {
-                uadOverlay.classList.remove('active')
-                modalUadError.textContent = ''
-                document.getElementById('inputUadNombre').value = ''
-                document.getElementById('inputUadAlias').value = ''
+          const cerrarUadModal = () => {
+            uadOverlay.classList.remove('active')
+            modalUadError.textContent = ''
+            document.getElementById('inputUadNombre').value   = ''
+            document.getElementById('inputUadAlias').value    = ''
+            document.getElementById('inputUadTitular').value  = ''
+          }
+
+          document.getElementById('btnNuevaUnidad').addEventListener('click', () => uadOverlay.classList.add('active'))
+          document.getElementById('modalUadClose').addEventListener('click', cerrarUadModal)
+          document.getElementById('btnUadCancelar').addEventListener('click', cerrarUadModal)
+          uadOverlay.addEventListener('click', e => { if (e.target === uadOverlay) cerrarUadModal() })
+
+          document.getElementById('btnUadAgregar').addEventListener('click', async () => {
+            const uadname   = document.getElementById('inputUadNombre').value.trim()
+            const alias     = document.getElementById('inputUadAlias').value.trim()
+            const titularId = document.getElementById('inputUadTitular').value || null
+
+            if (!uadname || !alias) { modalUadError.textContent = 'Nombre y alias son obligatorios.'; return }
+
+            try {
+              const res  = await fetch('/registeruad', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uadname, alias, titularId })
+              })
+              const data = await res.json()
+              if (!res.ok) { modalUadError.textContent = data.error || 'Error al registrar unidad.'; return }
+              cerrarUadModal()
+              window.location.reload()
+            } catch { modalUadError.textContent = 'Error de conexión.' }
+          })
+
+          // ── Modal editar UAD ──
+          const uadEditOverlay    = document.getElementById('modalUadEditOverlay')
+          const modalUadEditError = document.getElementById('modalUadEditError')
+          let uadEditandoId = null
+
+          const cerrarUadEditModal = () => {
+            uadEditOverlay.classList.remove('active')
+            modalUadEditError.textContent = ''
+            uadEditandoId = null
+          }
+
+          document.getElementById('modalUadEditClose').addEventListener('click', cerrarUadEditModal)
+          document.getElementById('btnUadEditCancelar').addEventListener('click', cerrarUadEditModal)
+          uadEditOverlay.addEventListener('click', e => { if (e.target === uadEditOverlay) cerrarUadEditModal() })
+
+          document.querySelectorAll('.btn-editar-uad').forEach(btn => {
+            btn.addEventListener('click', () => {
+              uadEditandoId = btn.dataset.id
+              document.getElementById('editUadNombre').value = btn.dataset.nombre
+              document.getElementById('editUadAlias').value  = btn.dataset.alias
+
+              // Si el titular actual no está en el select (porque ya está asignado),
+              // lo agregamos temporalmente para que pueda mantenerse o cambiarse
+              const select = document.getElementById('editUadTitular')
+              const titularId = btn.dataset.titular || ''
+              const titularNombre = btn.dataset.titularNombre || ''
+
+              // Limpiar opción temporal previa si existe
+              const prev = select.querySelector('option[data-temp]')
+              if (prev) prev.remove()
+
+              if (titularId && !select.querySelector('option[value="' + titularId + '"]')) {
+                const opt = document.createElement('option')
+                opt.value = titularId
+                opt.textContent = titularNombre
+                opt.dataset.temp = '1'
+                select.appendChild(opt)
               }
 
-              btnNuevaUad?.addEventListener('click', abrirUadModal)
-              document.getElementById('modalUadClose')?.addEventListener('click', cerrarUadModal)
-              document.getElementById('btnUadCancelar')?.addEventListener('click', cerrarUadModal)
-              uadOverlay?.addEventListener('click', e => { if (e.target === uadOverlay) cerrarUadModal() })
+              select.value = titularId
+              uadEditOverlay.classList.add('active')
+            })
+          })
 
-              document.getElementById('btnUadAgregar')?.addEventListener('click', async () => {
-                const uadname = document.getElementById('inputUadNombre').value.trim()
-                const alias = document.getElementById('inputUadAlias').value.trim()
+          document.getElementById('btnUadGuardar').addEventListener('click', async () => {
+            const uadname   = document.getElementById('editUadNombre').value.trim()
+            const alias     = document.getElementById('editUadAlias').value.trim()
+            const titularId = document.getElementById('editUadTitular').value || null
 
-                if (!uadname || !alias) {
-                  modalUadError.textContent = 'Todos los campos son obligatorios.'
-                  return
-                }
+            if (!uadname || !alias) { modalUadEditError.textContent = 'Nombre y alias son obligatorios.'; return }
 
-                try {
-                  const res = await fetch('/registeruad', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uadname, alias })
-                  })
-                  const data = await res.json()
-                  if (!res.ok) { modalUadError.textContent = data.error || 'Error al registrar unidad.'; return }
-                  cerrarUadModal()
-                  window.location.reload()
-                } catch {
-                  modalUadError.textContent = 'Error de conexión.'
-                }
+            try {
+              const res  = await fetch(`/uads/${uadEditandoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uadname, alias, titularId })
               })
+              const data = await res.json()
+              if (!res.ok) { modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; return }
+              cerrarUadEditModal()
+              window.location.reload()
+            } catch { modalUadEditError.textContent = 'Error de conexión.' }
+          })
+        </script>
+      <% } %>
 
-              // ── MODAL EDITAR UNIDAD ──
-              const uadEditOverlay = document.getElementById('modalUadEditOverlay')
-              const modalUadEditError = document.getElementById('modalUadEditError')
-              let uadEditandoId = null
-
-              const cerrarUadEditModal = () => {
-                uadEditOverlay.classList.remove('active')
-                modalUadEditError.textContent = ''
-                uadEditandoId = null
-              }
-
-              document.getElementById('modalUadEditClose')?.addEventListener('click', cerrarUadEditModal)
-              document.getElementById('btnUadEditCancelar')?.addEventListener('click', cerrarUadEditModal)
-              uadEditOverlay?.addEventListener('click', e => { if (e.target === uadEditOverlay) cerrarUadEditModal() })
-
-              document.querySelectorAll('.btn-editar-uad').forEach(btn => {
-                btn.addEventListener('click', () => {
-                  uadEditandoId = btn.dataset.id
-                  document.getElementById('editUadNombre').value = btn.dataset.nombre
-                  document.getElementById('editUadAlias').value = btn.dataset.alias
-                  uadEditOverlay.classList.add('active')
-                })
-              })
-
-              document.getElementById('btnUadGuardar')?.addEventListener('click', async () => {
-                const uadname = document.getElementById('editUadNombre').value.trim()
-                const alias = document.getElementById('editUadAlias').value.trim()
-
-                if (!uadname || !alias) {
-                  modalUadEditError.textContent = 'Todos los campos son obligatorios.'
-                  return
-                }
-
-                try {
-                  const res = await fetch(`/uads/${uadEditandoId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uadname, alias })
-                  })
-                  const data = await res.json()
-                  if (!res.ok) { modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; return }
-                  cerrarUadEditModal()
-                  window.location.reload()
-                } catch {
-                  modalUadEditError.textContent = 'Error de conexión.'
-                }
-              })
-            </script>
-            <% } %>
     </main>
   </div>
 
-  <script>
-    const overlay = document.getElementById('modalOverlay')
-    const btnNuevo = document.getElementById('btnNuevoUsuario')
-    const btnClose = document.getElementById('modalClose')
-    const btnCancelar = document.getElementById('btnCancelar')
-    const btnAgregar = document.getElementById('btnAgregar')
-    const modalError = document.getElementById('modalError')
-
-    const abrirModal = () => overlay.classList.add('active')
-    const cerrarModal = () => {
-      overlay.classList.remove('active')
-      modalError.textContent = ''
-    }
-
-    btnNuevo?.addEventListener('click', abrirModal)
-    btnClose?.addEventListener('click', cerrarModal)
-    btnCancelar?.addEventListener('click', cerrarModal)
-    overlay?.addEventListener('click', (e) => { if (e.target === overlay) cerrarModal() })
-
-    btnAgregar?.addEventListener('click', async () => {
-      const username = document.getElementById('inputNombre').value.trim()
-      const email = document.getElementById('inputCorreo').value.trim()
-      const password = document.getElementById('inputPassword').value.trim()
-      const role = document.getElementById('inputRol').value
-      const estatus = document.getElementById('inputEstatus').value
-      const administrativeUnitId = document.getElementById('inputUnidad').value
-
-      if (!username || !email || !password || !role || !estatus) {
-        modalError.textContent = 'Todos los campos son obligatorios.'
-        return
-      }
-
-      try {
-        const res = await fetch('/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, password, role, administrativeUnitId })
-        })
-        const data = await res.json()
-        if (!res.ok) { modalError.textContent = data.error || 'Error al registrar usuario.'; return }
-        cerrarModal()
-        window.location.reload()
-      } catch {
-        modalError.textContent = 'Error de conexión.'
-      }
-    })
-
-    const editOverlay = document.getElementById('modalEditOverlay')
-    const btnEditClose = document.getElementById('modalEditClose')
-    const btnEditCancelar = document.getElementById('btnEditCancelar')
-    const btnGuardar = document.getElementById('btnGuardar')
-    const modalEditError = document.getElementById('modalEditError')
-    let usuarioEditandoId = null
-
-    const cerrarModalEdit = () => {
-      editOverlay.classList.remove('active')
-      modalEditError.textContent = ''
-      usuarioEditandoId = null
-    }
-
-    btnEditClose?.addEventListener('click', cerrarModalEdit)
-    btnEditCancelar?.addEventListener('click', cerrarModalEdit)
-    editOverlay?.addEventListener('click', (e) => { if (e.target === editOverlay) cerrarModalEdit() })
-
-    document.querySelectorAll('.btn-editar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        usuarioEditandoId = btn.dataset.id
-        document.getElementById('editNombre').value = btn.dataset.nombre
-        document.getElementById('editCorreo').value = btn.dataset.correo
-        document.getElementById('editRol').value = btn.dataset.rol
-        document.getElementById('editEstatus').value = btn.dataset.estatus
-        document.getElementById('editUnidad').value = btn.dataset.unidad || ''
-        editOverlay.classList.add('active')
-      })
-    })
-
-    btnGuardar?.addEventListener('click', async () => {
-      const username = document.getElementById('editNombre').value.trim()
-      const email = document.getElementById('editCorreo').value.trim()
-      const role = document.getElementById('editRol').value
-      const estatus = document.getElementById('editEstatus').value
-      const administrativeUnitId = document.getElementById('editUnidad').value
-      const password = document.getElementById('editPassword').value.trim()
-
-      if (!username || !email || !role || !estatus) {
-        modalEditError.textContent = 'Todos los campos son obligatorios.'
-        return
-      }
-
-      try {
-        const res = await fetch(`/users/${usuarioEditandoId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, role, administrativeUnitId, estatus, password })
-        })
-        const data = await res.json()
-        if (!res.ok) { modalEditError.textContent = data.error || 'Error al actualizar usuario.'; return }
-        cerrarModalEdit()
-        window.location.reload()
-      } catch {
-        modalEditError.textContent = 'Error de conexión.'
-      }
-    })
-  </script>
   <script>
     ;(function () {
       function getCsrf () {
@@ -554,5 +543,4 @@
     })()
   </script>
 </body>
-
 </html>

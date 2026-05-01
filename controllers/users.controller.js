@@ -15,10 +15,10 @@ export const getUsuarios = async (req, res) => {
 
 export const updateUsuario = async (req, res) => {
   const { id } = req.params
-  const { username, email, role, administrativeUnitId, estatus, password } = req.body
+  const { username, email, role, estatus, password } = req.body
 
   try {
-    await UserRepository.update(id, { username, email, role, administrativeUnitId, estatus, password })
+    await UserRepository.update(id, { username, email, role, estatus, password })
 
     await AuditRepository.registrar({
       accion: 'USUARIO_EDITADO',

@@ -1,11 +1,9 @@
-import jwt from 'jsonwebtoken'
-import { SECRET_JWT_KEY } from '../config.js'
 import { UADRepository } from '../repositories/uad.repository.js'
 
 export const registeruad = async (req, res) => {
-  const { uadname, alias } = req.body
+  const { uadname, alias, titularId } = req.body
   try {
-    const uadId = await UADRepository.create({ uadname, alias })
+    const uadId = await UADRepository.create({ uadname, alias, titularId: titularId || null })
     res.status(201).json({ uadId })
   } catch (error) {
     res.status(400).json({ error: error.message })
@@ -23,9 +21,9 @@ export const getUads = async (req, res) => {
 
 export const updateUad = async (req, res) => {
   const { id } = req.params
-  const { uadname, alias } = req.body
+  const { uadname, alias, titularId } = req.body
   try {
-    await UADRepository.update(id, { uadname, alias })
+    await UADRepository.update(id, { uadname, alias, titularId: titularId || null })
     res.json({ message: 'Unidad actualizada correctamente' })
   } catch (error) {
     res.status(400).json({ error: error.message })

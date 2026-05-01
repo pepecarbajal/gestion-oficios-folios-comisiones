@@ -1,59 +1,53 @@
-import bcrypt from 'bcrypt'
 import { db } from '../db.js'
 import { Validation } from '../validations/uad.validation.js'
 
 const UADS_COLLECTION = 'unidadesAdministrativas'
 
 export class UADRepository {
-  static async create({ uadname, alias }) {
+  static async create ({ uadname, alias, titularId = null }) {
     Validation.uadname(uadname)
     Validation.alias(alias)
 
     const firestore = db()
 
-    const existingUser = await firestore
+    const existingAlias = await firestore
       .collection(UADS_COLLECTION)
       .where('alias', '==', alias)
       .limit(1)
       .get()
 
-    if (!existingUser.empty) {
+    if (!existingAlias.empty) {
       throw new Error(`El alias "${alias}" ya está registrado`)
     }
 
     const userRef = await firestore.collection(UADS_COLLECTION).add({
       uadname,
-      alias
+      alias,
+      titularId
     })
 
     return userRef.id
   }
 
-  static async registeruad({ uadname, alias }) {
-    Validation.uadname(uadname)
-    Validation.alias(alias)
-
-    const firestore = db()
-
-    const snapshot = await firestore
-      .collection(UADS_COLLECTION)
-      .where('alias', '==', alias)
-      .limit(1)
-      .get()
-
-    if (snapshot.empty) throw new Error('User not found')
-
-    const userDoc = snapshot.docs[0]
-    const userData = userDoc.data()
-  }
-
-  static async getAll() {
+  static async getAll () {
     const firestore = db()
     const snapshot = await firestore.collection(UADS_COLLECTION).get()
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   }
 
-  static async update(id, { uadname, alias }) {
+  static async getByTitularId (titularId) {
+    const firestore = db()
+    const snapshot = await firestore
+      .collection(UADS_COLLECTION)
+      .where('titularId', '==', titularId)
+      .limit(1)
+      .get()
+    if (snapshot.empty) return null
+    const doc = snapshot.docs[0]
+    return { id: doc.id, ...doc.data() }
+  }
+
+  static async update (id, { uadname, alias, titularId }) {
     Validation.uadname(uadname)
     Validation.alias(alias)
 
@@ -73,7 +67,12 @@ export class UADRepository {
       throw new Error(`El alias "${alias}" ya está en uso`)
     }
 
-    await ref.update({ uadname, alias })
+    const updateData = { uadname, alias }
+    if (titularId !== undefined) {
+      updateData.titularId = titularId || null
+    }
+
+    await ref.update(updateData)
     return id
   }
 }

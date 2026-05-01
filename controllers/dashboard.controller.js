@@ -29,14 +29,19 @@ const renderADM = async (req, res) => {
         UADRepository.getAll()
       ])
 
+      const titularMap = {}
+      unidades.forEach(u => {
+        if (u.titularId) titularMap[u.titularId] = u
+      })
+
       const usuariosMapeados = usuarios.map(u => {
-        const unidad = unidades.find(und => und.id === u.administrativeUnitId)
+        const unidadAsignada = titularMap[u.id]
         return {
           ...u,
           nombre: u.username,
           correo: u.email,
           rol: u.role,
-          unidad: unidad ? unidad.alias : '—',
+          unidad: unidadAsignada ? unidadAsignada.alias : '—',
           estatus: u.estatus || 'Activo',
           initials: u.username?.slice(0, 2).toUpperCase()
         }
@@ -47,9 +52,37 @@ const renderADM = async (req, res) => {
     }
 
     if (section === 'unidades') {
-      const unidades = await UADRepository.getAll()
-      const unidadesMapeadas = unidades.map(u => ({ ...u, nombre: u.uadname, alias: u.alias }))
-      return res.render('dashboardadm', { section, unidades: unidadesMapeadas, usuarios: [] })
+      const [unidades, usuarios] = await Promise.all([
+        UADRepository.getAll(),
+        UserRepository.getAll()
+      ])
+
+      const usuarioMap = {}
+      usuarios.forEach(u => { usuarioMap[u.id] = u })
+
+      const unidadesMapeadas = unidades.map(u => ({
+        ...u,
+        nombre: u.uadname,
+        alias: u.alias,
+        titular: u.titularId && usuarioMap[u.titularId]
+          ? usuarioMap[u.titularId].username
+          : '—',
+        titularId: u.titularId || ''
+      }))
+
+      // Solo UADs sin unidad asignada aún
+      const titularesAsignados = new Set(unidades.map(u => u.titularId).filter(Boolean))
+
+      const usuariosMapeados = usuarios
+        .filter(u => u.role === 'UAD' && !titularesAsignados.has(u.id))
+        .map(u => ({
+          id: u.id,
+          nombre: u.username,
+          correo: u.email,
+          rol: u.role
+        }))
+
+      return res.render('dashboardadm', { section, unidades: unidadesMapeadas, usuarios: usuariosMapeados })
     }
   } catch (error) {
     console.error('[renderADM]', error)

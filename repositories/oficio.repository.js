@@ -114,18 +114,18 @@ export class OficioRepository {
 
   static async getByUnidad (unidadId) {
     const firestore = db()
-
+    
     const snapshot = await firestore
       .collection(OFICIOS_COLLECTION)
+      .where('unidadId', 'in', [unidadId, 'TODAS'])
+      .orderBy('creadoEn', 'desc')
       .get()
-
-    const oficios = snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(o => o.unidadId === unidadId || o.unidadId === 'TODAS')
-      .sort((a, b) => (b.creadoEn > a.creadoEn ? 1 : -1))
-
+    
+    const oficios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    
     return Promise.all(oficios.map(o => OficioRepository._hydratarUrls(o)))
   }
+
 
   static async guardarRespuesta (oficioId, { unidadId, unidadAlias, comentario, archivos }) {
     const firestore = db()

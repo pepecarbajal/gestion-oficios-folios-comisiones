@@ -1,12 +1,15 @@
 import { OficioRepository } from '../repositories/oficio.repository.js'
 import { UADRepository } from '../repositories/uad.repository.js'
 import { AuditRepository } from '../repositories/audit.repository.js'
+import { OficioValidation } from '../validations/oficio.validation.js'
 
 const getIp = (req) =>
   req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || null
 
 export const registrarOficio = async (req, res) => {
   try {
+    OficioValidation.validateRegistro(req.body, req.file)
+
     const {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
@@ -29,9 +32,6 @@ export const registrarOficio = async (req, res) => {
     let archivoMime = null
 
     if (req.file) {
-      if (req.file.mimetype !== 'application/pdf') {
-        return res.status(400).json({ error: 'Solo se permiten archivos PDF.' })
-      }
       archivoBuffer = req.file.buffer
       archivoMime = req.file.mimetype
     }
@@ -99,13 +99,7 @@ export const guardarRespuestaUAD = async (req, res) => {
 
   try {
     const archivos = req.files || []
-
-    const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'image/webp']
-    for (const file of archivos) {
-      if (!tiposPermitidos.includes(file.mimetype)) {
-        return res.status(400).json({ error: `Tipo de archivo no permitido: ${file.originalname}` })
-      }
-    }
+    OficioValidation.validateRespuestaArchivos(archivos)
 
     await OficioRepository.guardarRespuesta(id, {
       unidadId,

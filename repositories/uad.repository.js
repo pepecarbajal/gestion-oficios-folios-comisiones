@@ -1,14 +1,12 @@
 import { db } from '../db.js'
-import { Validation } from '../validations/uad.validation.js'
 
 const UADS_COLLECTION = 'unidadesAdministrativas'
+let uadCache = null
 
 export class UADRepository {
   static async create ({ uadname, alias, titularId = null }) {
-    Validation.uadname(uadname)
-    Validation.alias(alias)
-
     const firestore = db()
+
 
     const existingAlias = await firestore
       .collection(UADS_COLLECTION)
@@ -26,13 +24,16 @@ export class UADRepository {
       titularId
     })
 
+    uadCache = null
     return userRef.id
   }
 
   static async getAll () {
+    if (uadCache) return uadCache
     const firestore = db()
     const snapshot = await firestore.collection(UADS_COLLECTION).get()
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    uadCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    return uadCache
   }
 
   static async getByTitularId (titularId) {
@@ -48,10 +49,8 @@ export class UADRepository {
   }
 
   static async update (id, { uadname, alias, titularId }) {
-    Validation.uadname(uadname)
-    Validation.alias(alias)
-
     const firestore = db()
+
     const ref = firestore.collection(UADS_COLLECTION).doc(id)
     const doc = await ref.get()
 
@@ -73,6 +72,7 @@ export class UADRepository {
     }
 
     await ref.update(updateData)
+    uadCache = null
     return id
   }
 }

@@ -172,19 +172,6 @@ const cerrarModal = () => {
   updateFileDropUI(null)
 }
 
-const cerrarModal = () => {
-  modalOverlay.classList.remove('active')
-  document.getElementById('modalOficioError').textContent = ''
-  ;['inputNoOficio','inputFechaOficio','inputFechaRecibo','inputFechaLimite',
-    'inputAsunto','inputRemitente','inputCargo','inputDependencia'].forEach(id => {
-    document.getElementById(id).value = ''
-  })
-  document.getElementById('inputUnidadTurnar').value = ''
-  inputArchivo.value = ''
-  fileLabel.textContent = 'Seleccionar archivo PDF'
-  fileDrop.classList.remove('has-file')
-}
-
 document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
 document.getElementById('modalOficioClose').addEventListener('click', cerrarModal)
 document.getElementById('btnOficioCancelar').addEventListener('click', cerrarModal)
@@ -246,8 +233,17 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch('/oficios', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar oficio.'; return }
+    if (!res.ok) {
+      const contentType = res.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json()
+        errorEl.textContent = data.error || 'Error al registrar oficio.'
+      } else {
+        const text = await res.text()
+        errorEl.textContent = text || 'Error al registrar oficio.'
+      }
+      return
+    }
     cerrarModal()
     window.location.reload()
   } catch {
@@ -282,17 +278,26 @@ document.querySelectorAll('.btn-cambiar-estatus').forEach(btn => {
 document.getElementById('btnEstatusGuardar').addEventListener('click', async () => {
   const estatus = document.getElementById('selectNuevoEstatus').value
   const errorEl = document.getElementById('modalEstatusError')
-  try {
-    const res = await fetch(`/oficios/${oficioEditandoId}/estatus`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estatus })
-    })
-    const data = await res.json()
-    if (!res.ok) { errorEl.textContent = data.error || 'Error.'; return }
-    cerrarModalEstatus()
-    window.location.reload()
-  } catch {
-    errorEl.textContent = 'Error de conexión.'
-  }
+    try {
+      const res = await fetch(`/oficios/${oficioEditandoId}/estatus`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estatus })
+      })
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json()
+          errorEl.textContent = data.error || 'Error al cambiar estatus.'
+        } else {
+          const text = await res.text()
+          errorEl.textContent = text || 'Error al cambiar estatus.'
+        }
+        return
+      }
+      cerrarModalEstatus()
+      window.location.reload()
+    } catch {
+      errorEl.textContent = 'Error de conexión.'
+    }
 })

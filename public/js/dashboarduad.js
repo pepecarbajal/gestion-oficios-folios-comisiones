@@ -8,7 +8,7 @@ function abrirEvidencias(btn) {
   const id = btn.dataset.oficioId
   const archivos = (window.__evidencias && window.__evidencias[id]) || []
   listaEvidModal.innerHTML = archivos.length
-    ? archivos.map(a => `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipoEv(a.tipo)} ${a.nombre}</a>`).join('')
+    ? archivos.map(a => `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip">${iconoTipoEv(a.tipo)} ${a.nombre}</a>`).join('')
     : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>'
   modalEvidOverlay.classList.add('active')
 }
@@ -153,7 +153,7 @@ document.querySelectorAll('.btn-responder').forEach(btn => {
         const arch = JSON.parse(btn.dataset.archivos || '[]')
         if (arch.length > 0) {
           existentesList.innerHTML = arch.map(a =>
-            `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipo(a.tipo)} ${a.nombre}</a>`
+            `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip">${iconoTipo(a.tipo)} ${a.nombre}</a>`
           ).join('')
           existentesPanel.style.display = 'block'
         }

@@ -12,7 +12,8 @@ function renderCardRespuesta(r) {
     : ''
   const archivos = (r.archivos || []).length > 0
     ? `<div class="resp-archivos">${(r.archivos).map(a =>
-        `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoArchivoModal(a.tipo)} ${a.nombre}</a>`
+         `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip">${iconoArchivoModal(a.tipo)} ${a.nombre}</a>`
+
       ).join('')}</div>`
     : ''
   const hasCuerpo = r.comentario || (r.archivos && r.archivos.length > 0)

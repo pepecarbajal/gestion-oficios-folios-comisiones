@@ -102,7 +102,7 @@
                 </td>
                 <td class="actions-cell">
                   <% if (o.archivoUrl) { %>
-                    <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver oficio PDF">
+                    <a href="javascript:void(0)" onclick="openFileViewer('<%= o.archivoUrl %>', 'Oficio <%= o.noOficio %>')" class="icon-btn" title="Ver oficio PDF">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </a>
                   <% } %>
@@ -183,7 +183,7 @@
                   </td>
                   <td class="actions-cell">
                     <% if (o.archivoUrl) { %>
-                      <a href="<%= o.archivoUrl %>" target="_blank" class="icon-btn" title="Ver oficio PDF">
+                      <a href="javascript:void(0)" onclick="openFileViewer('<%= o.archivoUrl %>', 'Oficio <%= o.noOficio %>')" class="icon-btn" title="Ver oficio PDF">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </a>
                     <% } %>
@@ -211,6 +211,9 @@
       </div>
     </main>
   </div>
+
+  <%# MODAL VISOR DE ARCHIVOS %>
+  <%- include('partials/viewer-modal') %>
 
   <%# MODAL RESPUESTA %>
   <div class="modal-overlay" id="modalRespuestaOverlay">
@@ -266,6 +269,7 @@
     </div>
   </div>
 
+  <script src="/js/viewer.js"></script>
   <script src="/js/dashboarduad.js"></script>
 
 <%- include('partials/footer') %>

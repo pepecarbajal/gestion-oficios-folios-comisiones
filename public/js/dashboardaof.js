@@ -105,7 +105,61 @@ if (filterUnidadAt) filterUnidadAt.addEventListener('change', filtrarAtendidos)
 const modalOverlay = document.getElementById('modalOficioOverlay')
 const fileDrop = document.getElementById('fileDrop')
 const inputArchivo = document.getElementById('inputArchivo')
-const fileLabel = document.getElementById('fileLabel')
+
+function updateFileDropUI(file) {
+  const children = Array.from(fileDrop.children)
+  children.forEach(child => {
+    if (child.id !== 'inputArchivo') fileDrop.removeChild(child)
+  })
+
+  if (file) {
+    fileDrop.classList.add('has-file')
+    const container = document.createElement('div')
+    container.className = 'file-chip-remove-container'
+    
+    const chip = document.createElement('div')
+    chip.className = 'file-chip-single'
+    
+    const info = document.createElement('div')
+    info.className = 'file-info'
+    info.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span>${file.name}</span>`
+    
+    const removeBtn = document.createElement('button')
+    removeBtn.className = 'chip-remove'
+    removeBtn.innerHTML = '&times;'
+    removeBtn.type = 'button'
+    removeBtn.onclick = (e) => {
+      e.stopPropagation()
+      inputArchivo.value = ''
+      updateFileDropUI(null)
+    }
+    
+    chip.appendChild(info)
+    chip.appendChild(removeBtn)
+    container.appendChild(chip)
+    fileDrop.appendChild(container)
+  } else {
+    fileDrop.classList.remove('has-file')
+    const svg = document.createElement('svg')
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    svg.setAttribute('width', '20')
+    svg.setAttribute('height', '20')
+    svg.setAttribute('viewBox', '0 0 24 24')
+    svg.setAttribute('fill', 'none')
+    svg.setAttribute('stroke', 'currentColor')
+    svg.setAttribute('stroke-width', '1.5')
+    svg.setAttribute('stroke-linecap', 'round')
+    svg.setAttribute('stroke-linejoin', 'round')
+    svg.innerHTML = '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>'
+    
+    const span = document.createElement('span')
+    span.id = 'fileLabel'
+    span.textContent = 'Seleccionar archivo PDF'
+    
+    fileDrop.appendChild(svg)
+    fileDrop.appendChild(span)
+  }
+}
 
 const cerrarModal = () => {
   modalOverlay.classList.remove('active')
@@ -115,9 +169,7 @@ const cerrarModal = () => {
     document.getElementById(id).value = ''
   })
   document.getElementById('inputUnidadTurnar').value = ''
-  inputArchivo.value = ''
-  fileLabel.textContent = 'Seleccionar archivo PDF'
-  fileDrop.classList.remove('has-file')
+  updateFileDropUI(null)
 }
 
 document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
@@ -128,7 +180,7 @@ modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) cer
 fileDrop.addEventListener('click', () => inputArchivo.click())
 inputArchivo.addEventListener('change', () => {
   const file = inputArchivo.files[0]
-  if (file) { fileLabel.textContent = file.name; fileDrop.classList.add('has-file') }
+  if (file) { updateFileDropUI(file) }
 })
 fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over') })
 fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'))
@@ -138,7 +190,7 @@ fileDrop.addEventListener('drop', e => {
   const file = e.dataTransfer.files[0]
   if (file && file.type === 'application/pdf') {
     const dt = new DataTransfer(); dt.items.add(file); inputArchivo.files = dt.files
-    fileLabel.textContent = file.name; fileDrop.classList.add('has-file')
+    updateFileDropUI(file)
   }
 })
 
@@ -181,8 +233,17 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch('/oficios', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar oficio.'; return }
+    if (!res.ok) {
+      const contentType = res.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json()
+        errorEl.textContent = data.error || 'Error al registrar oficio.'
+      } else {
+        const text = await res.text()
+        errorEl.textContent = text || 'Error al registrar oficio.'
+      }
+      return
+    }
     cerrarModal()
     window.location.reload()
   } catch {
@@ -217,17 +278,26 @@ document.querySelectorAll('.btn-cambiar-estatus').forEach(btn => {
 document.getElementById('btnEstatusGuardar').addEventListener('click', async () => {
   const estatus = document.getElementById('selectNuevoEstatus').value
   const errorEl = document.getElementById('modalEstatusError')
-  try {
-    const res = await fetch(`/oficios/${oficioEditandoId}/estatus`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estatus })
-    })
-    const data = await res.json()
-    if (!res.ok) { errorEl.textContent = data.error || 'Error.'; return }
-    cerrarModalEstatus()
-    window.location.reload()
-  } catch {
-    errorEl.textContent = 'Error de conexión.'
-  }
+    try {
+      const res = await fetch(`/oficios/${oficioEditandoId}/estatus`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estatus })
+      })
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json()
+          errorEl.textContent = data.error || 'Error al cambiar estatus.'
+        } else {
+          const text = await res.text()
+          errorEl.textContent = text || 'Error al cambiar estatus.'
+        }
+        return
+      }
+      cerrarModalEstatus()
+      window.location.reload()
+    } catch {
+      errorEl.textContent = 'Error de conexión.'
+    }
 })

@@ -24,6 +24,7 @@ export class UADRepository {
       titularId
     })
 
+    uadCache = null
     return userRef.id
   }
 
@@ -71,6 +72,7 @@ export class UADRepository {
     }
 
     await ref.update(updateData)
+    uadCache = null
     return id
   }
 }

@@ -59,7 +59,7 @@ export const securityHeaders = (req, res, next) => {
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' storage.googleapis.com data:",
-      "frame-src 'none'",
+       "frame-src 'self' storage.googleapis.com",
       "object-src 'none'",
       "connect-src 'self'"
     ].join('; ')

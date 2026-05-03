@@ -1,16 +1,30 @@
 const modalEvidOverlay = document.getElementById('modalEvidenciasOverlay')
 const listaEvidModal = document.getElementById('listaEvidenciasModal')
 const iconoTipoEv = tipo => tipo === 'application/pdf'
-  ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
-  : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+  ? `<span class="archivo-type-badge pdf">PDF</span>`
+  : `<span class="archivo-type-badge img">IMG</span>`
 
 function abrirEvidencias(btn) {
   const id = btn.dataset.oficioId
+  const comentario = btn.dataset.comentario || ''
   const archivos = (window.__evidencias && window.__evidencias[id]) || []
-  listaEvidModal.innerHTML = archivos.length
-    ? archivos.map(a => `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipoEv(a.tipo)} ${a.nombre}</a>`).join('')
-    : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>'
-  modalEvidOverlay.classList.add('active')
+  
+  let content = '';
+  if (comentario) {
+    content += `<p class="resp-comentario">"${comentario}"</p>`;
+  }
+  
+  if (archivos.length > 0) {
+    content += archivos.map(a => {
+      const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
+      return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
+    }).join('');
+  } else if (!comentario) {
+    content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>';
+  }
+  
+  listaEvidModal.innerHTML = content;
+  modalEvidOverlay.classList.add('active');
 }
 
 document.getElementById('modalEvidenciasClose').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
@@ -73,8 +87,8 @@ let archivosSeleccionados = []
 
 const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 const iconoTipo = tipo => tipo === 'application/pdf'
-  ? `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
-  : `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+  ? `<span class="archivo-type-badge pdf">PDF</span>`
+  : `<span class="archivo-type-badge img">IMG</span>`
 
 function renderListaArchivos() {
   listaArchivos.innerHTML = ''
@@ -149,15 +163,16 @@ document.querySelectorAll('.btn-responder').forEach(btn => {
     const existentesPanel = document.getElementById('archivosExistentes')
     const existentesList = document.getElementById('listaArchivosExistentes')
     if (yaRespondio) {
-      try {
-        const arch = JSON.parse(btn.dataset.archivos || '[]')
-        if (arch.length > 0) {
-          existentesList.innerHTML = arch.map(a =>
-            `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoTipo(a.tipo)} ${a.nombre}</a>`
-          ).join('')
-          existentesPanel.style.display = 'block'
-        }
-      } catch (_) {}
+          try {
+            const arch = JSON.parse(btn.dataset.archivos || '[]')
+            if (arch.length > 0) {
+              existentesList.innerHTML = arch.map(a => {
+                const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
+                return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipo(a.tipo)} <span>${a.nombre}</span></a>`;
+              }).join('')
+              existentesPanel.style.display = 'block'
+            }
+          } catch (_) {}
     }
     modalOverlay.classList.add('active')
   })

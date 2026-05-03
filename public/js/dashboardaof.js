@@ -2,8 +2,8 @@ const modalRespOverlay = document.getElementById('modalRespuestasOverlay')
 const listaRespModal = document.getElementById('listaRespuestasModal')
 
 const iconoArchivoModal = tipo => tipo === 'application/pdf'
-  ? `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
-  : `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+  ? `<span class="archivo-type-badge pdf">PDF</span>`
+  : `<span class="archivo-type-badge img">IMG</span>`
 
 function renderCardRespuesta(r) {
   const fecha = new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})
@@ -11,9 +11,10 @@ function renderCardRespuesta(r) {
     ? `<p class="resp-comentario">"${r.comentario}"</p>`
     : ''
   const archivos = (r.archivos || []).length > 0
-    ? `<div class="resp-archivos">${(r.archivos).map(a =>
-        `<a href="${a.url}" target="_blank" class="archivo-chip">${iconoArchivoModal(a.tipo)} ${a.nombre}</a>`
-      ).join('')}</div>`
+    ? `<div class="resp-archivos">${(r.archivos).map(a => {
+          const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
+          return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoArchivoModal(a.tipo)} <span>${a.nombre}</span></a>`;
+        }).join('')}</div>`
     : ''
   const hasCuerpo = r.comentario || (r.archivos && r.archivos.length > 0)
   return `

@@ -6,14 +6,25 @@ const iconoTipoEv = tipo => tipo === 'application/pdf'
 
 function abrirEvidencias(btn) {
   const id = btn.dataset.oficioId
+  const comentario = btn.dataset.comentario || ''
   const archivos = (window.__evidencias && window.__evidencias[id]) || []
-  listaEvidModal.innerHTML = archivos.length
-    ? archivos.map(a => {
-        const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
-        return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
-      }).join('')
-    : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>'
-  modalEvidOverlay.classList.add('active')
+  
+  let content = '';
+  if (comentario) {
+    content += `<p class="resp-comentario">"${comentario}"</p>`;
+  }
+  
+  if (archivos.length > 0) {
+    content += archivos.map(a => {
+      const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
+      return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
+    }).join('');
+  } else if (!comentario) {
+    content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>';
+  }
+  
+  listaEvidModal.innerHTML = content;
+  modalEvidOverlay.classList.add('active');
 }
 
 document.getElementById('modalEvidenciasClose').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))

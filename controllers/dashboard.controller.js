@@ -48,7 +48,13 @@ const renderADM = async (req, res) => {
       })
 
       const unidadesMapeadas = unidades.map(u => ({ ...u, nombre: u.uadname }))
-      return res.render('dashboardadm', { section, usuarios: usuariosMapeados, unidades: unidadesMapeadas })
+      return res.render('dashboardadm', {
+        title: 'Dashboard Administrador',
+        styles: ['/styles-dashboardadm.css'],
+        section,
+        usuarios: usuariosMapeados,
+        unidades: unidadesMapeadas
+      })
     }
 
     if (section === 'unidades') {
@@ -70,7 +76,6 @@ const renderADM = async (req, res) => {
         titularId: u.titularId || ''
       }))
 
-      // Solo UADs sin unidad asignada aún
       const titularesAsignados = new Set(unidades.map(u => u.titularId).filter(Boolean))
 
       const usuariosMapeados = usuarios
@@ -82,7 +87,13 @@ const renderADM = async (req, res) => {
           rol: u.role
         }))
 
-      return res.render('dashboardadm', { section, unidades: unidadesMapeadas, usuarios: usuariosMapeados })
+      return res.render('dashboardadm', {
+        title: 'Dashboard Administrador',
+        styles: ['/styles-dashboardadm.css'],
+        section,
+        unidades: unidadesMapeadas,
+        usuarios: usuariosMapeados
+      })
     }
   } catch (error) {
     console.error('[renderADM]', error)
@@ -92,11 +103,46 @@ const renderADM = async (req, res) => {
 
 const renderAOF = async (req, res) => {
   try {
-    const [oficios, unidades] = await Promise.all([
+    const [oficiosRaw, unidades] = await Promise.all([
       OficioRepository.getAll(),
       UADRepository.getAll()
     ])
-    res.render('dashboardaof', { oficios, unidades })
+
+    const ahora = new Date()
+
+    const calcPrioridadAOF = (o) => {
+      if (!o.fechaLimite) return 2
+      const limite = new Date(o.fechaLimite)
+      limite.setHours(23, 59, 59, 999)
+      if (limite < ahora) return 0
+      const dias = (limite - ahora) / (1000 * 60 * 60 * 24)
+      return dias <= 6 ? 1 : 2
+    }
+
+    const oficiosPend = oficiosRaw
+      .filter(o => {
+        const limite = o.fechaLimite ? new Date(o.fechaLimite) : null
+        if (limite) limite.setHours(23, 59, 59, 999)
+        return o.estatus === 'Pendiente' || (limite && limite < ahora && o.estatus === 'Pendiente')
+      })
+      .sort((a, b) => {
+        const pa = calcPrioridadAOF(a), pb = calcPrioridadAOF(b)
+        if (pa !== pb) return pa - pb
+        const la = a.fechaLimite ? new Date(a.fechaLimite) : new Date('9999-12-31')
+        const lb = b.fechaLimite ? new Date(b.fechaLimite) : new Date('9999-12-31')
+        return la - lb
+      })
+
+    const oficiosAt = oficiosRaw.filter(o => o.estatus === 'Atendido' && (o.respuestas || []).length > 0)
+
+    res.render('dashboardaof', {
+      title: 'Asistente de Oficios',
+      styles: ['/styles-dashboardaof.css'],
+      oficiosPend,
+      oficiosAt,
+      oficios: oficiosRaw,
+      unidades
+    })
   } catch (error) {
     console.error('[renderAOF]', error)
     res.status(500).send('Error interno del servidor')
@@ -112,8 +158,46 @@ const renderUAD = async (req, res) => {
       return res.status(403).send('Tu usuario no tiene una unidad administrativa asignada.')
     }
 
-    const oficios = await OficioRepository.getByUnidad(unidadId)
-    res.render('dashboarduad', { oficios, unidadId, unidadAlias })
+    const oficiosRaw = await OficioRepository.getByUnidad(unidadId)
+    const ahora = new Date()
+
+    const calcPrioridad = (o) => {
+      if (!o.fechaLimite) return 2
+      const limite = new Date(o.fechaLimite)
+      limite.setHours(23, 59, 59, 999)
+      if (limite < ahora) return 0
+      const diasRestantes = (limite - ahora) / (1000 * 60 * 60 * 24)
+      return diasRestantes <= 6 ? 1 : 2
+    }
+
+    const oficiosPend = oficiosRaw
+      .filter(o => {
+        const limite = o.fechaLimite ? new Date(o.fechaLimite) : null
+        if (limite) limite.setHours(23, 59, 59, 999)
+        return o.estatus === 'Pendiente' || (limite && limite < ahora && o.estatus === 'Pendiente')
+      })
+      .sort((a, b) => {
+        const pa = calcPrioridad(a), pb = calcPrioridad(b)
+        if (pa !== pb) return pa - pb
+        const la = a.fechaLimite ? new Date(a.fechaLimite) : new Date('9999-12-31')
+        const lb = b.fechaLimite ? new Date(b.fechaLimite) : new Date('9999-12-31')
+        return la - lb
+      })
+
+    const oficiosAtend = oficiosRaw.filter(o => {
+      const respuestas = o.respuestas || []
+      return respuestas.some(r => r.unidadId === unidadId)
+    })
+
+    res.render('dashboarduad', {
+      title: 'Unidad Administrativa',
+      styles: ['/styles-dashboarduad.css'],
+      oficiosPend,
+      oficiosAtend,
+      oficios: oficiosRaw,
+      unidadId,
+      unidadAlias
+    })
   } catch (error) {
     console.error('[renderUAD]', error)
     res.status(500).send('Error interno del servidor')

@@ -411,20 +411,60 @@ body {
 
 /* ── ARCHIVO CHIPS ── */
 .archivo-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  background: #f3f4f6;
+  gap: 12px;
+  padding: 8px 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  font-size: 0.76rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   color: #374151;
   text-decoration: none;
-  transition: background 0.15s;
-  max-width: 240px;
+  transition: all 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-bottom: 6px;
+}
+
+.archivo-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.65rem;
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.archivo-chip-pdf {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.archivo-chip-pdf .archivo-type-badge.pdf {
+  background: #dc2626;
+}
+
+.archivo-chip-img {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+.archivo-chip-img .archivo-type-badge.img {
+  background: #2563eb;
+}
+
+.archivo-chip:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+.archivo-chip span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.archivo-chip:hover { background: #e5e7eb; }

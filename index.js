@@ -2,7 +2,8 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import { initFirebase } from './db.js'
 import { PORT } from './config.js'
-import authRoutes from './routes/admin.routes.js'
+import authRoutes from './routes/auth.routes.js'
+import adminRoutes from './routes/admin.routes.js'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { securityHeaders, csrfInit } from './middlewares/security.middleware.js'
@@ -23,15 +24,8 @@ app.use(csrfInit)
 
 app.use(express.static(join(__dirname, 'public')))
 
-app.get('/login', (req, res) => {
-  res.render('login', { error: null, query: req.query })
-})
-
-app.get('/', (req, res) => {
-  res.render('login', { error: null, query: req.query })
-})
-
 app.use(authRoutes)
+app.use(adminRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`)

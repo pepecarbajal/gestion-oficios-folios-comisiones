@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title><%= title %></title>
+  <title><%= typeof title !== 'undefined' ? title : 'Gestión de Oficios' %></title>
   <link rel="stylesheet" href="/styles-base.css">
   <% if (typeof styles !== 'undefined') { %>
     <% styles.forEach(style => { %>

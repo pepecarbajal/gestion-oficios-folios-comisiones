@@ -282,6 +282,9 @@ body {
   justify-content: center;
   padding: 16px;
 }
+.viewer-overlay {
+  z-index: 200;
+}
 .modal-overlay.active { display: flex; }
 .modal {
   background: #fff;

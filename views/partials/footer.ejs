@@ -1,0 +1,16 @@
+  <script>
+    ;(function () {
+      function getCsrf () {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        return m ? decodeURIComponent(m[1]) : ''
+      }
+      const form = document.getElementById('formLogout')
+      if (form) {
+        form.addEventListener('submit', function () {
+          document.getElementById('csrfLogout').value = getCsrf()
+        })
+      }
+    })()
+  </script>
+</body>
+</html>

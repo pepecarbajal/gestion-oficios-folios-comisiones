@@ -1,35 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard Administrador</title>
-  <link rel="stylesheet" href="/styles-base.css">
-  <link rel="stylesheet" href="/styles-dashboardadm.css">
-</head>
-
-<body>
-  <script>
-    ;(function () {
-      function getCookie (name) {
-        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
-        return match ? decodeURIComponent(match[1]) : null
-      }
-      const originalFetch = window.fetch
-      window.fetch = function (input, init = {}) {
-        const csrfToken = getCookie('csrf_token')
-        if (csrfToken) {
-          init.headers = init.headers || {}
-          if (init.headers instanceof Headers) {
-            if (!init.headers.has('X-CSRF-Token')) init.headers.set('X-CSRF-Token', csrfToken)
-          } else {
-            init.headers['X-CSRF-Token'] = init.headers['X-CSRF-Token'] || csrfToken
-          }
-        }
-        return originalFetch.call(this, input, init)
-      }
-    })()
-  </script>
+<%- include('partials/header') %>
 
   <div class="layout">
     <aside class="sidebar">
@@ -49,10 +18,10 @@
           <input type="hidden" name="_csrf" id="csrfLogout">
           <button type="submit" class="logout">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+               <polyline points="16 17 21 12 16 7"/>
+               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
             Salir
           </button>
@@ -62,7 +31,6 @@
 
     <main class="main">
 
-      <%# ══════════════ SECCIÓN USUARIOS ══════════════ %>
       <% if (section === 'usuarios') { %>
         <div class="content-card">
           <div class="card-header">
@@ -84,10 +52,7 @@
               <% usuarios.forEach(u => { %>
                 <tr>
                   <td>
-                    <div class="user-cell">
-                      <div class="avatar"><%= u.initials %></div>
-                      <strong><%= u.nombre %></strong>
-                    </div>
+                    <%- include('partials/user-cell', { name: u.nombre, initials: u.initials }) %>
                   </td>
                   <td><%= u.correo %></td>
                   <td><%= u.rol %></td>
@@ -125,7 +90,7 @@
           </div>
         </div>
 
-        <%# Modal nuevo usuario (sin campo unidad) %>
+        <%# Modal nuevo usuario %>
         <div class="modal-overlay" id="modalOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -173,7 +138,7 @@
           </div>
         </div>
 
-        <%# Modal editar usuario (sin campo unidad) %>
+        <%# Modal editar usuario %>
         <div class="modal-overlay" id="modalEditOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -220,96 +185,8 @@
             </div>
           </div>
         </div>
-
-        <script>
-          // ── Modal nuevo usuario ──
-          const overlay = document.getElementById('modalOverlay')
-          const modalError = document.getElementById('modalError')
-
-          const cerrarModal = () => { overlay.classList.remove('active'); modalError.textContent = '' }
-
-          document.getElementById('btnNuevoUsuario').addEventListener('click', () => overlay.classList.add('active'))
-          document.getElementById('modalClose').addEventListener('click', cerrarModal)
-          document.getElementById('btnCancelar').addEventListener('click', cerrarModal)
-          overlay.addEventListener('click', e => { if (e.target === overlay) cerrarModal() })
-
-          document.getElementById('btnAgregar').addEventListener('click', async () => {
-            const username = document.getElementById('inputNombre').value.trim()
-            const email    = document.getElementById('inputCorreo').value.trim()
-            const password = document.getElementById('inputPassword').value.trim()
-            const role     = document.getElementById('inputRol').value
-            const estatus  = document.getElementById('inputEstatus').value
-
-            if (!username || !email || !password || !role || !estatus) {
-              modalError.textContent = 'Todos los campos son obligatorios.'
-              return
-            }
-            try {
-              const res  = await fetch('/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, role })
-              })
-              const data = await res.json()
-              if (!res.ok) { modalError.textContent = data.error || 'Error al registrar usuario.'; return }
-              cerrarModal()
-              window.location.reload()
-            } catch { modalError.textContent = 'Error de conexión.' }
-          })
-
-          // ── Modal editar usuario ──
-          const editOverlay   = document.getElementById('modalEditOverlay')
-          const modalEditError = document.getElementById('modalEditError')
-          let usuarioEditandoId = null
-
-          const cerrarModalEdit = () => {
-            editOverlay.classList.remove('active')
-            modalEditError.textContent = ''
-            usuarioEditandoId = null
-          }
-
-          document.getElementById('modalEditClose').addEventListener('click', cerrarModalEdit)
-          document.getElementById('btnEditCancelar').addEventListener('click', cerrarModalEdit)
-          editOverlay.addEventListener('click', e => { if (e.target === editOverlay) cerrarModalEdit() })
-
-          document.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', () => {
-              usuarioEditandoId = btn.dataset.id
-              document.getElementById('editNombre').value  = btn.dataset.nombre
-              document.getElementById('editCorreo').value  = btn.dataset.correo
-              document.getElementById('editRol').value     = btn.dataset.rol
-              document.getElementById('editEstatus').value = btn.dataset.estatus
-              editOverlay.classList.add('active')
-            })
-          })
-
-          document.getElementById('btnGuardar').addEventListener('click', async () => {
-            const username = document.getElementById('editNombre').value.trim()
-            const email    = document.getElementById('editCorreo').value.trim()
-            const role     = document.getElementById('editRol').value
-            const estatus  = document.getElementById('editEstatus').value
-            const password = document.getElementById('editPassword').value.trim()
-
-            if (!username || !email || !role || !estatus) {
-              modalEditError.textContent = 'Todos los campos son obligatorios.'
-              return
-            }
-            try {
-              const res  = await fetch(`/users/${usuarioEditandoId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, role, estatus, password })
-              })
-              const data = await res.json()
-              if (!res.ok) { modalEditError.textContent = data.error || 'Error al actualizar usuario.'; return }
-              cerrarModalEdit()
-              window.location.reload()
-            } catch { modalEditError.textContent = 'Error de conexión.' }
-          })
-        </script>
       <% } %>
 
-      <%# ══════════════ SECCIÓN UNIDADES ══════════════ %>
       <% if (section === 'unidades') { %>
         <div class="content-card">
           <div class="card-header">
@@ -353,7 +230,7 @@
           </table>
         </div>
 
-        <%# Modal nueva unidad (con selector de titular) %>
+        <%# Modal nueva unidad %>
         <div class="modal-overlay" id="modalUadOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -387,7 +264,7 @@
           </div>
         </div>
 
-        <%# Modal editar unidad (con selector de titular) %>
+        <%# Modal editar unidad %>
         <div class="modal-overlay" id="modalUadEditOverlay">
           <div class="modal">
             <div class="modal-header">
@@ -420,127 +297,11 @@
             </div>
           </div>
         </div>
-
-        <script>
-          // ── Modal nueva UAD ──
-          const uadOverlay    = document.getElementById('modalUadOverlay')
-          const modalUadError = document.getElementById('modalUadError')
-
-          const cerrarUadModal = () => {
-            uadOverlay.classList.remove('active')
-            modalUadError.textContent = ''
-            document.getElementById('inputUadNombre').value   = ''
-            document.getElementById('inputUadAlias').value    = ''
-            document.getElementById('inputUadTitular').value  = ''
-          }
-
-          document.getElementById('btnNuevaUnidad').addEventListener('click', () => uadOverlay.classList.add('active'))
-          document.getElementById('modalUadClose').addEventListener('click', cerrarUadModal)
-          document.getElementById('btnUadCancelar').addEventListener('click', cerrarUadModal)
-          uadOverlay.addEventListener('click', e => { if (e.target === uadOverlay) cerrarUadModal() })
-
-          document.getElementById('btnUadAgregar').addEventListener('click', async () => {
-            const uadname   = document.getElementById('inputUadNombre').value.trim()
-            const alias     = document.getElementById('inputUadAlias').value.trim()
-            const titularId = document.getElementById('inputUadTitular').value || null
-
-            if (!uadname || !alias) { modalUadError.textContent = 'Nombre y alias son obligatorios.'; return }
-
-            try {
-              const res  = await fetch('/registeruad', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uadname, alias, titularId })
-              })
-              const data = await res.json()
-              if (!res.ok) { modalUadError.textContent = data.error || 'Error al registrar unidad.'; return }
-              cerrarUadModal()
-              window.location.reload()
-            } catch { modalUadError.textContent = 'Error de conexión.' }
-          })
-
-          // ── Modal editar UAD ──
-          const uadEditOverlay    = document.getElementById('modalUadEditOverlay')
-          const modalUadEditError = document.getElementById('modalUadEditError')
-          let uadEditandoId = null
-
-          const cerrarUadEditModal = () => {
-            uadEditOverlay.classList.remove('active')
-            modalUadEditError.textContent = ''
-            uadEditandoId = null
-          }
-
-          document.getElementById('modalUadEditClose').addEventListener('click', cerrarUadEditModal)
-          document.getElementById('btnUadEditCancelar').addEventListener('click', cerrarUadEditModal)
-          uadEditOverlay.addEventListener('click', e => { if (e.target === uadEditOverlay) cerrarUadEditModal() })
-
-          document.querySelectorAll('.btn-editar-uad').forEach(btn => {
-            btn.addEventListener('click', () => {
-              uadEditandoId = btn.dataset.id
-              document.getElementById('editUadNombre').value = btn.dataset.nombre
-              document.getElementById('editUadAlias').value  = btn.dataset.alias
-
-              // Si el titular actual no está en el select (porque ya está asignado),
-              // lo agregamos temporalmente para que pueda mantenerse o cambiarse
-              const select = document.getElementById('editUadTitular')
-              const titularId = btn.dataset.titular || ''
-              const titularNombre = btn.dataset.titularNombre || ''
-
-              // Limpiar opción temporal previa si existe
-              const prev = select.querySelector('option[data-temp]')
-              if (prev) prev.remove()
-
-              if (titularId && !select.querySelector('option[value="' + titularId + '"]')) {
-                const opt = document.createElement('option')
-                opt.value = titularId
-                opt.textContent = titularNombre
-                opt.dataset.temp = '1'
-                select.appendChild(opt)
-              }
-
-              select.value = titularId
-              uadEditOverlay.classList.add('active')
-            })
-          })
-
-          document.getElementById('btnUadGuardar').addEventListener('click', async () => {
-            const uadname   = document.getElementById('editUadNombre').value.trim()
-            const alias     = document.getElementById('editUadAlias').value.trim()
-            const titularId = document.getElementById('editUadTitular').value || null
-
-            if (!uadname || !alias) { modalUadEditError.textContent = 'Nombre y alias son obligatorios.'; return }
-
-            try {
-              const res  = await fetch(`/uads/${uadEditandoId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uadname, alias, titularId })
-              })
-              const data = await res.json()
-              if (!res.ok) { modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; return }
-              cerrarUadEditModal()
-              window.location.reload()
-            } catch { modalUadEditError.textContent = 'Error de conexión.' }
-          })
-        </script>
       <% } %>
 
     </main>
   </div>
 
-  <script>
-    ;(function () {
-      function getCsrf () {
-        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
-        return m ? decodeURIComponent(m[1]) : ''
-      }
-      const form = document.getElementById('formLogout')
-      if (form) {
-        form.addEventListener('submit', function () {
-          document.getElementById('csrfLogout').value = getCsrf()
-        })
-      }
-    })()
-  </script>
-</body>
-</html>
+  <script src="/js/dashboardadm.js"></script>
+
+<%- include('partials/footer') %>

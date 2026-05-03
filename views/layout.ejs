@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/styles-base.css">
+  <% if (typeof styles !== 'undefined') { %>
+    <% styles.forEach(style => { %>
+      <link rel="stylesheet" href="<%= style %>">
+    <% }) %>
+  <% } %>
+</head>
+<body>
+  <script src="/js/csrf.js"></script>
+  
+  <%- body %>
+
+  <script>
+    ;(function () {
+      function getCsrf () {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        return m ? decodeURIComponent(m[1]) : ''
+      }
+      const form = document.getElementById('formLogout')
+      if (form) {
+        form.addEventListener('submit', function () {
+          document.getElementById('csrfLogout').value = getCsrf()
+        })
+      }
+    })()
+  </script>
+</body>
+</html>

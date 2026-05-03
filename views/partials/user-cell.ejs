@@ -1,0 +1,9 @@
+<div class="user-cell">
+  <div class="avatar"><%= initials %></div>
+  <div>
+    <strong><%= name %></strong>
+    <% if (typeof cargo !== 'undefined' && cargo) { %>
+      <span class="sub"><%= cargo %></span>
+    <% } %>
+  </div>
+</div>

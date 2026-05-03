@@ -1,8 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Login</title>
+<%- include('partials/header') %>
   <link rel="stylesheet" href="/styles-login.css">
 </head>
 <body>
@@ -14,7 +10,6 @@
     <% } %>
 
     <%
-      // Mostrar mensaje si fue redirigido por cuenta inactiva
       const razon = typeof query !== 'undefined' ? query?.razon : null
     %>
     <% if (razon === 'cuenta_inactiva') { %>
@@ -31,5 +26,4 @@
       <button type="submit">Iniciar sesión</button>
     </form>
   </div>
-</body>
-</html>
+<%- include('partials/footer') %>

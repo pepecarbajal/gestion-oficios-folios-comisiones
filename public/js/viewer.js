@@ -21,7 +21,7 @@ window.openFileViewer = function(url, fileName = 'Archivo') {
     if (!viewerOverlay || !viewerBody) return;
 
     viewerTitle.textContent = fileName;
-    const extension = url.split('.').pop().toLowerCase();
+    const extension = url.split('?')[0].split('.').pop().toLowerCase();
 
     if (extension === 'pdf') {
         viewerBody.innerHTML = `<iframe src="${url}" width="100%" height="80vh" style="border:none;"></iframe>`;

@@ -24,9 +24,9 @@ window.openFileViewer = function(url, fileName = 'Archivo') {
     const extension = url.split('?')[0].split('.').pop().toLowerCase();
 
     if (extension === 'pdf') {
-        viewerBody.innerHTML = `<iframe src="${url}" width="100%" height="80vh" style="border:none;"></iframe>`;
+        viewerBody.innerHTML = `<iframe src="${url}" width="100%" style="border:none; height:100%;"></iframe>`;
     } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-        viewerBody.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:80vh;">
+        viewerBody.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100%;">
                                     <img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">
                                 </div>`;
     } else {

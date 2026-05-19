@@ -67,10 +67,88 @@ export class OficioRepository {
     return docRef.id
   }
 
+  static async update (id, {
+    noOficio, fechaOficio, fechaRecibo, fechaLimite,
+    asunto, remitente, cargo, dependencia,
+    unidadId, unidadAlias, estatus,
+    archivoBuffer, archivoMime
+  }) {
+    if (!noOficio) throw new Error('El número de oficio es obligatorio')
+    if (!asunto) throw new Error('El asunto es obligatorio')
+    if (!remitente) throw new Error('El remitente es obligatorio')
+    if (!unidadId) throw new Error('La unidad a turnar es obligatoria')
+
+    const firestore = db()
+    const ref = firestore.collection(OFICIOS_COLLECTION).doc(id)
+    const docSnap = await ref.get()
+    if (!docSnap.exists) throw new Error('Oficio no encontrado')
+
+    const actual = docSnap.data()
+    const noOficioTrimmed = noOficio.trim()
+    if (noOficioTrimmed !== actual.noOficio) {
+      const existing = await firestore
+        .collection(OFICIOS_COLLECTION)
+        .where('noOficio', '==', noOficioTrimmed)
+        .limit(1)
+        .get()
+
+      if (!existing.empty) {
+        throw new Error(`El oficio "${noOficioTrimmed}" ya está registrado`)
+      }
+    }
+
+    const storageBucket = bucket()
+    let archivoPath = actual.archivoPath || null
+
+    if (archivoBuffer && archivoMime === 'application/pdf') {
+      if (actual.archivoPath) {
+        try {
+          await storageBucket.file(actual.archivoPath).delete()
+        } catch {}
+      }
+
+      const nombreArchivo = noOficioTrimmed.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_') + '.pdf'
+      archivoPath = `oficios/${nombreArchivo}`
+      const file = storageBucket.file(archivoPath)
+      await file.save(archivoBuffer, {
+        metadata: { contentType: 'application/pdf' },
+        resumable: false
+      })
+    } else if (!archivoBuffer && noOficioTrimmed !== actual.noOficio && actual.archivoPath) {
+      const nombreNuevo = noOficioTrimmed.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_') + '.pdf'
+      const nuevoPath = `oficios/${nombreNuevo}`
+
+      try {
+        await storageBucket.file(actual.archivoPath).copy(storageBucket.file(nuevoPath))
+        await storageBucket.file(actual.archivoPath).delete()
+        archivoPath = nuevoPath
+      } catch {
+        archivoPath = actual.archivoPath
+      }
+    }
+
+    await ref.update({
+      noOficio: noOficioTrimmed,
+      fechaOficio: fechaOficio || null,
+      fechaRecibo: fechaRecibo || null,
+      fechaLimite: fechaLimite || null,
+      asunto: asunto.trim(),
+      remitente: remitente.trim(),
+      cargo: cargo?.trim() || '',
+      dependencia: dependencia?.trim() || '',
+      unidadId,
+      unidadAlias: unidadAlias || '',
+      estatus: estatus || actual.estatus,
+      archivoPath,
+      actualizadoEn: new Date().toISOString()
+    })
+
+    return id
+  }
+
   static async _hydratarUrls (oficio) {
     const storageBucket = bucket()
 
-    // URL del PDF principal
     if (oficio.archivoPath) {
       try {
         oficio.archivoUrl = await getSignedUrl(storageBucket, oficio.archivoPath)
@@ -81,7 +159,6 @@ export class OficioRepository {
       oficio.archivoUrl = null
     }
 
-    // URLs de archivos de evidencias en respuestas
     if (Array.isArray(oficio.respuestas)) {
       for (const resp of oficio.respuestas) {
         if (Array.isArray(resp.archivos)) {
@@ -114,18 +191,17 @@ export class OficioRepository {
 
   static async getByUnidad (unidadId) {
     const firestore = db()
-    
+
     const snapshot = await firestore
       .collection(OFICIOS_COLLECTION)
       .where('unidadId', 'in', [unidadId, 'TODAS'])
       .orderBy('creadoEn', 'desc')
       .get()
-    
+
     const oficios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    
+
     return Promise.all(oficios.map(o => OficioRepository._hydratarUrls(o)))
   }
-
 
   static async guardarRespuesta (oficioId, { unidadId, unidadAlias, comentario, archivos }) {
     const firestore = db()

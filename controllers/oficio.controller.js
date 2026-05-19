@@ -71,6 +71,74 @@ export const registrarOficio = async (req, res) => {
   }
 }
 
+export const editarOficio = async (req, res) => {
+  const { id } = req.params
+  try {
+    OficioValidation.validateEdicion(req.body, req.file)
+
+    const {
+      noOficio, fechaOficio, fechaRecibo, fechaLimite,
+      asunto, remitente, cargo, dependencia,
+      unidadId, estatus
+    } = req.body
+
+    let unidadAlias = ''
+    if (unidadId && unidadId !== 'TODAS') {
+      const unidades = await UADRepository.getAll()
+      const unidad = unidades.find(u => u.id === unidadId)
+      if (!unidad) {
+        return res.status(400).json({ error: 'La unidad administrativa seleccionada no existe.' })
+      }
+      unidadAlias = unidad.alias || ''
+    } else if (unidadId === 'TODAS') {
+      unidadAlias = 'TODAS'
+    }
+
+    let archivoBuffer = null
+    let archivoMime = null
+
+    if (req.file) {
+      archivoBuffer = req.file.buffer
+      archivoMime = req.file.mimetype
+    }
+
+    await OficioRepository.update(id, {
+      noOficio, fechaOficio, fechaRecibo, fechaLimite,
+      asunto, remitente, cargo, dependencia,
+      unidadId, unidadAlias, estatus,
+      archivoBuffer, archivoMime
+    })
+
+    await AuditRepository.registrar({
+      accion: 'OFICIO_EDITADO',
+      usuarioId: req.user?.id,
+      usuarioEmail: null,
+      rol: req.user?.role,
+      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, estatus },
+      ip: getIp(req)
+    })
+
+    res.json({ message: 'Oficio actualizado correctamente' })
+  } catch (error) {
+    const esErrorControlado = [
+      'El número de oficio es obligatorio',
+      'El asunto es obligatorio',
+      'El remitente es obligatorio',
+      'La unidad a turnar es obligatoria',
+      'ya está registrado',
+      'Estatus inválido',
+      'Oficio no encontrado'
+    ].some(msg => error.message?.includes(msg))
+
+    if (esErrorControlado) {
+      res.status(400).json({ error: error.message })
+    } else {
+      console.error('[editarOficio]', error)
+      res.status(500).json({ error: 'Error interno al editar el oficio.' })
+    }
+  }
+}
+
 export const actualizarEstatusOficio = async (req, res) => {
   const { id } = req.params
   const { estatus } = req.body

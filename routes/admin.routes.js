@@ -6,7 +6,7 @@ import { getUsuarios, updateUsuario } from '../controllers/users.controller.js'
 import { authMiddleware, requireAdm, requireAOF, requireUAD } from '../middlewares/auth.middleware.js'
 import { loginLimiter, csrfProtection } from '../middlewares/security.middleware.js'
 import { dashboard } from '../controllers/dashboard.controller.js'
-import { registrarOficio, actualizarEstatusOficio, guardarRespuestaUAD } from '../controllers/oficio.controller.js'
+import { registrarOficio, editarOficio, actualizarEstatusOficio, guardarRespuestaUAD } from '../controllers/oficio.controller.js'
 
 const router = Router()
 
@@ -53,6 +53,10 @@ router.get('/dashboard', authMiddleware, dashboard)
 router.post('/oficios',
   authMiddleware, requireAOF, csrfProtection,
   uploadPDF.single('archivo'), registrarOficio)
+
+router.put('/oficios/:id',
+  authMiddleware, requireAOF, csrfProtection,
+  uploadPDF.single('archivo'), editarOficio)
 
 router.put('/oficios/:id/estatus',
   authMiddleware, requireAOF, csrfProtection,

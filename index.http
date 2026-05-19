@@ -1,0 +1,10 @@
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+  "email": "admin@sefodeco.com",
+  "username": "Administrador",
+  "password": "123456",
+  "estatus": "Activo",
+  "role": "ADM"
+}

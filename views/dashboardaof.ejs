@@ -86,6 +86,20 @@
                 data-unidad="<%= o.unidadAlias || '' %>"
                 data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
                 data-id="<%= o.id %>">
+                <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                  id: o.id,
+                  noOficio: o.noOficio,
+                  fechaOficio: o.fechaOficio || "",
+                  fechaRecibo: o.fechaRecibo || "",
+                  fechaLimite: o.fechaLimite || "",
+                  asunto: o.asunto,
+                  remitente: o.remitente,
+                  cargo: o.cargo || "",
+                  dependencia: o.dependencia || "",
+                  unidadId: o.unidadId || "",
+                  estatus: o.estatus,
+                  tieneArchivo: !!o.archivoPath
+                }).replace(/<\/script>/gi, '<\\/script>') %></script>
                 <td class="no-cell"><%= o.noOficio %></td>
                 <td>
                   <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
@@ -114,7 +128,8 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                     </button>
                   <% } %>
-                  <button class="icon-btn btn-cambiar-estatus" title="Cambiar estatus" data-id="<%= o.id %>" data-estatus="<%= o.estatus %>">
+                  <%# Botón editar — reemplaza el de cambiar estatus %>
+                  <button class="icon-btn btn-editar-oficio" title="Editar oficio" data-id="<%= o.id %>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                 </td>
@@ -200,6 +215,20 @@
                   data-unidad="<%= o.unidadAlias || '' %>"
                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto + ' ' + (o.unidadAlias || '')).toLowerCase() %>"
                   data-id="<%= o.id %>">
+                  <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                    id: o.id,
+                    noOficio: o.noOficio,
+                    fechaOficio: o.fechaOficio || "",
+                    fechaRecibo: o.fechaRecibo || "",
+                    fechaLimite: o.fechaLimite || "",
+                    asunto: o.asunto,
+                    remitente: o.remitente,
+                    cargo: o.cargo || "",
+                    dependencia: o.dependencia || "",
+                    unidadId: o.unidadId || "",
+                    estatus: o.estatus,
+                    tieneArchivo: !!o.archivoPath
+                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
                   <td class="no-cell"><%= o.noOficio %></td>
                   <td>
                     <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
@@ -225,6 +254,10 @@
                     <% } %>
                     <button class="icon-btn" title="Ver respuestas" data-oficio-id="<%= o.id %>" onclick="abrirModalRespuestas(this)">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </button>
+                    <%# Botón editar en tab Atendidos %>
+                    <button class="icon-btn btn-editar-oficio" title="Editar oficio" data-id="<%= o.id %>">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
                   </td>
                 </tr>
@@ -320,26 +353,95 @@
     </div>
   </div>
 
-  <%# MODAL CAMBIAR ESTATUS %>
-  <div class="modal-overlay" id="modalEstatusOverlay">
-    <div class="modal modal-sm">
+  <%# MODAL EDITAR OFICIO (reemplaza al de cambiar estatus) %>
+  <div class="modal-overlay" id="modalEditarOverlay">
+    <div class="modal">
       <div class="modal-header">
-        <h3>Cambiar Estatus</h3>
-        <button class="modal-close" id="modalEstatusClose">&times;</button>
+        <h3>Editar Oficio</h3>
+        <button class="modal-close" id="modalEditarClose">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-error" id="modalEstatusError"></p>
+        <p class="modal-error" id="modalEditarError"></p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>No. Oficio</label>
+            <input type="text" id="editNoOficio" placeholder="OF-2024-005">
+          </div>
+          <div class="form-group">
+            <label>Fecha del Oficio</label>
+            <input type="date" id="editFechaOficio">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Recibo</label>
+            <input type="date" id="editFechaRecibo">
+          </div>
+          <div class="form-group">
+            <label>Fecha Límite</label>
+            <input type="date" id="editFechaLimite">
+          </div>
+        </div>
         <div class="form-group">
-          <label>Nuevo Estatus</label>
-          <select id="selectNuevoEstatus">
-            <option value="Pendiente">Pendiente</option>
-            <option value="Atendido">Atendido</option>
-          </select>
+          <label>Asunto</label>
+          <textarea id="editAsunto" placeholder="Describa brevemente el asunto" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Remitente</label>
+            <input type="text" id="editRemitente" placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" id="editCargo" placeholder="Cargo del remitente">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dependencia</label>
+            <input type="text" id="editDependencia" placeholder="Dependencia de origen">
+          </div>
+          <div class="form-group">
+            <label>Unidad a Turnar</label>
+            <select id="editUnidadTurnar">
+              <option value="" disabled>Seleccionar</option>
+              <option value="TODAS" data-alias="TODAS">— Todas las unidades —</option>
+              <% unidades.forEach(u => { %>
+                <option value="<%= u.id %>" data-alias="<%= u.alias %>"><%= u.uadname %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Estatus</label>
+            <select id="editEstatus">
+              <option value="Pendiente">Pendiente</option>
+              <option value="Atendido">Atendido</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>
+            Reemplazar PDF
+            <span class="label-hint" id="editArchivoHint">(opcional)</span>
+          </label>
+          <div class="file-drop" id="editFileDrop">
+            <input type="file" id="editArchivo" accept="application/pdf" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <span id="editFileLabel">Seleccionar archivo PDF</span>
+          </div>
+          <p class="label-hint" id="editArchivoActual" style="margin-top:4px; display:none">
+            Este oficio ya tiene un PDF adjunto. Si subes uno nuevo lo reemplazará.
+          </p>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" id="btnEstatusCancelar">Cancelar</button>
-        <button class="btn-primary" id="btnEstatusGuardar">Guardar</button>
+        <button class="btn-cancel" id="btnEditarCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnEditarGuardar">
+          <span id="btnEditarText">Guardar cambios</span>
+          <span id="btnEditarLoader" class="loader" style="display:none"></span>
+        </button>
       </div>
     </div>
   </div>

@@ -13,7 +13,7 @@ export const registrarOficio = async (req, res) => {
     const {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId
+      unidadId, tipoArchivo
     } = req.body
 
     let unidadAlias = ''
@@ -40,7 +40,8 @@ export const registrarOficio = async (req, res) => {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
       unidadId, unidadAlias,
-      archivoBuffer, archivoMime
+      archivoBuffer, archivoMime,
+      tipoArchivo: tipoArchivo === '1' ? 1 : 0
     })
 
     await AuditRepository.registrar({
@@ -48,7 +49,7 @@ export const registrarOficio = async (req, res) => {
       usuarioId: req.user?.id,
       usuarioEmail: null,
       rol: req.user?.role,
-      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto },
+      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, tipoArchivo },
       ip: getIp(req)
     })
 
@@ -79,7 +80,7 @@ export const editarOficio = async (req, res) => {
     const {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId, estatus
+      unidadId, estatus, tipoArchivo
     } = req.body
 
     let unidadAlias = ''
@@ -106,7 +107,8 @@ export const editarOficio = async (req, res) => {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
       unidadId, unidadAlias, estatus,
-      archivoBuffer, archivoMime
+      archivoBuffer, archivoMime,
+      tipoArchivo: tipoArchivo !== undefined ? (tipoArchivo === '1' ? 1 : 0) : undefined
     })
 
     await AuditRepository.registrar({
@@ -114,7 +116,7 @@ export const editarOficio = async (req, res) => {
       usuarioId: req.user?.id,
       usuarioEmail: null,
       rol: req.user?.role,
-      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, estatus },
+      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, estatus, tipoArchivo },
       ip: getIp(req)
     })
 

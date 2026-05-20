@@ -16,7 +16,8 @@ export class OficioRepository {
   static async create ({
     noOficio, fechaOficio, fechaRecibo, fechaLimite,
     asunto, remitente, cargo, dependencia,
-    unidadId, unidadAlias, archivoBuffer, archivoMime
+    unidadId, unidadAlias, archivoBuffer, archivoMime,
+    tipoArchivo = 0
   }) {
     if (!noOficio) throw new Error('El número de oficio es obligatorio')
     if (!asunto) throw new Error('El asunto es obligatorio')
@@ -60,6 +61,7 @@ export class OficioRepository {
       unidadAlias: unidadAlias || '',
       estatus: 'Pendiente',
       archivoPath,
+      tipoArchivo: Number(tipoArchivo) === 1 ? 1 : 0,
       respuestas: [],
       creadoEn: new Date().toISOString()
     })
@@ -71,7 +73,8 @@ export class OficioRepository {
     noOficio, fechaOficio, fechaRecibo, fechaLimite,
     asunto, remitente, cargo, dependencia,
     unidadId, unidadAlias, estatus,
-    archivoBuffer, archivoMime
+    archivoBuffer, archivoMime,
+    tipoArchivo
   }) {
     if (!noOficio) throw new Error('El número de oficio es obligatorio')
     if (!asunto) throw new Error('El asunto es obligatorio')
@@ -127,6 +130,11 @@ export class OficioRepository {
       }
     }
 
+    // tipoArchivo: if provided use it, otherwise keep existing value
+    const nuevoTipo = tipoArchivo !== undefined
+      ? (Number(tipoArchivo) === 1 ? 1 : 0)
+      : (actual.tipoArchivo ?? 0)
+
     await ref.update({
       noOficio: noOficioTrimmed,
       fechaOficio: fechaOficio || null,
@@ -140,6 +148,7 @@ export class OficioRepository {
       unidadAlias: unidadAlias || '',
       estatus: estatus || actual.estatus,
       archivoPath,
+      tipoArchivo: nuevoTipo,
       actualizadoEn: new Date().toISOString()
     })
 

@@ -103,6 +103,7 @@ function filtrarAtendidos() {
 if (searchAt) searchAt.addEventListener('input', filtrarAtendidos)
 if (filterUnidadAt) filterUnidadAt.addEventListener('change', filtrarAtendidos)
 
+// ── FILE DROP NUEVO OFICIO ──
 const modalOverlay = document.getElementById('modalOficioOverlay')
 const fileDrop = document.getElementById('fileDrop')
 const inputArchivo = document.getElementById('inputArchivo')
@@ -170,6 +171,9 @@ const cerrarModal = () => {
     document.getElementById(id).value = ''
   })
   document.getElementById('inputUnidadTurnar').value = ''
+  // Reset checkbox
+  const chk = document.getElementById('inputEsCorreo')
+  if (chk) chk.checked = false
   updateFileDropUI(null)
 }
 
@@ -208,6 +212,7 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   const unidadId = unidadSelect.value
   const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
   const archivo = inputArchivo.files[0]
+  const esCorreo = document.getElementById('inputEsCorreo')?.checked ? '1' : '0'
   const errorEl = document.getElementById('modalOficioError')
 
   if (!noOficio || !fechaOficio || !asunto || !remitente || !unidadId) {
@@ -231,6 +236,7 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
     formData.append('dependencia', dependencia)
     formData.append('unidadId', unidadId)
     formData.append('unidadAlias', unidadAlias)
+    formData.append('tipoArchivo', esCorreo)
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch('/oficios', { method: 'POST', body: formData })
@@ -255,6 +261,7 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   }
 })
 
+// ── FILE DROP EDITAR OFICIO ──
 const modalEditarOverlay = document.getElementById('modalEditarOverlay')
 const editFileDrop       = document.getElementById('editFileDrop')
 const editArchivo        = document.getElementById('editArchivo')
@@ -328,6 +335,10 @@ function abrirModalEditar(oficio) {
   document.getElementById('editUnidadTurnar').value = oficio.unidadId    || ''
   document.getElementById('editEstatus').value      = oficio.estatus     || 'Pendiente'
 
+  // Set tipoArchivo checkbox
+  const editChk = document.getElementById('editEsCorreo')
+  if (editChk) editChk.checked = oficio.tipoArchivo === 1
+
   const avisoArchivo = document.getElementById('editArchivoActual')
   avisoArchivo.style.display = oficio.tieneArchivo ? 'block' : 'none'
 
@@ -389,6 +400,7 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   const unidadSelect = document.getElementById('editUnidadTurnar')
   const unidadId    = unidadSelect.value
   const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+  const esCorreo    = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
 
   if (!noOficio || !asunto || !remitente || !unidadId) {
     errorEl.textContent = 'No. oficio, asunto, remitente y unidad son obligatorios.'
@@ -412,6 +424,7 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     formData.append('unidadId',    unidadId)
     formData.append('unidadAlias', unidadAlias)
     formData.append('estatus',     document.getElementById('editEstatus').value)
+    formData.append('tipoArchivo', esCorreo)
     if (editArchivo.files[0]) formData.append('archivo', editArchivo.files[0])
 
     const res = await fetch(`/oficios/${_oficioEditandoId}`, { method: 'PUT', body: formData })

@@ -2,11 +2,82 @@
 /* En el HTML: <link rel="stylesheet" href="/styles-base.css"> antes de este archivo */
 
 /* ── TABLA OFICIOS ── */
+
+/* Layout fijo: los anchos los define el <colgroup> en el EJS */
+#tablaOficios,
+#tablaAtendidos {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Todas las celdas: padding uniforme y corte de texto seguro */
+#tablaOficios th,  #tablaOficios td,
+#tablaAtendidos th, #tablaAtendidos td {
+  padding: 10px 10px;
+  vertical-align: middle;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Col 1 — icono tipo: centrado */
+#tablaOficios th:nth-child(1),  #tablaOficios td:nth-child(1),
+#tablaAtendidos th:nth-child(1), #tablaAtendidos td:nth-child(1) {
+  text-align: center;
+  padding-left: 12px;
+  padding-right: 4px;
+}
+
+/* Col 2 — No. Oficio: fuente mono, rompe cadenas sin espacios */
+.no-cell {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: #6b7280;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Col 4 — Asunto: texto completo con wrap */
+.asunto-cell {
+  font-size: 0.83rem;
+  color: #374151;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Col 6 — Unidad: trunca con ellipsis si es muy larga */
+#tablaOficios td:nth-child(6),
+#tablaAtendidos td:nth-child(6) {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Col 7 — Prioridad / Respuestas: sin salto */
+#tablaOficios td:nth-child(7),
+#tablaAtendidos td:nth-child(7) {
+  white-space: nowrap;
+}
+
+/* Col 8 — Acción: botones centrados */
+#tablaOficios td:nth-child(8),
+#tablaAtendidos td:nth-child(8) {
+  text-align: center;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 8px;
+}
+
+/* Filas */
 .table tr.oficio-row:last-of-type td { border-bottom: none; }
 .table tr.oficio-row:hover td { background: #fafafa; }
 .table tr.oficio-row:has(+ .respuestas-row) td { border-bottom: none; }
 
-.fecha-cell { font-size: 0.875rem; }
+/* ── CELDA FECHA ── */
+.fecha-cell { font-size: 0.875rem; line-height: 1.4; }
 
 .fecha-limite {
   display: block;
@@ -95,4 +166,10 @@
 }
 .file-drop:hover,
 .file-drop.drag-over { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
-.file-drop.has-file  { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }\n\n/* ── CHIP DE ARCHIVO SELECCIONADO ── */\n.file-chip-remove-container {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n}\n\n.file-chip-single {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  padding: 6px 12px;\n  border: 1px solid #d1d5db;\n  background: transparent;\n  border-radius: 4px;\n  color: #4b5563;\n  font-size: 0.85rem;\n  max-width: 100%;\n}\n\n.file-chip-single .file-info {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.file-chip-single .chip-remove {\n  background: transparent;\n  border: none;\n  color: #9ca3af;\n  cursor: pointer;\n  font-size: 1.2rem;\n  line-height: 1;\n  padding: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transition: color 0.2s;\n}\n\n.file-chip-single .chip-remove:hover {\n  color: #dc2626;\n}
+.file-drop.has-file  { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
+
+.file-chip-remove-container { display: flex; align-items: center; justify-content: center; width: 100%; }
+.file-chip-single { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border: 1px solid #d1d5db; background: transparent; border-radius: 4px; color: #4b5563; font-size: 0.85rem; max-width: 100%; }
+.file-chip-single .file-info { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-chip-single .chip-remove { background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+.file-chip-single .chip-remove:hover { color: #dc2626; }

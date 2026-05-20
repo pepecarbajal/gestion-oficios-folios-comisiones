@@ -16,9 +16,9 @@
   overflow-wrap: anywhere;
 }
 
-/* Columna de icono: centrada */
+/* Columna de icono: alineada a la izquierda */
 .table td:nth-child(1), .table th:nth-child(1) {
-  text-align: center;
+  text-align: left;
   padding-left: 12px;
   padding-right: 4px;
 }
@@ -63,7 +63,7 @@
 .actions-cell {
   display: flex !important;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1px;
   white-space: nowrap;
 }

@@ -4,17 +4,13 @@ const iconoTipoEv = tipo => tipo === 'application/pdf'
   ? `<span class="archivo-type-badge pdf">PDF</span>`
   : `<span class="archivo-type-badge img">IMG</span>`
 
-function abrirEvidencias(btn) {
-  const id = btn.dataset.oficioId
-  const comentario = btn.dataset.comentario || ''
-  const archivos = (window.__evidencias && window.__evidencias[id]) || []
-  
+function abrirEvidencias(id, comentario = '', archivos = []) {
   let content = '';
   if (comentario) {
     content += `<p class="resp-comentario">"${comentario}"</p>`;
   }
   
-  if (archivos.length > 0) {
+  if (archivos && archivos.length > 0) {
     content += archivos.map(a => {
       const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
       return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
@@ -57,7 +53,6 @@ function abrirModalResponder(oficioId, comentario = '', archivos = '[]', yaRespo
 }
 
 function cambiarTab(tab, e) {
-// ... (existing changing tab logic)
   if (e) e.preventDefault()
   const esPend = tab === 'pendientes'
   document.getElementById('tabPendientes').style.display = esPend ? '' : 'none'
@@ -97,52 +92,37 @@ function toggleActionMenu(e, id) {
     });
   }
 
-  // Logic for "Register/Edit Response"
-  // In UAD, we check if they already responded
+  // Logic for "Register/Edit/View Response"
   const row = document.querySelector(`.oficio-row[data-id="${id}"]`);
-  const yaRespondio = row && row.dataset.ya === 'true'; // This might need adjust based on how data is stored in row
+  const isAtendido = row && row.classList.contains('atend-row');
+  const yaRespondio = row && row.dataset.ya === 'true';
 
-  actions.push({
-    label: yaRespondio ? 'Editar respuesta' : 'Registrar respuesta',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-    action: () => {
-      const btnFake = document.createElement('button');
-      btnFake.dataset.id = id;
-      // We need to recover the actual response data for editing
-      // In the original code, btn-responder has dataset.comentario, dataset.archivos, dataset.ya
-      // Since we removed the btn-responder, we must find a way to get this data.
-      // Let's look for the original row or store it in a global.
-      
-      // Temporary fix: try to find the original btn-responder if it still exists or 
-      // we can fetch it from the row's data if we store it there.
-      // Since the button is gone, we'll search for the closest logic.
-      
-      // Instead, let's use a helper to trigger the original 'responder' logic
-      // But that logic depends on the button's dataset.
-      // I'll modify the row to store these in dataset.
-      
-      // For now, let's just try to call the responder logic with a dummy button
-      // and we'll adjust the HTML to store response data in the row.
-      const rowEl = document.querySelector(`.oficio-row[data-id="${id}"]`);
-      if (rowEl) {
-        btnFake.dataset.id = id;
-        btnFake.dataset.comentario = rowEl.dataset.comentario || '';
-        btnFake.dataset.archivos = rowEl.dataset.archivos || '[]';
-        btnFake.dataset.ya = rowEl.dataset.ya || 'false';
-        
-        // Trigger the event
-        const event = new Event('click');
-        btnFake.dispatchEvent(event);
-        
-        // Wait, the listener is on document.querySelectorAll('.btn-responder')
-        // Let's just manually call the logic if possible or re-add the listener to the fake button.
-        // The easiest is to just call the function that the button would have called.
-        // But the original code uses an anonymous function in addEventListener.
-        
-        // I will refactor the responder logic into a named function.
+  if (isAtendido) {
+    actions.push({
+      label: 'Ver respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      action: () => {
+        const comentario = row.dataset.comentario || '';
+        const archivos = JSON.parse(row.dataset.archivos || '[]');
+        abrirEvidencias(id, comentario, archivos);
       }
-    }
-  });
+    });
+  } else {
+    actions.push({
+      label: yaRespondio ? 'Editar respuesta' : 'Registrar respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      action: () => {
+        const rowEl = document.querySelector(`.oficio-row[data-id="${id}"]`);
+        if (rowEl) {
+          const comentario = rowEl.dataset.comentario || '';
+          const archivos = rowEl.dataset.archivos || '[]';
+          const yaResp = rowEl.dataset.ya === 'true';
+          abrirModalResponder(id, comentario, archivos, yaResp.toString());
+        }
+      }
+    });
+  }
+
 
   menu.innerHTML = actions.map((a, index) => `
     <button class="dropdown-item" data-index="${index}">

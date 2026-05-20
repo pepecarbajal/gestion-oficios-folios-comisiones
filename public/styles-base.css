@@ -219,7 +219,7 @@ body {
 .badge-vencido-p { background-color: #fee2e2; color: #dc2626; }
 
 /* ── ACTIONS ── */
-.actions-cell { display: flex; gap: 6px; align-items: center; }
+.actions-cell { display: flex; gap: 6px; align-items: center; justify-content: flex-start; }
 
 .icon-btn {
   color: #9ca3af;

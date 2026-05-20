@@ -85,14 +85,18 @@
                  const yaRespondio = !!miRespuesta;
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                <tr class="oficio-row pend-row"
-                  data-estatus="<%= estatusGlobal %>"
-                  data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                  data-id="<%= o.id %>"
-                  data-ya="<%= yaRespondio %>"
-                  data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
-                  data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>">
-                  <td>
+                 <tr class="oficio-row pend-row"
+                   data-estatus="<%= estatusGlobal %>"
+                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                   data-id="<%= o.id %>"
+                   data-ya="<%= yaRespondio %>"
+                   data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
+                   data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>">
+                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
+                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                   <td>
+
                     <% if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
@@ -178,10 +182,17 @@
                  const archivos = miRespuesta.archivos || [];
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                <tr class="atendido-row atend-row"
-                  data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                  data-id="<%= o.id %>">
-                  <td>
+                  <tr class="oficio-row atend-row atendido-row"
+                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                    data-id="<%= o.id %>"
+                    data-ya="true"
+                    data-comentario="<%= miRespuesta.comentario || '' %>"
+                    data-archivos="<%= JSON.stringify(miRespuesta.archivos || []) %>">
+                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
+                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                   <td>
+
                     <% if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>

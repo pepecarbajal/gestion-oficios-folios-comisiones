@@ -4,17 +4,13 @@ const iconoTipoEv = tipo => tipo === 'application/pdf'
   ? `<span class="archivo-type-badge pdf">PDF</span>`
   : `<span class="archivo-type-badge img">IMG</span>`
 
-function abrirEvidencias(btn) {
-  const id = btn.dataset.oficioId
-  const comentario = btn.dataset.comentario || ''
-  const archivos = (window.__evidencias && window.__evidencias[id]) || []
-  
+function abrirEvidencias(id, comentario = '', archivos = []) {
   let content = '';
   if (comentario) {
     content += `<p class="resp-comentario">"${comentario}"</p>`;
   }
   
-  if (archivos.length > 0) {
+  if (archivos && archivos.length > 0) {
     content += archivos.map(a => {
       const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
       return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
@@ -31,6 +27,31 @@ document.getElementById('modalEvidenciasClose').addEventListener('click', () => 
 document.getElementById('btnEvidenciasCerrar').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
 modalEvidOverlay.addEventListener('click', e => { if (e.target === modalEvidOverlay) modalEvidOverlay.classList.remove('active') })
 
+function abrirModalResponder(oficioId, comentario = '', archivos = '[]', yaRespondio = 'false') {
+  oficioRespId = oficioId;
+  const isAlreadyAnswered = yaRespondio === 'true';
+  document.getElementById('modalRespuestaTitulo').textContent = isAlreadyAnswered ? 'Editar Respuesta' : 'Responder Oficio';
+  document.getElementById('inputComentario').value = comentario;
+  archivosSeleccionados = [];
+  renderListaArchivos();
+
+  const existentesPanel = document.getElementById('archivosExistentes');
+  const existentesList = document.getElementById('listaArchivosExistentes');
+  if (isAlreadyAnswered) {
+    try {
+      const arch = JSON.parse(archivos);
+      if (arch.length > 0) {
+        existentesList.innerHTML = arch.map(a => {
+          const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
+          return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipo(a.tipo)} <span>${a.nombre}</span></a>`;
+        }).join('');
+        existentesPanel.style.display = 'block';
+      }
+    } catch (_) {}
+  }
+  modalOverlay.classList.add('active');
+}
+
 function cambiarTab(tab, e) {
   if (e) e.preventDefault()
   const esPend = tab === 'pendientes'
@@ -39,6 +60,96 @@ function cambiarTab(tab, e) {
   document.getElementById('navPendientes').classList.toggle('active', esPend)
   document.getElementById('navAtendidos').classList.toggle('active', !esPend)
 }
+
+// ── ACTION DROPDOWN LOGIC ──
+let currentActionMenu = null;
+
+function toggleActionMenu(e, id) {
+  e.stopPropagation();
+  
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  
+  const menu = document.createElement('div');
+  menu.className = 'action-dropdown active';
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+
+  const dataEl = document.getElementById(`oficio-data-${id}`);
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+
+  const actions = [];
+  if (data.archivoUrl) {
+    actions.push({
+      label: 'Ver oficio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => openFileViewer(data.archivoUrl, `Oficio ${data.noOficio}`)
+    });
+  }
+
+  // Logic for "Register/Edit/View Response"
+  const row = document.querySelector(`.oficio-row[data-id="${id}"]`);
+  const isAtendido = row && row.classList.contains('atend-row');
+  const yaRespondio = row && row.dataset.ya === 'true';
+
+  if (isAtendido) {
+    actions.push({
+      label: 'Ver respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      action: () => {
+        const comentario = row.dataset.comentario || '';
+        const archivos = JSON.parse(row.dataset.archivos || '[]');
+        abrirEvidencias(id, comentario, archivos);
+      }
+    });
+  } else {
+    actions.push({
+      label: yaRespondio ? 'Editar respuesta' : 'Registrar respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      action: () => {
+        const rowEl = document.querySelector(`.oficio-row[data-id="${id}"]`);
+        if (rowEl) {
+          const comentario = rowEl.dataset.comentario || '';
+          const archivos = rowEl.dataset.archivos || '[]';
+          const yaResp = rowEl.dataset.ya === 'true';
+          abrirModalResponder(id, comentario, archivos, yaResp.toString());
+        }
+      }
+    });
+  }
+
+
+  menu.innerHTML = actions.map((a, index) => `
+    <button class="dropdown-item" data-index="${index}">
+      ${a.icon} <span>${a.label}</span>
+    </button>
+  `).join('');
+
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item');
+    if (item) {
+      const index = item.dataset.index;
+      actions[index].action();
+      menu.remove();
+      currentActionMenu = null;
+    }
+  });
+
+  document.body.appendChild(menu);
+  currentActionMenu = menu;
+}
+
+document.addEventListener('click', () => {
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+});
 
 const searchPend = document.getElementById('searchPendientes')
 const filterEstatusPend = document.getElementById('filterEstatusPend')

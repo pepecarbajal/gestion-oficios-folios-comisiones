@@ -124,15 +124,18 @@ body {
 
 .table th {
   text-align: left;
-  padding: 10px 12px;
-  color: #6b7280;
+  padding: 12px;
+  color: #9ca3af;
   font-weight: 500;
-  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f3f4f6;
   white-space: nowrap;
 }
 
 .table td {
-  padding: 13px 12px;
+  padding: 16px 12px;
   border-bottom: 1px solid #f3f4f6;
   color: #374151;
   vertical-align: middle;
@@ -146,10 +149,11 @@ body {
   font-size: 0.8rem;
   color: #6b7280;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .asunto-cell {
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -174,22 +178,10 @@ body {
 .empty-state-full p { font-size: 0.9rem; font-style: italic; }
 
 /* ── USER CELL ── */
-.user-cell { display: flex; align-items: center; gap: 10px; }
-
-.avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background-color: #e0e7f0;
-  color: #0d1b2e;
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
-.avatar-sm { width: 30px; height: 30px; font-size: 0.68rem; }
+.user-cell { display: flex; flex-direction: column; gap: 2px; }
 
 .sub { display: block; font-size: 0.76rem; color: #9ca3af; margin-top: 1px; }
+
 
 /* ── BADGES ── */
 .badge {
@@ -227,7 +219,7 @@ body {
 .badge-vencido-p { background-color: #fee2e2; color: #dc2626; }
 
 /* ── ACTIONS ── */
-.actions-cell { display: flex; gap: 6px; align-items: center; }
+.actions-cell { display: flex; gap: 6px; align-items: center; justify-content: flex-start; }
 
 .icon-btn {
   color: #9ca3af;
@@ -270,6 +262,72 @@ body {
 }
 .page-btn:hover { background: #f3f4f6; }
 .page-btn.active { background-color: #0d1b2e; color: #fff; border-color: #0d1b2e; }
+
+/* ── ACTION MENU (DROPDOWN) ── */
+.menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.menu-btn:hover { color: #374151; background: #f3f4f6; }
+
+.action-dropdown {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  z-index: 1000;
+  min-width: 200px;
+  padding: 6px;
+  display: none;
+}
+.action-dropdown.active { display: block; }
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+}
+.dropdown-item:hover { background: #f3f4f6; }
+.dropdown-item svg { color: #9ca3af; flex-shrink: 0; }
+
+/* ── RESPONDIDO COLUMN ── */
+.respondido-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.respondido-fecha {
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.respondido-comentario {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
 
 /* ── MODALS ── */
 .modal-overlay {

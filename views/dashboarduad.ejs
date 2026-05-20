@@ -48,13 +48,22 @@
         </div>
 
         <table class="table">
+          <colgroup>
+            <col style="width:48px">   <!-- icono tipo -->
+            <col style="width:13%">    <!-- No. Oficio -->
+            <col style="width:18%">    <!-- Remitente -->
+            <col style="width:32%">    <!-- Asunto -->
+            <col style="width:15%">    <!-- Fecha -->
+            <col style="width:10%">    <!-- Prioridad -->
+            <col style="width:80px">   <!-- Acción -->
+          </colgroup>
           <thead>
             <tr>
+              <th></th>
               <th>No.</th>
               <th>Remitente</th>
               <th>Asunto</th>
               <th>Fecha</th>
-              <th>Límite</th>
               <th>Prioridad</th>
               <th>Acción</th>
             </tr>
@@ -63,63 +72,65 @@
             <% if (oficiosPend.length === 0) { %>
               <tr><td colspan="7" class="empty-state">No tienes oficios pendientes.</td></tr>
             <% } %>
-            <% oficiosPend.forEach(o => {
-               const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
-               if (limite) limite.setHours(23,59,59,999);
-               const vencido = limite && limite < new Date();
-               const urgente = !vencido && limite && (limite - new Date()) / (1000 * 60 * 60 * 24) <= 6;
-               const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
-               const estatusGlobal = vencido ? 'Vencido' : o.estatus;
-               const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-               const respuestas = o.respuestas || [];
-               const miRespuesta = respuestas.find(r => r.unidadId === unidadId);
-               const yaRespondio = !!miRespuesta;
-            %>
-              <tr class="oficio-row pend-row"
-                data-estatus="<%= estatusGlobal %>"
-                data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>">
-                <td class="no-cell"><%= o.noOficio %></td>
-                <td>
-                  <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
-                </td>
-                <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
-                <td>
-                  <%= o.fechaOficio
-                    ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'})
-                    : '—' %>
-                </td>
-                <td>
-                  <% if (o.fechaLimite) { %>
-                    <span class="fecha-limite-cell <%= vencido ? 'vencida' : '' %>">
-                      <%= new Date(o.fechaLimite).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
-                    </span>
-                  <% } else { %>
-                    <span class="text-muted">—</span>
-                  <% } %>
-                </td>
-                <td>
-                  <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
-                </td>
-                <td class="actions-cell">
-                  <% if (o.archivoUrl) { %>
-                    <a href="javascript:void(0)" onclick="openFileViewer('<%= o.archivoUrl %>', 'Oficio <%= o.noOficio %>')" class="icon-btn" title="Ver oficio PDF">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </a>
-                  <% } %>
-                  <button class="icon-btn btn-responder"
-                    title="<%= yaRespondio ? 'Editar respuesta' : 'Responder' %>"
-                    data-id="<%= o.id %>"
-                    data-comentario="<%= yaRespondio ? (miRespuesta.comentario || '').replace(/"/g, '&quot;') : '' %>"
-                    data-archivos="<%= yaRespondio ? JSON.stringify(miRespuesta.archivos || []).replace(/"/g, '&quot;') : '[]' %>"
-                    data-ya="<%= yaRespondio %>">
-                    <% if (yaRespondio) { %>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <% oficiosPend.forEach(o => {
+                 const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+                 if (limite) limite.setHours(23,59,59,999);
+                 const vencido = limite && limite < new Date();
+                 const urgente = !vencido && limite && (limite - new Date()) / (1000 * 60 * 60 * 24) <= 6;
+                 const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
+                 const estatusGlobal = vencido ? 'Vencido' : o.estatus;
+                 const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                 const respuestas = o.respuestas || [];
+                 const miRespuesta = respuestas.find(r => r.unidadId === unidadId);
+                 const yaRespondio = !!miRespuesta;
+                 const esCorreo = (o.tipoArchivo === 1);
+              %>
+                 <tr class="oficio-row pend-row"
+                   data-estatus="<%= estatusGlobal %>"
+                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                   data-id="<%= o.id %>"
+                   data-ya="<%= yaRespondio %>"
+                   data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
+                   data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>">
+                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
+                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                   <td>
+
+                    <% if (esCorreo) { %>
+                      <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      </span>
                     <% } else { %>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      <span class="tipo-icon tipo-icon-oficio" title="Oficio">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                      </span>
                     <% } %>
-                  </button>
-                </td>
-              </tr>
+                  </td>
+                  <td class="no-cell"><%= o.noOficio %></td>
+                  <td>
+                    <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
+                  </td>
+                  <td class="asunto-cell" title="<%= o.asunto %>"><%= o.asunto %></td>
+                  <td class="fecha-cell">
+                    <%= o.fechaOficio
+                      ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'})
+                      : '—' %>
+                    <% if (o.fechaLimite) { %>
+                      <span class="fecha-limite <%= vencido ? 'vencida' : '' %>">Límite: <%= new Date(o.fechaLimite).toLocaleDateString('es-MX', {day:'2-digit',month:'short'}) %></span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                    </button>
+                  </td>
+                </tr>
+
+
             <% }) %>
           </tbody>
         </table>
@@ -144,8 +155,18 @@
           </div>
         <% } else { %>
           <table class="table">
+            <colgroup>
+              <col style="width:48px">   <!-- icono tipo -->
+              <col style="width:13%">    <!-- No. Oficio -->
+              <col style="width:18%">    <!-- Remitente -->
+              <col style="width:34%">    <!-- Asunto -->
+              <col style="width:11%">    <!-- Fecha -->
+              <col style="width:10%">    <!-- Respondido -->
+              <col style="width:80px">   <!-- Acción -->
+            </colgroup>
             <thead>
               <tr>
+                <th></th>
                 <th>No.</th>
                 <th>Remitente</th>
                 <th>Asunto</th>
@@ -159,10 +180,29 @@
                  const miRespuesta = (o.respuestas || []).find(r => r.unidadId === unidadId);
                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
                  const archivos = miRespuesta.archivos || [];
+                 const esCorreo = (o.tipoArchivo === 1);
               %>
-                <tr class="atendido-row atend-row"
-                  data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                  data-id="<%= o.id %>">
+                  <tr class="oficio-row atend-row atendido-row"
+                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                    data-id="<%= o.id %>"
+                    data-ya="true"
+                    data-comentario="<%= miRespuesta.comentario || '' %>"
+                    data-archivos="<%= JSON.stringify(miRespuesta.archivos || []) %>">
+                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
+                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                   <td>
+
+                    <% if (esCorreo) { %>
+                      <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      </span>
+                    <% } else { %>
+                      <span class="tipo-icon tipo-icon-oficio" title="Oficio">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                      </span>
+                    <% } %>
+                  </td>
                   <td class="no-cell"><%= o.noOficio %></td>
                   <td>
                     <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
@@ -174,34 +214,21 @@
                       : '—' %>
                   </td>
                   <td class="fecha-cell">
-                    <span class="fecha-respuesta">
+                    <span class="respondido-fecha">
                       <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
                     </span>
                     <% if (miRespuesta.comentario) { %>
-                      <span class="fecha-limite" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario.length > 30 ? miRespuesta.comentario.slice(0,30) + '…' : miRespuesta.comentario %>"</span>
+                      <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
                     <% } %>
                   </td>
                   <td class="actions-cell">
-                    <% if (o.archivoUrl) { %>
-                      <a href="javascript:void(0)" onclick="openFileViewer('<%= o.archivoUrl %>', 'Oficio <%= o.noOficio %>')" class="icon-btn" title="Ver oficio PDF">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </a>
-                    <% } %>
-                    <% if (archivos.length > 0) { %>
-                       <button class="icon-btn btn-ver-evidencias" title="Ver evidencias (<%= archivos.length %> archivo<%= archivos.length > 1 ? 's' : '' %>)"
-                         data-oficio-id="<%= o.id %>"
-                         data-comentario="<%= (miRespuesta?.comentario || '').replace(/"/g, '&quot;') %>"
-                         onclick="abrirEvidencias(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                      </button>
-                      <script type="application/json" id="evid-data-<%= o.id %>"><%- JSON.stringify(archivos).replace(/<\/script>/gi,'<\/script>') %></script>
-                      <script>
-                        window.__evidencias = window.__evidencias || {};
-                        window.__evidencias['<%= o.id %>'] = JSON.parse(document.getElementById('evid-data-<%= o.id %>').textContent);
-                      </script>
-                    <% } %>
+                    <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                    </button>
                   </td>
                 </tr>
+
+
               <% }) %>
             </tbody>
           </table>

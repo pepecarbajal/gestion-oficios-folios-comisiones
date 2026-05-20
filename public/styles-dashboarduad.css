@@ -1,6 +1,73 @@
 /* styles-dashboarduad.css — importa estilos compartidos */
 /* En el HTML: <link rel="stylesheet" href="/styles-base.css"> antes de este archivo */
 
+/* ── LAYOUT FIJO PARA TABLAS ── */
+.table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  padding: 10px 10px;
+  vertical-align: middle;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Columna de icono: alineada a la izquierda */
+.table td:nth-child(1), .table th:nth-child(1) {
+  text-align: left;
+  padding-left: 12px;
+  padding-right: 4px;
+}
+
+/* Col — No. Oficio: fuente monospace pequeña */
+.no-cell {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+/* Col — Asunto */
+.asunto-cell {
+  font-size: 0.83rem;
+  color: #374151;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Col — Fecha */
+.fecha-cell { 
+  font-size: 0.83rem; 
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* ── ICONO TIPO ── */
+.tipo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.tipo-icon-oficio { background: #fef2f2; color: #dc2626; }
+.tipo-icon-correo { background: #eff6ff; color: #2563eb; }
+
+/* ── ACCIONES ── */
+.actions-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  white-space: nowrap;
+}
+
 /* ── TABLA PENDIENTES ── */
 .table tr.oficio-row:has(+ .respuestas-row) td,
 .table tr.atendido-row:has(+ .archivos-row) td { border-bottom: none; }
@@ -8,8 +75,6 @@
 /* ── TABLA ATENDIDOS ── */
 .table tr.atendido-row:last-of-type td { border-bottom: none; }
 .table tr.atendido-row:hover td { background: #fafafa; }
-
-.fecha-cell { font-size: 0.875rem; }
 
 .fecha-respuesta {
   display: block;

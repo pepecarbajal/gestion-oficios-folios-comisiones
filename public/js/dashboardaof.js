@@ -44,6 +44,8 @@ document.getElementById('modalRespuestasClose').addEventListener('click', () => 
 document.getElementById('btnRespuestasCerrar').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
 modalRespOverlay.addEventListener('click', e => { if (e.target === modalRespOverlay) modalRespOverlay.classList.remove('active') })
 
+// ... (previous code remains unchanged until line 46)
+
 function cambiarTab(tab, e) {
   if (e) e.preventDefault()
   const esOf = tab === 'oficios'
@@ -52,6 +54,88 @@ function cambiarTab(tab, e) {
   document.getElementById('navOficios').classList.toggle('active', esOf)
   document.getElementById('navAtendidos').classList.toggle('active', !esOf)
 }
+
+// ── ACTION DROPDOWN LOGIC ──
+let currentActionMenu = null;
+
+function toggleActionMenu(e, id) {
+  e.stopPropagation();
+  
+  // Close existing menu
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  
+  const menu = document.createElement('div');
+  menu.className = 'action-dropdown active';
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+
+  const dataEl = document.getElementById(`oficio-data-${id}`);
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+
+  // Actions based on data
+  const actions = [];
+  if (data.archivoUrl) {
+    actions.push({
+      label: 'Ver oficio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => openFileViewer(data.archivoUrl, `Oficio ${data.noOficio}`)
+    });
+  }
+
+  // Check if it has responses (use window.__respuestas if available)
+  const respuestas = (window.__respuestas && window.__respuestas[id]) || [];
+  if (respuestas.length > 0) {
+    actions.push({
+      label: 'Ver respuestas',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => {
+        const btnFake = document.createElement('button');
+        btnFake.dataset.oficioId = id;
+        abrirModalRespuestas(btnFake);
+      }
+    });
+  }
+
+  actions.push({
+    label: 'Editar',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    action: () => abrirModalEditar(data)
+  });
+
+  menu.innerHTML = actions.map((a, index) => `
+    <button class="dropdown-item" data-index="${index}">
+      ${a.icon} <span>${a.label}</span>
+    </button>
+  `).join('');
+
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item');
+    if (item) {
+      const index = item.dataset.index;
+      actions[index].action();
+      menu.remove();
+      currentActionMenu = null;
+    }
+  });
+
+  document.body.appendChild(menu);
+  currentActionMenu = menu;
+}
+
+document.addEventListener('click', () => {
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+});
+
+// ... (Rest of the file continues)
 
 const searchOf = document.getElementById('searchOficios')
 const filterEstatusOf = document.getElementById('filterEstatusOf')

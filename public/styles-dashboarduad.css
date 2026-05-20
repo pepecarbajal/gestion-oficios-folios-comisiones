@@ -56,7 +56,7 @@
   border-radius: 8px;
   flex-shrink: 0;
 }
-.tipo-icon-oficio { background: #fef2f2; color: #dc2626; }
+.tipo-icon-oficio { background: #f8f8f8; color: #000000; }
 .tipo-icon-correo { background: #eff6ff; color: #2563eb; }
 
 /* ── ACCIONES ── */

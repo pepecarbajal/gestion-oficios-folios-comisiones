@@ -176,19 +176,6 @@ body {
 /* ── USER CELL ── */
 .user-cell { display: flex; align-items: center; gap: 10px; }
 
-.avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background-color: #e0e7f0;
-  color: #0d1b2e;
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
-.avatar-sm { width: 30px; height: 30px; font-size: 0.68rem; }
-
 .sub { display: block; font-size: 0.76rem; color: #9ca3af; margin-top: 1px; }
 
 /* ── BADGES ── */

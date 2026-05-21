@@ -135,57 +135,134 @@ document.addEventListener('click', () => {
   }
 });
 
-// ... (Rest of the file continues)
+// ── PAGINATION ──
+const PAGE_SIZE = 10;
+let pageOf = 1;
+let pageAt = 1;
+
+function renderPagination(total, page, containerId, infoId, onPageChange) {
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  const container = document.getElementById(containerId);
+  const info = document.getElementById(infoId);
+  if (!container) return;
+
+  const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(page * PAGE_SIZE, total);
+  if (info) {
+    info.textContent = total > 0
+      ? `Mostrando ${start}-${end} de ${total}`
+      : 'Mostrando 0 de 0';
+  }
+
+  let html = `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>&laquo;</button>`;
+
+  let pageStart = Math.max(1, page - 3);
+  let pageEnd = Math.min(totalPages, page + 3);
+  if (pageStart > 1) {
+    html += `<button class="page-btn" data-page="1">1</button>`;
+    if (pageStart > 2) html += `<span class="page-ellipsis">...</span>`;
+  }
+  for (let i = pageStart; i <= pageEnd; i++) {
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+  }
+  if (pageEnd < totalPages) {
+    if (pageEnd < totalPages - 1) html += `<span class="page-ellipsis">...</span>`;
+    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+  }
+
+  html += `<button class="page-btn" data-page="next" ${page >= totalPages ? 'disabled' : ''}>&raquo;</button>`;
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      let newPage = page;
+      if (btn.dataset.page === 'prev') newPage = page - 1;
+      else if (btn.dataset.page === 'next') newPage = page + 1;
+      else newPage = parseInt(btn.dataset.page);
+      if (newPage >= 1 && newPage <= totalPages) {
+        onPageChange(newPage);
+      }
+    });
+  });
+}
 
 const searchOf = document.getElementById('searchOficios')
 const filterEstatusOf = document.getElementById('filterEstatusOf')
 const filterUnidadOf = document.getElementById('filterUnidadOf')
 
-function filtrarOficios() {
-  const texto = searchOf.value.toLowerCase()
-  const estatus = filterEstatusOf.value
-  const unidad = filterUnidadOf.value
-  let visibles = 0
-  document.querySelectorAll('.of-row').forEach(row => {
-    const matchTexto = !texto || row.dataset.search.includes(texto)
-    const matchEstatus = !estatus || row.dataset.estatus === estatus
-    const matchUnidad = !unidad || row.dataset.unidad === unidad
-    const visible = matchTexto && matchEstatus && matchUnidad
-    row.style.display = visible ? '' : 'none'
-    const respRow = document.getElementById(`resp-${row.dataset.id}`)
-    if (respRow && !visible) respRow.style.display = 'none'
-    if (visible) visibles++
-  })
-  const total = document.querySelectorAll('.of-row').length
-  const info = document.getElementById('paginacionInfoOf')
-  if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+function filtrarOficios(resetPage = true) {
+  if (resetPage) pageOf = 1;
+
+  const texto = searchOf.value.toLowerCase();
+  const estatus = filterEstatusOf.value;
+  const unidad = filterUnidadOf.value;
+
+  const allRows = Array.from(document.querySelectorAll('.of-row'));
+  const filtered = allRows.filter(row => {
+    const matchTexto = !texto || row.dataset.search.includes(texto);
+    const matchEstatus = !estatus || row.dataset.estatus === estatus;
+    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    return matchTexto && matchEstatus && matchUnidad;
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageOf > totalPages) pageOf = totalPages;
+  const start = (pageOf - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+
+  document.querySelectorAll('.respuestas-row').forEach(r => { r.style.display = 'none'; });
+
+  renderPagination(total, pageOf, 'pageControlsOf', 'paginacionInfoOf', (np) => {
+    pageOf = np;
+    filtrarOficios(false);
+  });
 }
 
-searchOf.addEventListener('input', filtrarOficios)
-filterEstatusOf.addEventListener('change', filtrarOficios)
-filterUnidadOf.addEventListener('change', filtrarOficios)
+searchOf.addEventListener('input', () => filtrarOficios(true));
+filterEstatusOf.addEventListener('change', () => filtrarOficios(true));
+filterUnidadOf.addEventListener('change', () => filtrarOficios(true));
 
 const searchAt = document.getElementById('searchAtendidos')
 const filterUnidadAt = document.getElementById('filterUnidadAt')
 
-function filtrarAtendidos() {
-  const texto = searchAt ? searchAt.value.toLowerCase() : ''
-  const unidad = filterUnidadAt ? filterUnidadAt.value : ''
-  let visibles = 0
-  document.querySelectorAll('.at-row').forEach(card => {
-    const matchTexto = !texto || card.dataset.search.includes(texto)
-    const matchUnidad = !unidad || card.dataset.unidad === unidad
-    const visible = matchTexto && matchUnidad
-    card.style.display = visible ? '' : 'none'
-    if (visible) visibles++
-  })
-  const total = document.querySelectorAll('.at-row').length
-  const info = document.getElementById('paginacionInfoAt')
-  if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+function filtrarAtendidos(resetPage = true) {
+  if (resetPage) pageAt = 1;
+
+  const texto = searchAt ? searchAt.value.toLowerCase() : '';
+  const unidad = filterUnidadAt ? filterUnidadAt.value : '';
+
+  const allRows = Array.from(document.querySelectorAll('.at-row'));
+  const filtered = allRows.filter(row => {
+    const matchTexto = !texto || row.dataset.search.includes(texto);
+    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    return matchTexto && matchUnidad;
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageAt > totalPages) pageAt = totalPages;
+  const start = (pageAt - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+
+  renderPagination(total, pageAt, 'pageControlsAt', 'paginacionInfoAt', (np) => {
+    pageAt = np;
+    filtrarAtendidos(false);
+  });
 }
 
-if (searchAt) searchAt.addEventListener('input', filtrarAtendidos)
-if (filterUnidadAt) filterUnidadAt.addEventListener('change', filtrarAtendidos)
+if (searchAt) searchAt.addEventListener('input', () => filtrarAtendidos(true));
+if (filterUnidadAt) filterUnidadAt.addEventListener('change', () => filtrarAtendidos(true));
+
+filtrarOficios(false);
+filtrarAtendidos(false);
 
 // ── FILE DROP NUEVO OFICIO ──
 const modalOverlay = document.getElementById('modalOficioOverlay')

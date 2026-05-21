@@ -151,42 +151,123 @@ document.addEventListener('click', () => {
   }
 });
 
+// ── PAGINATION ──
+const PAGE_SIZE = 10;
+let pagePend = 1;
+let pageAtend = 1;
+
+function renderPagination(total, page, containerId, infoId, onPageChange) {
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  const container = document.getElementById(containerId);
+  const info = document.getElementById(infoId);
+  if (!container) return;
+
+  const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(page * PAGE_SIZE, total);
+  if (info) {
+    info.textContent = total > 0
+      ? `Mostrando ${start}-${end} de ${total}`
+      : 'Mostrando 0 de 0';
+  }
+
+  let html = `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>&laquo;</button>`;
+
+  let pageStart = Math.max(1, page - 3);
+  let pageEnd = Math.min(totalPages, page + 3);
+  if (pageStart > 1) {
+    html += `<button class="page-btn" data-page="1">1</button>`;
+    if (pageStart > 2) html += `<span class="page-ellipsis">...</span>`;
+  }
+  for (let i = pageStart; i <= pageEnd; i++) {
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+  }
+  if (pageEnd < totalPages) {
+    if (pageEnd < totalPages - 1) html += `<span class="page-ellipsis">...</span>`;
+    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+  }
+
+  html += `<button class="page-btn" data-page="next" ${page >= totalPages ? 'disabled' : ''}>&raquo;</button>`;
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      let newPage = page;
+      if (btn.dataset.page === 'prev') newPage = page - 1;
+      else if (btn.dataset.page === 'next') newPage = page + 1;
+      else newPage = parseInt(btn.dataset.page);
+      if (newPage >= 1 && newPage <= totalPages) {
+        onPageChange(newPage);
+      }
+    });
+  });
+}
+
 const searchPend = document.getElementById('searchPendientes')
 const filterEstatusPend = document.getElementById('filterEstatusPend')
 
-function filtrarPendientes() {
-  const texto = searchPend.value.toLowerCase()
-  const estatus = filterEstatusPend.value
-  let visibles = 0
-  document.querySelectorAll('.pend-row').forEach(row => {
-    const matchTexto = !texto || row.dataset.search.includes(texto)
-    const matchEstatus = !estatus || row.dataset.estatus === estatus
-    const visible = matchTexto && matchEstatus
-    row.style.display = visible ? '' : 'none'
-    if (visible) visibles++
-  })
-  const total = document.querySelectorAll('.pend-row').length
-  const info = document.getElementById('paginacionInfoPend')
-  if (info) info.textContent = `Mostrando ${visibles} de ${total}`
+function filtrarPendientes(resetPage = true) {
+  if (resetPage) pagePend = 1;
+
+  const texto = searchPend.value.toLowerCase();
+  const estatus = filterEstatusPend.value;
+
+  const allRows = Array.from(document.querySelectorAll('.pend-row'));
+  const filtered = allRows.filter(row => {
+    const matchTexto = !texto || row.dataset.search.includes(texto);
+    const matchEstatus = !estatus || row.dataset.estatus === estatus;
+    return matchTexto && matchEstatus;
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pagePend > totalPages) pagePend = totalPages;
+  const start = (pagePend - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+
+  renderPagination(total, pagePend, 'pageControlsPend', 'paginacionInfoPend', (np) => {
+    pagePend = np;
+    filtrarPendientes(false);
+  });
 }
 
-searchPend.addEventListener('input', filtrarPendientes)
-filterEstatusPend.addEventListener('change', filtrarPendientes)
+searchPend.addEventListener('input', () => filtrarPendientes(true));
+filterEstatusPend.addEventListener('change', () => filtrarPendientes(true));
+function filtrarAtendidos(resetPage = true) {
+  if (resetPage) pageAtend = 1;
+
+  const texto = searchAtend ? searchAtend.value.toLowerCase() : '';
+
+  const allRows = Array.from(document.querySelectorAll('.atend-row'));
+  const filtered = allRows.filter(row => {
+    return !texto || row.dataset.search.includes(texto);
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageAtend > totalPages) pageAtend = totalPages;
+  const start = (pageAtend - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+
+  renderPagination(total, pageAtend, 'pageControlsAtend', 'paginacionInfoAtend', (np) => {
+    pageAtend = np;
+    filtrarAtendidos(false);
+  });
+}
+
 const searchAtend = document.getElementById('searchAtendidos')
 if (searchAtend) {
-  searchAtend.addEventListener('input', () => {
-    const texto = searchAtend.value.toLowerCase()
-    let visibles = 0
-    document.querySelectorAll('.atend-row').forEach(card => {
-      const visible = !texto || card.dataset.search.includes(texto)
-      card.style.display = visible ? '' : 'none'
-      if (visible) visibles++
-    })
-    const total = document.querySelectorAll('.atend-row').length
-    const info = document.getElementById('paginacionInfoAtend')
-    if (info) info.textContent = `Mostrando ${visibles} de ${total}`
-  })
+  searchAtend.addEventListener('input', () => filtrarAtendidos(true));
 }
+
+filtrarPendientes(false);
+filtrarAtendidos(false);
 
 const modalOverlay = document.getElementById('modalRespuestaOverlay')
 const inputEvidencias = document.getElementById('inputEvidencias')

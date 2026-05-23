@@ -61,6 +61,19 @@ function cambiarTab(tab, e) {
   document.getElementById('navAtendidos').classList.toggle('active', !esPend)
 }
 
+async function marcarEnterado(oficioId) {
+  try {
+    const formData = new FormData()
+    formData.append('comentario', '')
+    const res = await fetch(`/oficios/${oficioId}/respuesta`, { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) { alert(data.error || 'Error al marcar como enterado'); return }
+    window.location.reload()
+  } catch {
+    alert('Error de conexión.')
+  }
+}
+
 // ── ACTION DROPDOWN LOGIC ──
 let currentActionMenu = null;
 
@@ -92,12 +105,54 @@ function toggleActionMenu(e, id) {
     });
   }
 
-  // Logic for "Register/Edit/View Response"
   const row = document.querySelector(`.oficio-row[data-id="${id}"]`);
   const isAtendido = row && row.classList.contains('atend-row');
   const yaRespondio = row && row.dataset.ya === 'true';
+  const esConocimiento = data.modo === 1;
+  const esCoResponsable = row && row.dataset.ecooresponsable === 'true';
 
-  if (isAtendido) {
+  // Co-responsables only see "Ver oficio" (already in actions above)
+  if (esCoResponsable) {
+    menu.innerHTML = actions.map((a, index) => `
+      <button class="dropdown-item" data-index="${index}">
+        ${a.icon} <span>${a.label}</span>
+      </button>
+    `).join('');
+
+    menu.addEventListener('click', (e) => {
+      const item = e.target.closest('.dropdown-item');
+      if (item) {
+        const index = item.dataset.index;
+        actions[index].action();
+        menu.remove();
+        currentActionMenu = null;
+      }
+    });
+
+    document.body.appendChild(menu);
+    currentActionMenu = menu;
+    return;
+  }
+
+  if (esConocimiento) {
+    if (yaRespondio) {
+      actions.push({
+        label: 'Ver enterado',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        action: () => {
+          const comentario = row.dataset.comentario || '';
+          const archivos = JSON.parse(row.dataset.archivos || '[]');
+          abrirEvidencias(id, comentario, archivos);
+        }
+      });
+    } else {
+      actions.push({
+        label: 'Enterado',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        action: () => marcarEnterado(id)
+      });
+    }
+  } else if (isAtendido) {
     actions.push({
       label: 'Ver respuesta',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',

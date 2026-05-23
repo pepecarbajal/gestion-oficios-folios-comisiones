@@ -133,7 +133,7 @@ const renderAOF = async (req, res) => {
         return la - lb
       })
 
-    const oficiosAt = oficiosRaw.filter(o => o.estatus === 'Atendido' && (o.respuestas || []).length > 0)
+    const oficiosAt = oficiosRaw.filter(o => (o.respuestas || []).length > 0)
 
     res.render('dashboardaof', {
       title: 'Asistente de Oficios',
@@ -174,7 +174,20 @@ const renderUAD = async (req, res) => {
       .filter(o => {
         const limite = o.fechaLimite ? new Date(o.fechaLimite) : null
         if (limite) limite.setHours(23, 59, 59, 999)
-        return o.estatus === 'Pendiente' || (limite && limite < ahora && o.estatus === 'Pendiente')
+        const respuestas = o.respuestas || []
+        const cooresp = o.cooresponsableIds || []
+        const esCoResponsable = cooresp.includes(unidadId)
+        const esResponsable = (o.responsableIds || []).includes(unidadId)
+
+        let yaRespondio
+        if (esCoResponsable) {
+          const responsables = o.responsableIds || []
+          yaRespondio = responsables.every(id => respuestas.some(r => r.unidadId === id))
+        } else {
+          yaRespondio = respuestas.some(r => r.unidadId === unidadId)
+        }
+
+        return !yaRespondio && (o.estatus === 'Pendiente' || (limite && limite < ahora && o.estatus === 'Pendiente'))
       })
       .sort((a, b) => {
         const pa = calcPrioridad(a), pb = calcPrioridad(b)
@@ -186,7 +199,31 @@ const renderUAD = async (req, res) => {
 
     const oficiosAtend = oficiosRaw.filter(o => {
       const respuestas = o.respuestas || []
+      const cooresp = o.cooresponsableIds || []
+      const esCoResponsable = cooresp.includes(unidadId)
+
+      if (esCoResponsable) {
+        const responsables = o.responsableIds || []
+        return responsables.every(id => respuestas.some(r => r.unidadId === id))
+      }
+
       return respuestas.some(r => r.unidadId === unidadId)
+    })
+
+    // Compute co-responsible metadata for each oficio
+    const todasUnidades = await UADRepository.getAll()
+    const unidadMap = {}
+    todasUnidades.forEach(u => { unidadMap[u.id] = u.alias })
+
+    const coresponsableMap = {}
+    oficiosRaw.forEach(o => {
+      const cooresp = o.cooresponsableIds || []
+      const responsables = o.responsableIds || []
+      coresponsableMap[o.id] = {
+        esResponsable: responsables.includes(unidadId),
+        esCoResponsable: cooresp.includes(unidadId),
+        aliasResponsable: responsables.map(id => unidadMap[id] || id).join(', ')
+      }
     })
 
     res.render('dashboarduad', {
@@ -196,7 +233,8 @@ const renderUAD = async (req, res) => {
       oficiosAtend,
       oficios: oficiosRaw,
       unidadId,
-      unidadAlias
+      unidadAlias,
+      coresponsableMap
     })
   } catch (error) {
     console.error('[renderUAD]', error)

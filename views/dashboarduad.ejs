@@ -85,19 +85,25 @@
                  const yaRespondio = !!miRespuesta;
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                 <tr class="oficio-row pend-row"
-                   data-estatus="<%= estatusGlobal %>"
-                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                   data-id="<%= o.id %>"
-                   data-ya="<%= yaRespondio %>"
-                   data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
-                   data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>">
-                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
-                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
-                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                   <td>
-
-                    <% if (esCorreo) { %>
+                  <tr class="oficio-row pend-row"
+                    data-estatus="<%= estatusGlobal %>"
+                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                    data-id="<%= o.id %>"
+                    data-ya="<%= yaRespondio %>"
+                    data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
+                    data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>"
+                    data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                    data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                    data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                    <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                       id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                     }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                    <td>
+                    <% if (o.modo === 1) { %>
+                      <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+</span>
+                    <% } else if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                       </span>
@@ -122,6 +128,9 @@
                   </td>
                   <td>
                     <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
+                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                      <span class="badge-coresponsable" style="display:inline-block;font-size:0.7rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-top:3px">Co-responsable</span>
+                    <% } %>
                   </td>
                   <td class="actions-cell">
                     <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
@@ -180,21 +189,27 @@
               <% oficiosAtend.forEach(o => {
                  const miRespuesta = (o.respuestas || []).find(r => r.unidadId === unidadId);
                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-                 const archivos = miRespuesta.archivos || [];
+                 const archivos = (miRespuesta?.archivos) || [];
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                  <tr class="oficio-row atend-row atendido-row"
-                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                    data-id="<%= o.id %>"
-                    data-ya="true"
-                    data-comentario="<%= miRespuesta.comentario || '' %>"
-                    data-archivos="<%= JSON.stringify(miRespuesta.archivos || []) %>">
-                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
-                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
-                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                   <td>
-
-                    <% if (esCorreo) { %>
+                   <tr class="oficio-row atend-row atendido-row"
+                     data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                     data-id="<%= o.id %>"
+                     data-ya="true"
+                     data-comentario="<%= miRespuesta?.comentario || '' %>"
+                     data-archivos="<%= JSON.stringify(miRespuesta?.archivos || []) %>"
+                     data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                     data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                     data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                    <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                       id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                     }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                    <td>
+                    <% if (o.modo === 1) { %>
+                      <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+</span>
+                    <% } else if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                       </span>
@@ -215,11 +230,15 @@
                       : '—' %>
                   </td>
                   <td class="fecha-cell">
-                    <span class="respondido-fecha">
-                      <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
-                    </span>
-                    <% if (miRespuesta.comentario) { %>
-                      <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
+                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                      <span class="respondido-fecha">Atendido por <%= coresponsableMap[o.id]?.aliasResponsable || '—' %></span>
+                    <% } else { %>
+                      <span class="respondido-fecha">
+                        <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                      </span>
+                      <% if (miRespuesta.comentario) { %>
+                        <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
+                      <% } %>
                     <% } %>
                   </td>
                   <td class="actions-cell">

@@ -202,7 +202,7 @@ function filtrarOficios(resetPage = true) {
   const filtered = allRows.filter(row => {
     const matchTexto = !texto || row.dataset.search.includes(texto);
     const matchEstatus = !estatus || row.dataset.estatus === estatus;
-    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
     return matchTexto && matchEstatus && matchUnidad;
   });
 
@@ -239,7 +239,7 @@ function filtrarAtendidos(resetPage = true) {
   const allRows = Array.from(document.querySelectorAll('.at-row'));
   const filtered = allRows.filter(row => {
     const matchTexto = !texto || row.dataset.search.includes(texto);
-    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
     return matchTexto && matchUnidad;
   });
 
@@ -324,6 +324,158 @@ function updateFileDropUI(file) {
   }
 }
 
+// ── SELECTOR MODAL DE UNIDADES ──
+// Each context (create/edit) has its own snapshot of selected IDs
+let _unidadesSeleccionadas = []
+let _cooresponsablesSeleccionadas = []
+let _selectorContext = null // 'create-resp' | 'create-cooresp' | 'edit-resp' | 'edit-cooresp'
+let _selectorTempIds = []
+
+function updateUnidadesButton (context) {
+  const isCreate = context.startsWith('create')
+  const isResp = context.endsWith('-resp')
+  const textId = isCreate
+    ? (isResp ? 'btnUnidadesText' : 'btnCoorespText')
+    : (isResp ? 'btnEditUnidadesText' : 'btnEditCoorespText')
+  const countId = isCreate
+    ? (isResp ? 'btnUnidadesCount' : 'btnCoorespCount')
+    : (isResp ? 'btnEditUnidadesCount' : 'btnEditCoorespCount')
+  const ids = isCreate
+    ? (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+    : (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+  const textEl = document.getElementById(textId)
+  const countEl = document.getElementById(countId)
+  if (!textEl) return
+
+  if (ids.length === 0) {
+    textEl.textContent = isResp ? 'Seleccionar unidades' : 'Seleccionar co-responsables'
+    if (countEl) { countEl.textContent = ''; countEl.style.display = 'none' }
+  } else {
+    const aliases = ids.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias || item.querySelector('.selector-item-text')?.textContent?.trim() : id
+    })
+    if (ids.length === 1) {
+      textEl.textContent = `1 unidad: ${aliases[0]}`
+    } else {
+      textEl.textContent = `${ids.length} unidades`
+    }
+    if (countEl) { countEl.textContent = ids.length; countEl.style.display = '' }
+  }
+}
+
+function renderSelectorItems () {
+  const query = (document.getElementById('searchUnidadesSelector').value || '').toLowerCase().trim()
+  const items = document.querySelectorAll('#selectorList .selector-item')
+  let visibleCount = 0
+  const emptyEl = document.getElementById('selectorEmpty')
+
+  items.forEach(item => {
+    if (item.dataset.value === '__TODAS__') {
+      item.style.display = ''
+      visibleCount++
+      return
+    }
+    const search = (item.dataset.search || '').toLowerCase()
+    const match = !query || search.includes(query)
+    item.style.display = match ? '' : 'none'
+    if (match) visibleCount++
+  })
+
+  emptyEl.style.display = visibleCount === 0 ? '' : 'none'
+}
+
+function refreshSelectorSelection () {
+  const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
+  const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+  const tempSet = new Set(_selectorTempIds)
+
+  // Check "TODAS" if all selected, else uncheck
+  const allSelected = Array.from(items).every(item => tempSet.has(item.dataset.value))
+  if (todasItem) {
+    todasItem.classList.toggle('selected', allSelected)
+  }
+
+  items.forEach(item => {
+    item.classList.toggle('selected', tempSet.has(item.dataset.value))
+  })
+}
+
+function toggleSelectorItem (value) {
+  if (value === '__TODAS__') {
+    const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+    const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
+    const currentlyAll = todasItem && todasItem.classList.contains('selected')
+    if (currentlyAll) {
+      _selectorTempIds = []
+    } else {
+      _selectorTempIds = Array.from(items).map(item => item.dataset.value)
+    }
+    refreshSelectorSelection()
+    return
+  }
+
+  const idx = _selectorTempIds.indexOf(value)
+  if (idx >= 0) {
+    _selectorTempIds.splice(idx, 1)
+  } else {
+    _selectorTempIds.push(value)
+  }
+  refreshSelectorSelection()
+}
+
+function abrirSelectorUnidades (context) {
+  _selectorContext = context
+  const isCreate = context.startsWith('create')
+  const isResp = context.endsWith('-resp')
+  _selectorTempIds = [...(isCreate
+    ? (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+    : (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas))]
+  refreshSelectorSelection()
+  document.getElementById('searchUnidadesSelector').value = ''
+  renderSelectorItems()
+  document.getElementById('modalSelectorUnidades').classList.add('active')
+}
+
+function cerrarSelectorUnidades (cancel) {
+  document.getElementById('modalSelectorUnidades').classList.remove('active')
+  _selectorContext = null
+  if (cancel) _selectorTempIds = []
+}
+
+function aplicarSelectorUnidades () {
+  const isResp = _selectorContext.endsWith('-resp')
+  if (isResp) {
+    _unidadesSeleccionadas = [..._selectorTempIds]
+  } else {
+    _cooresponsablesSeleccionadas = [..._selectorTempIds]
+  }
+  updateUnidadesButton(_selectorContext)
+  cerrarSelectorUnidades(false)
+}
+
+// ── Eventos del modal selector ──
+document.getElementById('modalSelectorClose').addEventListener('click', () => cerrarSelectorUnidades(true))
+document.getElementById('btnSelectorCancelar').addEventListener('click', () => cerrarSelectorUnidades(true))
+document.getElementById('btnSelectorAplicar').addEventListener('click', aplicarSelectorUnidades)
+document.getElementById('modalSelectorUnidades').addEventListener('click', e => {
+  if (e.target === e.currentTarget) cerrarSelectorUnidades(true)
+})
+
+document.getElementById('searchUnidadesSelector').addEventListener('input', renderSelectorItems)
+
+document.getElementById('selectorList').addEventListener('click', e => {
+  const item = e.target.closest('.selector-item')
+  if (!item) return
+  toggleSelectorItem(item.dataset.value)
+})
+
+// ── Botones que abren el selector ──
+document.getElementById('btnSelectUnidades').addEventListener('click', () => abrirSelectorUnidades('create-resp'))
+document.getElementById('btnEditSelectUnidades').addEventListener('click', () => abrirSelectorUnidades('edit-resp'))
+document.getElementById('btnSelectCooresponsables').addEventListener('click', () => abrirSelectorUnidades('create-cooresp'))
+document.getElementById('btnEditSelectCooresponsables').addEventListener('click', () => abrirSelectorUnidades('edit-cooresp'))
+
 const cerrarModal = () => {
   modalOverlay.classList.remove('active')
   document.getElementById('modalOficioError').textContent = ''
@@ -331,12 +483,27 @@ const cerrarModal = () => {
     'inputAsunto','inputRemitente','inputCargo','inputDependencia'].forEach(id => {
     document.getElementById(id).value = ''
   })
-  document.getElementById('inputUnidadTurnar').value = ''
-  // Reset checkbox
+  _unidadesSeleccionadas = []
+  _cooresponsablesSeleccionadas = []
+  updateUnidadesButton('create-resp')
+  updateUnidadesButton('create-cooresp')
   const chk = document.getElementById('inputEsCorreo')
   if (chk) chk.checked = false
+  const chkModo = document.getElementById('inputEsConocimiento')
+  if (chkModo) chkModo.checked = false
+  toggleCoorespRow()
   updateFileDropUI(null)
 }
+
+function toggleCoorespRow () {
+  const isConocimiento = document.getElementById('inputEsConocimiento')?.checked
+  const regRow = document.getElementById('rowCooresponsablesReg')
+  const editRow = document.getElementById('rowCooresponsablesEdit')
+  if (regRow) regRow.style.display = isConocimiento ? 'none' : ''
+  if (editRow) editRow.style.display = isConocimiento ? 'none' : ''
+}
+
+document.getElementById('inputEsConocimiento')?.addEventListener('change', toggleCoorespRow)
 
 document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
 document.getElementById('modalOficioClose').addEventListener('click', cerrarModal)
@@ -369,14 +536,17 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   const remitente = document.getElementById('inputRemitente').value.trim()
   const cargo = document.getElementById('inputCargo').value.trim()
   const dependencia = document.getElementById('inputDependencia').value.trim()
-  const unidadSelect = document.getElementById('inputUnidadTurnar')
-  const unidadId = unidadSelect.value
-  const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+  const unidadIds = _unidadesSeleccionadas
+  const unidadAlias = unidadIds.map(id => {
+    const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+    return item ? item.dataset.alias : id
+  }).join(', ')
   const archivo = inputArchivo.files[0]
   const esCorreo = document.getElementById('inputEsCorreo')?.checked ? '1' : '0'
+  const esConocimiento = document.getElementById('inputEsConocimiento')?.checked ? '1' : '0'
   const errorEl = document.getElementById('modalOficioError')
 
-  if (!noOficio || !fechaOficio || !asunto || !remitente || !unidadId) {
+  if (!noOficio || !fechaOficio || !asunto || !remitente || unidadIds.length === 0) {
     errorEl.textContent = 'No. oficio, fecha, asunto, remitente y unidad son obligatorios.'
     return
   }
@@ -386,6 +556,14 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   errorEl.textContent = ''
 
   try {
+    const responsableIds = _unidadesSeleccionadas
+    const cooresponsableIds = esConocimiento === '1' ? [] : _cooresponsablesSeleccionadas
+    const allUnitIds = [...new Set([...responsableIds, ...cooresponsableIds])]
+    const allUnitAlias = allUnitIds.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias : id
+    }).join(', ')
+
     const formData = new FormData()
     formData.append('noOficio', noOficio)
     formData.append('fechaOficio', fechaOficio)
@@ -395,9 +573,12 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
     formData.append('remitente', remitente)
     formData.append('cargo', cargo)
     formData.append('dependencia', dependencia)
-    formData.append('unidadId', unidadId)
-    formData.append('unidadAlias', unidadAlias)
+    allUnitIds.forEach(id => formData.append('unidadIds', id))
+    formData.append('unidadAlias', allUnitAlias)
+    responsableIds.forEach(id => formData.append('responsableIds', id))
+    cooresponsableIds.forEach(id => formData.append('cooresponsableIds', id))
     formData.append('tipoArchivo', esCorreo)
+    formData.append('modo', esConocimiento)
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch('/oficios', { method: 'POST', body: formData })
@@ -493,12 +674,17 @@ function abrirModalEditar(oficio) {
   document.getElementById('editRemitente').value    = oficio.remitente   || ''
   document.getElementById('editCargo').value        = oficio.cargo       || ''
   document.getElementById('editDependencia').value  = oficio.dependencia || ''
-  document.getElementById('editUnidadTurnar').value = oficio.unidadId    || ''
+  _unidadesSeleccionadas = [...(oficio.responsableIds || oficio.unidadIds || [])]
+  _cooresponsablesSeleccionadas = [...(oficio.cooresponsableIds || [])]
+  updateUnidadesButton('edit-resp')
+  updateUnidadesButton('edit-cooresp')
   document.getElementById('editEstatus').value      = oficio.estatus     || 'Pendiente'
 
-  // Set tipoArchivo checkbox
   const editChk = document.getElementById('editEsCorreo')
   if (editChk) editChk.checked = oficio.tipoArchivo === 1
+  const editChkModo = document.getElementById('editEsConocimiento')
+  if (editChkModo) editChkModo.checked = oficio.modo === 1
+  toggleCoorespRow()
 
   const avisoArchivo = document.getElementById('editArchivoActual')
   avisoArchivo.style.display = oficio.tieneArchivo ? 'block' : 'none'
@@ -512,7 +698,14 @@ function abrirModalEditar(oficio) {
 const cerrarModalEditar = () => {
   modalEditarOverlay.classList.remove('active')
   _oficioEditandoId = null
+  _unidadesSeleccionadas = []
+  _cooresponsablesSeleccionadas = []
+  updateUnidadesButton('edit-resp')
+  updateUnidadesButton('edit-cooresp')
   document.getElementById('modalEditarError').textContent = ''
+  const chkEditModo = document.getElementById('editEsConocimiento')
+  if (chkEditModo) chkEditModo.checked = false
+  toggleCoorespRow()
   editArchivo.value = ''
   updateEditFileDropUI(null)
 }
@@ -558,12 +751,15 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   const noOficio    = document.getElementById('editNoOficio').value.trim()
   const asunto      = document.getElementById('editAsunto').value.trim()
   const remitente   = document.getElementById('editRemitente').value.trim()
-  const unidadSelect = document.getElementById('editUnidadTurnar')
-  const unidadId    = unidadSelect.value
-  const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+  const unidadIds   = _unidadesSeleccionadas
+  const unidadAlias = unidadIds.map(id => {
+    const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+    return item ? item.dataset.alias : id
+  }).join(', ')
   const esCorreo    = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
+  const esConocimiento = document.getElementById('editEsConocimiento')?.checked ? '1' : '0'
 
-  if (!noOficio || !asunto || !remitente || !unidadId) {
+  if (!noOficio || !asunto || !remitente || unidadIds.length === 0) {
     errorEl.textContent = 'No. oficio, asunto, remitente y unidad son obligatorios.'
     return
   }
@@ -573,6 +769,14 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   errorEl.textContent = ''
 
   try {
+    const responsableIds = _unidadesSeleccionadas
+    const cooresponsableIds = esConocimiento === '1' ? [] : _cooresponsablesSeleccionadas
+    const allUnitIds = [...new Set([...responsableIds, ...cooresponsableIds])]
+    const allUnitAlias = allUnitIds.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias : id
+    }).join(', ')
+
     const formData = new FormData()
     formData.append('noOficio',    noOficio)
     formData.append('fechaOficio', document.getElementById('editFechaOficio').value)
@@ -582,10 +786,13 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     formData.append('remitente',   remitente)
     formData.append('cargo',       document.getElementById('editCargo').value.trim())
     formData.append('dependencia', document.getElementById('editDependencia').value.trim())
-    formData.append('unidadId',    unidadId)
-    formData.append('unidadAlias', unidadAlias)
+    allUnitIds.forEach(id => formData.append('unidadIds', id))
+    formData.append('unidadAlias', allUnitAlias)
+    responsableIds.forEach(id => formData.append('responsableIds', id))
+    cooresponsableIds.forEach(id => formData.append('cooresponsableIds', id))
     formData.append('estatus',     document.getElementById('editEstatus').value)
     formData.append('tipoArchivo', esCorreo)
+    formData.append('modo', esConocimiento)
     if (editArchivo.files[0]) formData.append('archivo', editArchivo.files[0])
 
     const res = await fetch(`/oficios/${_oficioEditandoId}`, { method: 'PUT', body: formData })

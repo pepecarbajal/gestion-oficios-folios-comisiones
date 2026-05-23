@@ -16,13 +16,14 @@ export class OficioRepository {
   static async create ({
     noOficio, fechaOficio, fechaRecibo, fechaLimite,
     asunto, remitente, cargo, dependencia,
-    unidadId, unidadAlias, archivoBuffer, archivoMime,
-    tipoArchivo = 0
+    unidadIds, unidadAlias, archivoBuffer, archivoMime,
+    tipoArchivo = 0, modo = 0,
+    responsableIds, cooresponsableIds
   }) {
     if (!noOficio) throw new Error('El número de oficio es obligatorio')
     if (!asunto) throw new Error('El asunto es obligatorio')
     if (!remitente) throw new Error('El remitente es obligatorio')
-    if (!unidadId) throw new Error('La unidad a turnar es obligatoria')
+    if (!unidadIds || unidadIds.length === 0) throw new Error('Debe seleccionar al menos una unidad a turnar')
 
     const firestore = db()
 
@@ -57,11 +58,15 @@ export class OficioRepository {
       remitente: remitente.trim(),
       cargo: cargo?.trim() || '',
       dependencia: dependencia?.trim() || '',
-      unidadId,
+      unidadIds,
+      unidadId: unidadIds[0],
       unidadAlias: unidadAlias || '',
+      responsableIds: responsableIds || unidadIds,
+      cooresponsableIds: cooresponsableIds || [],
       estatus: 'Pendiente',
       archivoPath,
       tipoArchivo: Number(tipoArchivo) === 1 ? 1 : 0,
+      modo: Number(modo) === 1 ? 1 : 0,
       respuestas: [],
       creadoEn: new Date().toISOString()
     })
@@ -72,14 +77,15 @@ export class OficioRepository {
   static async update (id, {
     noOficio, fechaOficio, fechaRecibo, fechaLimite,
     asunto, remitente, cargo, dependencia,
-    unidadId, unidadAlias, estatus,
+    unidadIds, unidadAlias, estatus,
     archivoBuffer, archivoMime,
-    tipoArchivo
+    tipoArchivo, modo,
+    responsableIds, cooresponsableIds
   }) {
     if (!noOficio) throw new Error('El número de oficio es obligatorio')
     if (!asunto) throw new Error('El asunto es obligatorio')
     if (!remitente) throw new Error('El remitente es obligatorio')
-    if (!unidadId) throw new Error('La unidad a turnar es obligatoria')
+    if (!unidadIds || unidadIds.length === 0) throw new Error('Debe seleccionar al menos una unidad a turnar')
 
     const firestore = db()
     const ref = firestore.collection(OFICIOS_COLLECTION).doc(id)
@@ -144,11 +150,15 @@ export class OficioRepository {
       remitente: remitente.trim(),
       cargo: cargo?.trim() || '',
       dependencia: dependencia?.trim() || '',
-      unidadId,
+      unidadIds,
+      unidadId: unidadIds[0],
       unidadAlias: unidadAlias || '',
+      responsableIds: responsableIds || unidadIds,
+      cooresponsableIds: cooresponsableIds || [],
       estatus: estatus || actual.estatus,
       archivoPath,
       tipoArchivo: nuevoTipo,
+      modo: modo !== undefined ? (Number(modo) === 1 ? 1 : 0) : (actual.modo ?? 0),
       actualizadoEn: new Date().toISOString()
     })
 
@@ -203,11 +213,26 @@ export class OficioRepository {
 
     const snapshot = await firestore
       .collection(OFICIOS_COLLECTION)
-      .where('unidadId', 'in', [unidadId, 'TODAS'])
+      .where('unidadIds', 'array-contains', unidadId)
       .orderBy('creadoEn', 'desc')
       .get()
 
-    const oficios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    let oficios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+    const legacySnapshot = await firestore
+      .collection(OFICIOS_COLLECTION)
+      .where('unidadId', '==', unidadId)
+      .orderBy('creadoEn', 'desc')
+      .get()
+
+    const legacyIds = new Set(oficios.map(o => o.id))
+    for (const doc of legacySnapshot.docs) {
+      if (!legacyIds.has(doc.id)) {
+        oficios.push({ id: doc.id, ...doc.data() })
+      }
+    }
+
+    oficios.sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn))
 
     return Promise.all(oficios.map(o => OficioRepository._hydratarUrls(o)))
   }
@@ -220,6 +245,12 @@ export class OficioRepository {
     if (!docSnap.exists) throw new Error('Oficio no encontrado')
 
     const oficio = docSnap.data()
+
+    const cooresp = oficio.cooresponsableIds || []
+    if (cooresp.includes(unidadId)) {
+      throw new Error('Esta unidad es co-responsable y no puede responder el oficio')
+    }
+
     const noOficio = oficio.noOficio.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
     const aliasLimpio = unidadAlias.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
     const storageBucket = bucket()
@@ -273,14 +304,14 @@ export class OficioRepository {
 
     let nuevoEstatus = oficio.estatus
 
-    if (oficio.unidadId === 'TODAS') {
-      const todasUads = await firestore.collection('unidadesAdministrativas').get()
-      const totalUads = todasUads.size
-      const uadsQueRespondieron = new Set(respuestas.map(r => r.unidadId)).size
-      if (uadsQueRespondieron >= totalUads && totalUads > 0) {
-        nuevoEstatus = 'Atendido'
-      }
-    } else {
+    const coorespIds = oficio.cooresponsableIds || []
+    const idsTurnados = coorespIds.length > 0
+      ? (oficio.responsableIds || oficio.unidadIds || (oficio.unidadId ? [oficio.unidadId] : []))
+      : (oficio.unidadIds || (oficio.unidadId ? [oficio.unidadId] : []))
+    const uadsQueRespondieron = new Set(respuestas.map(r => r.unidadId))
+    const todasRespondieron = idsTurnados.every(id => uadsQueRespondieron.has(id))
+
+    if (idsTurnados.length > 0 && todasRespondieron) {
       nuevoEstatus = 'Atendido'
     }
 

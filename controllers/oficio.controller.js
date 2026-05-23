@@ -6,6 +6,21 @@ import { OficioValidation } from '../validations/oficio.validation.js'
 const getIp = (req) =>
   req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || null
 
+function parseUnidadIds (raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string' && raw) return [raw]
+  return []
+}
+
+function buildUnidadAlias (unidadIds, unidades) {
+  return unidadIds
+    .map(id => {
+      const u = unidades.find(u => u.id === id)
+      return u ? u.alias : id
+    })
+    .join(', ')
+}
+
 export const registrarOficio = async (req, res) => {
   try {
     OficioValidation.validateRegistro(req.body, req.file)
@@ -13,20 +28,25 @@ export const registrarOficio = async (req, res) => {
     const {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId, tipoArchivo
+      unidadIds: rawUnidadIds, tipoArchivo, modo,
+      responsableIds: rawResponsableIds, cooresponsableIds: rawCooresponsableIds
     } = req.body
 
-    let unidadAlias = ''
-    if (unidadId && unidadId !== 'TODAS') {
-      const unidades = await UADRepository.getAll()
-      const unidad = unidades.find(u => u.id === unidadId)
-      unidadAlias = unidad?.alias || ''
-      if (!unidad) {
-        return res.status(400).json({ error: 'La unidad administrativa seleccionada no existe.' })
-      }
-    } else if (unidadId === 'TODAS') {
-      unidadAlias = 'TODAS'
+    const unidadIds = parseUnidadIds(rawUnidadIds)
+    if (unidadIds.length === 0) {
+      return res.status(400).json({ error: 'Debe seleccionar al menos una unidad a turnar.' })
     }
+
+    const unidades = await UADRepository.getAll()
+    const unidadAlias = buildUnidadAlias(unidadIds, unidades)
+
+    const idsInvalidos = unidadIds.filter(id => !unidades.find(u => u.id === id))
+    if (idsInvalidos.length > 0) {
+      return res.status(400).json({ error: `Las siguientes unidades no existen: ${idsInvalidos.join(', ')}` })
+    }
+
+    const responsableIds = parseUnidadIds(rawResponsableIds)
+    const cooresponsableIds = parseUnidadIds(rawCooresponsableIds)
 
     let archivoBuffer = null
     let archivoMime = null
@@ -39,9 +59,12 @@ export const registrarOficio = async (req, res) => {
     const id = await OficioRepository.create({
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId, unidadAlias,
+      unidadIds, unidadAlias,
       archivoBuffer, archivoMime,
-      tipoArchivo: tipoArchivo === '1' ? 1 : 0
+      tipoArchivo: tipoArchivo === '1' ? 1 : 0,
+      modo: modo === '1' ? 1 : 0,
+      responsableIds: modo === '1' ? unidadIds : responsableIds,
+      cooresponsableIds: modo === '1' ? [] : cooresponsableIds
     })
 
     await AuditRepository.registrar({
@@ -49,7 +72,7 @@ export const registrarOficio = async (req, res) => {
       usuarioId: req.user?.id,
       usuarioEmail: null,
       rol: req.user?.role,
-      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, tipoArchivo },
+      detalle: { oficioId: id, noOficio, unidadIds, unidadAlias, asunto, tipoArchivo, modo, responsableIds, cooresponsableIds },
       ip: getIp(req)
     })
 
@@ -59,7 +82,7 @@ export const registrarOficio = async (req, res) => {
       'El número de oficio es obligatorio',
       'El asunto es obligatorio',
       'El remitente es obligatorio',
-      'La unidad a turnar es obligatoria',
+      'Debe seleccionar al menos una unidad a turnar',
       'ya está registrado'
     ].some(msg => error.message?.includes(msg))
 
@@ -80,20 +103,27 @@ export const editarOficio = async (req, res) => {
     const {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId, estatus, tipoArchivo
+      unidadIds: rawUnidadIds, estatus, tipoArchivo, modo,
+      responsableIds: rawResponsableIds, cooresponsableIds: rawCooresponsableIds
     } = req.body
 
-    let unidadAlias = ''
-    if (unidadId && unidadId !== 'TODAS') {
-      const unidades = await UADRepository.getAll()
-      const unidad = unidades.find(u => u.id === unidadId)
-      if (!unidad) {
-        return res.status(400).json({ error: 'La unidad administrativa seleccionada no existe.' })
-      }
-      unidadAlias = unidad.alias || ''
-    } else if (unidadId === 'TODAS') {
-      unidadAlias = 'TODAS'
+    const unidadIds = parseUnidadIds(rawUnidadIds)
+    if (unidadIds.length === 0) {
+      return res.status(400).json({ error: 'Debe seleccionar al menos una unidad a turnar.' })
     }
+
+    const unidades = await UADRepository.getAll()
+    const unidadAlias = buildUnidadAlias(unidadIds, unidades)
+
+    const idsInvalidos = unidadIds.filter(id => !unidades.find(u => u.id === id))
+    if (idsInvalidos.length > 0) {
+      return res.status(400).json({ error: `Las siguientes unidades no existen: ${idsInvalidos.join(', ')}` })
+    }
+
+    const responsableIds = parseUnidadIds(rawResponsableIds)
+    const cooresponsableIds = parseUnidadIds(rawCooresponsableIds)
+
+    const modoFinal = modo !== undefined ? (modo === '1' ? 1 : 0) : undefined
 
     let archivoBuffer = null
     let archivoMime = null
@@ -106,9 +136,12 @@ export const editarOficio = async (req, res) => {
     await OficioRepository.update(id, {
       noOficio, fechaOficio, fechaRecibo, fechaLimite,
       asunto, remitente, cargo, dependencia,
-      unidadId, unidadAlias, estatus,
+      unidadIds, unidadAlias, estatus,
       archivoBuffer, archivoMime,
-      tipoArchivo: tipoArchivo !== undefined ? (tipoArchivo === '1' ? 1 : 0) : undefined
+      tipoArchivo: tipoArchivo !== undefined ? (tipoArchivo === '1' ? 1 : 0) : undefined,
+      modo: modoFinal,
+      responsableIds: modoFinal === 1 ? unidadIds : responsableIds,
+      cooresponsableIds: modoFinal === 1 ? [] : cooresponsableIds
     })
 
     await AuditRepository.registrar({
@@ -116,7 +149,7 @@ export const editarOficio = async (req, res) => {
       usuarioId: req.user?.id,
       usuarioEmail: null,
       rol: req.user?.role,
-      detalle: { oficioId: id, noOficio, unidadId, unidadAlias, asunto, estatus, tipoArchivo },
+      detalle: { oficioId: id, noOficio, unidadIds, unidadAlias, asunto, estatus, tipoArchivo, modo, responsableIds, cooresponsableIds },
       ip: getIp(req)
     })
 
@@ -126,7 +159,7 @@ export const editarOficio = async (req, res) => {
       'El número de oficio es obligatorio',
       'El asunto es obligatorio',
       'El remitente es obligatorio',
-      'La unidad a turnar es obligatoria',
+      'Debe seleccionar al menos una unidad a turnar',
       'ya está registrado',
       'Estatus inválido',
       'Oficio no encontrado'

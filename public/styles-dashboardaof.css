@@ -38,6 +38,19 @@
   overflow-wrap: anywhere;
 }
 
+/* ── ICONO TIPO ── */
+.tipo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.tipo-icon-oficio { background: #f8f8f8; color: #000000; }
+.tipo-icon-correo { background: #eff6ff; color: #2563eb; }
+.tipo-icon-conocimiento { background: #fef3c7; color: #92400e; }
+
 /* Col 4 — Asunto: texto completo con wrap */
 .asunto-cell {
   font-size: 0.83rem;

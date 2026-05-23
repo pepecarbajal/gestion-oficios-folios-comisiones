@@ -1,4 +1,4 @@
-// ── Auditoría — colores por usuario ──
+// ── Logs — colores por usuario ──
 const USER_COLORS = {}
 
 function stringToColor (str) {
@@ -28,7 +28,7 @@ function renderAuditTable (logs) {
   const tbody = document.querySelector('#auditTable tbody')
   if (!tbody) return
   if (!logs.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros de auditoría.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros.</td></tr>'
     return
   }
   tbody.innerHTML = logs.map(log => {
@@ -37,7 +37,7 @@ function renderAuditTable (logs) {
     const fecha = ts.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })
     const hora = ts.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
     const uid = log.usuarioId || ''
-    const uidShort = uid ? uid.slice(-6) : '—'
+    const uidDisplay = uid || '—'
 
     let detalle = '—'
     if (log.accion === 'LOGIN_FAIL' && log.detalle?.razon) detalle = log.detalle.razon
@@ -53,7 +53,7 @@ function renderAuditTable (logs) {
     return `<tr class="${isError ? 'row-error' : ''}">
       <td class="fecha-cell">${fecha} ${hora}</td>
       <td>
-        <span class="user-badge" data-user-id="${uid}">${uidShort}</span>
+        <span class="user-badge" data-user-id="${uid}">${uidDisplay}</span>
         <span class="user-email">${log.usuarioEmail || '—'}</span>
       </td>
       <td>${log.rol || '—'}</td>
@@ -65,19 +65,22 @@ function renderAuditTable (logs) {
   assignUserColors()
 }
 
-// ── Auditoría — filtros ──
+// ── Logs — filtros ──
 function initAuditFilters () {
   const filterBar = document.getElementById('auditFilters')
   if (!filterBar) return
 
-  const fechaDesde = document.getElementById('fechaDesde')
-  const fechaHasta = document.getElementById('fechaHasta')
+  const filtroFecha = document.getElementById('filtroFecha')
   const filtroUsuario = document.getElementById('filtroUsuario')
+
+  filtroFecha.valueAsDate = new Date()
 
   async function applyFilters () {
     const params = new URLSearchParams()
-    if (fechaDesde.value) params.set('fechaDesde', fechaDesde.value)
-    if (fechaHasta.value) params.set('fechaHasta', fechaHasta.value)
+    if (filtroFecha.value) {
+      params.set('fechaDesde', filtroFecha.value)
+      params.set('fechaHasta', filtroFecha.value)
+    }
     if (filtroUsuario.value) params.set('usuarioId', filtroUsuario.value)
     params.set('limite', '200')
 
@@ -86,16 +89,17 @@ function initAuditFilters () {
       const logs = await res.json()
       renderAuditTable(logs)
     } catch {
-      console.error('Error al filtrar auditoría')
+      console.error('Error al filtrar logs')
     }
   }
 
-  fechaDesde.addEventListener('change', applyFilters)
-  fechaHasta.addEventListener('change', applyFilters)
+  filtroFecha.addEventListener('change', applyFilters)
   filtroUsuario.addEventListener('change', applyFilters)
+
+  applyFilters()
 }
 
-// Inicializar auditoría
+// Inicializar logs
 window.addEventListener('DOMContentLoaded', () => {
   assignUserColors()
   initAuditFilters()

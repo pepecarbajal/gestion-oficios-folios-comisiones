@@ -47,7 +47,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
 .form-row { gap: 14px; }
 
-/* ── FILTROS AUDITORÍA ── */
+/* ── FILTROS LOGS ── */
 .filter-bar { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin-bottom: 20px; }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-group label { font-size: 0.78rem; color: #6b7280; font-weight: 500; }

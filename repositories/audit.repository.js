@@ -64,7 +64,6 @@ export class AuditRepository {
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
     } catch (err) {
       if (err.code === 'ENOENT' || err.message?.includes('index')) {
-        console.warn('[AuditRepository] Índice compuesto no encontrado, usando getRecientes como fallback')
         const todos = await this.getRecientes(limite)
         return todos.filter(log => {
           if (usuarioId && log.usuarioId !== usuarioId) return false

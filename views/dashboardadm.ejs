@@ -11,7 +11,7 @@
             Unidades
           </a>
           <a href="/dashboard?section=auditoria" class="nav-item <%= section === 'auditoria' ? 'active' : '' %>">
-            Auditoría
+            Logs
           </a>
         </nav>
       </div>
@@ -305,16 +305,12 @@
       <% if (section === 'auditoria') { %>
         <div class="content-card">
           <div class="card-header">
-            <h2 class="section-title">Registro de Auditoría</h2>
+            <h2 class="section-title">Logs</h2>
           </div>
           <div class="filter-bar" id="auditFilters">
             <div class="filter-group">
-              <label for="fechaDesde">Fecha desde</label>
-              <input type="date" id="fechaDesde">
-            </div>
-            <div class="filter-group">
-              <label for="fechaHasta">Fecha hasta</label>
-              <input type="date" id="fechaHasta">
+              <label for="filtroFecha">Fecha</label>
+              <input type="date" id="filtroFecha">
             </div>
             <div class="filter-group">
               <label for="filtroUsuario">Usuario</label>
@@ -350,7 +346,7 @@
                     </td>
                     <td>
                       <span class="user-badge" data-user-id="<%= log.usuarioId || '' %>">
-                        <%= (log.usuarioId || '—').slice(-6) %>
+                        <%= log.usuarioId || '—' %>
                       </span>
                       <span class="user-email"><%= log.usuarioEmail || '—' %></span>
                     </td>
@@ -382,7 +378,7 @@
             </table>
           </div>
           <% if (logs.length === 0) { %>
-            <p class="empty-state">No hay registros de auditoría.</p>
+            <p class="empty-state">No hay registros.</p>
           <% } %>
         </div>
       <% } %>

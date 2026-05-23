@@ -1,4 +1,5 @@
 import { db, bucket } from '../db.js'
+import { ValidationError, NotFoundError } from '../utils/errors.js'
 
 const OFICIOS_COLLECTION = 'oficios'
 const SIGNED_URL_EXPIRY_MINUTES = 60
@@ -20,11 +21,6 @@ export class OficioRepository {
     tipoArchivo = 0, modo = 0,
     responsableIds, cooresponsableIds
   }) {
-    if (!noOficio) throw new Error('El número de oficio es obligatorio')
-    if (!asunto) throw new Error('El asunto es obligatorio')
-    if (!remitente) throw new Error('El remitente es obligatorio')
-    if (!unidadIds || unidadIds.length === 0) throw new Error('Debe seleccionar al menos una unidad a turnar')
-
     const firestore = db()
 
     const existing = await firestore
@@ -34,7 +30,7 @@ export class OficioRepository {
       .get()
 
     if (!existing.empty) {
-      throw new Error(`El oficio "${noOficio}" ya está registrado`)
+      throw new ValidationError(`El oficio "${noOficio}" ya está registrado`)
     }
     let archivoPath = null
 
@@ -82,15 +78,10 @@ export class OficioRepository {
     tipoArchivo, modo,
     responsableIds, cooresponsableIds
   }) {
-    if (!noOficio) throw new Error('El número de oficio es obligatorio')
-    if (!asunto) throw new Error('El asunto es obligatorio')
-    if (!remitente) throw new Error('El remitente es obligatorio')
-    if (!unidadIds || unidadIds.length === 0) throw new Error('Debe seleccionar al menos una unidad a turnar')
-
     const firestore = db()
     const ref = firestore.collection(OFICIOS_COLLECTION).doc(id)
     const docSnap = await ref.get()
-    if (!docSnap.exists) throw new Error('Oficio no encontrado')
+    if (!docSnap.exists) throw new NotFoundError('Oficio no encontrado')
 
     const actual = docSnap.data()
     const noOficioTrimmed = noOficio.trim()
@@ -102,7 +93,7 @@ export class OficioRepository {
         .get()
 
       if (!existing.empty) {
-        throw new Error(`El oficio "${noOficioTrimmed}" ya está registrado`)
+        throw new ValidationError(`El oficio "${noOficioTrimmed}" ya está registrado`)
       }
     }
 
@@ -242,13 +233,13 @@ export class OficioRepository {
     const ref = firestore.collection(OFICIOS_COLLECTION).doc(oficioId)
     const docSnap = await ref.get()
 
-    if (!docSnap.exists) throw new Error('Oficio no encontrado')
+    if (!docSnap.exists) throw new NotFoundError('Oficio no encontrado')
 
     const oficio = docSnap.data()
 
     const cooresp = oficio.cooresponsableIds || []
     if (cooresp.includes(unidadId)) {
-      throw new Error('Esta unidad es co-responsable y no puede responder el oficio')
+      throw new ValidationError('Esta unidad es co-responsable y no puede responder el oficio')
     }
 
     const noOficio = oficio.noOficio.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
@@ -321,12 +312,12 @@ export class OficioRepository {
 
   static async updateEstatus (id, estatus) {
     if (!['Pendiente', 'Atendido'].includes(estatus)) {
-      throw new Error('Estatus inválido')
+      throw new ValidationError('Estatus inválido')
     }
     const firestore = db()
     const ref = firestore.collection(OFICIOS_COLLECTION).doc(id)
     const doc = await ref.get()
-    if (!doc.exists) throw new Error('Oficio no encontrado')
+    if (!doc.exists) throw new NotFoundError('Oficio no encontrado')
     await ref.update({ estatus })
     return id
   }

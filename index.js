@@ -3,10 +3,14 @@ import cookieParser from 'cookie-parser'
 import { initFirebase } from './db.js'
 import { PORT } from './config.js'
 import authRoutes from './routes/auth.routes.js'
-import adminRoutes from './routes/admin.routes.js'
+import userRoutes from './routes/user.routes.js'
+import uadRoutes from './routes/uad.routes.js'
+import oficioRoutes from './routes/oficio.routes.js'
+import dashboardRoutes from './routes/dashboard.routes.js'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { securityHeaders, csrfInit } from './middlewares/security.middleware.js'
+import { errorHandler } from './middlewares/error-handler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -25,7 +29,12 @@ app.use(csrfInit)
 app.use(express.static(join(__dirname, 'public')))
 
 app.use(authRoutes)
-app.use(adminRoutes)
+app.use(userRoutes)
+app.use(uadRoutes)
+app.use(oficioRoutes)
+app.use(dashboardRoutes)
+
+app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`)

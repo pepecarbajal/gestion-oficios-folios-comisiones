@@ -1,36 +1,31 @@
-import { UADRepository } from '../repositories/uad.repository.js'
-import { Validation } from '../validations/uad.validation.js'
+import { registerUad as createUad, getUads as listUads, updateUad as patchUad } from '../services/uad.service.js'
 
-export const registeruad = async (req, res) => {
-  const { uadname, alias, titularId } = req.body
+export const registeruad = async (req, res, next) => {
   try {
-    Validation.uadname(uadname)
-    Validation.alias(alias)
-    const uadId = await UADRepository.create({ uadname, alias, titularId: titularId || null })
+    const { uadname, alias, titularId } = req.body
+    const uadId = await createUad({ uadname, alias, titularId })
     res.status(201).json({ uadId })
   } catch (error) {
-    res.status(400).json({ error: error.message })
+    next(error)
   }
 }
 
-export const getUads = async (req, res) => {
+export const getUads = async (req, res, next) => {
   try {
-    const unidades = await UADRepository.getAll()
+    const unidades = await listUads()
     res.json(unidades)
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    next(error)
   }
 }
 
-export const updateUad = async (req, res) => {
-  const { id } = req.params
-  const { uadname, alias, titularId } = req.body
+export const updateUad = async (req, res, next) => {
   try {
-    Validation.uadname(uadname)
-    Validation.alias(alias)
-    await UADRepository.update(id, { uadname, alias, titularId: titularId || null })
+    const { id } = req.params
+    const { uadname, alias, titularId } = req.body
+    await patchUad(id, { uadname, alias, titularId })
     res.json({ message: 'Unidad actualizada correctamente' })
   } catch (error) {
-    res.status(400).json({ error: error.message })
+    next(error)
   }
 }

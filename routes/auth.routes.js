@@ -1,10 +1,8 @@
-import express from 'express'
-import { registrarOficio } from '../controllers/oficio.controller.js' // This is just an example, I need to check where login logic is. 
-// Wait, index.js had:
-// app.get('/login', (req, res) => { res.render('login', { error: null, query: req.query }) })
-// app.get('/', (req, res) => { res.render('login', { error: null, query: req.query }) })
+import { Router } from 'express'
+import { login, logout } from '../controllers/auth.controller.js'
+import { loginLimiter, csrfProtection } from '../middlewares/security.middleware.js'
 
-const router = express.Router()
+const router = Router()
 
 router.get('/login', (req, res) => {
   res.render('login', { error: null, query: req.query })
@@ -13,5 +11,8 @@ router.get('/login', (req, res) => {
 router.get('/', (req, res) => {
   res.render('login', { error: null, query: req.query })
 })
+
+router.post('/login', loginLimiter, login)
+router.post('/logout', csrfProtection, logout)
 
 export default router

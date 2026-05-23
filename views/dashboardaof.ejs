@@ -453,7 +453,7 @@
                     <span class="fecha-limite <%= vencido ? 'vencida' : '' %>">Límite: <%= new Date(o.fechaLimite).toLocaleDateString('es-MX', {day:'2-digit',month:'short'}) %></span>
                   <% } %>
                 </td>
-                <td><%= o.unidadAlias || '—' %></td>
+                <td><% const uAlias = o.unidadAlias || ''; if (uAlias.includes(', ')) { %><span class="unidad-varias" title="<%= uAlias.replace(/, /g, '\n') %>">Varias</span><% } else { %><%= uAlias || '—' %><% } %></td>
                 <td>
                   <span class="badge badge-prioridad badge-<%= prioridad %>">
                     <%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %>
@@ -597,9 +597,9 @@
                   <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
                   <td class="asunto-cell"><%= o.asunto %></td>
                   <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
-                  <td><%= o.unidadAlias || '—' %></td>
+                  <td><% const uAliasAt = o.unidadAlias || ''; if (uAliasAt.includes(', ')) { %><span class="unidad-varias" title="<%= uAliasAt.replace(/, /g, '\n') %>">Varias</span><% } else { %><%= uAliasAt || '—' %><% } %></td>
                    <td>
-                     <div class="respondido-cell">
+                      <div class="respondido-cell">
                        <span class="respondido-fecha"><%= totalResp %> respuesta<%= totalResp !== 1 ? 's' : '' %></span>
                        <script type="application/json" id="resp-data-<%= o.id %>"><%- JSON.stringify(respuestas).replace(/<\/script>/gi,'<\/script>') %></script>
                        <script>

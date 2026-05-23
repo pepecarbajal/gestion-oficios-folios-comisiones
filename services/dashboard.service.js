@@ -1,6 +1,7 @@
 import { UADRepository } from '../repositories/uad.repository.js'
 import { OficioRepository } from '../repositories/oficio.repository.js'
 import { UserRepository } from '../repositories/user.repository.js'
+import { AuditRepository } from '../repositories/audit.repository.js'
 
 export const getDashboardADM = async (section) => {
   if (section === 'usuarios') {
@@ -62,6 +63,14 @@ export const getDashboardADM = async (section) => {
       }))
 
     return { unidades: unidadesMapeadas, usuarios: usuariosDisponibles }
+  }
+
+  if (section === 'auditoria') {
+    const [logs, auditUsers] = await Promise.all([
+      AuditRepository.getByFilters({ limite: 50 }),
+      AuditRepository.getDistinctUsers(500)
+    ])
+    return { logs, auditUsers }
   }
 
   return {}

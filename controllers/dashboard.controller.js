@@ -1,4 +1,4 @@
-import { getDashboardData } from '../services/dashboard.service.js'
+import { getDashboardData } from '../services/dashboard/dashboard.service.js'
 
 export const dashboard = async (req, res, next) => {
   const { role, unidadId, unidadAlias } = req.user

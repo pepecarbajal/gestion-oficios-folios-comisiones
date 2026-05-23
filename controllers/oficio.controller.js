@@ -1,5 +1,7 @@
 import { getIp } from '../utils/ip.js'
-import { registrarOficio as createOficio, editarOficio as updateOficio, actualizarEstatusOficio as changeEstatusOficio, guardarRespuestaUAD as saveRespuestaUAD } from '../services/oficio.service.js'
+import { registrarOficio as createOficio, editarOficio as updateOficio } from '../services/oficio/oficio.service.js'
+import { actualizarEstatusOficio as changeEstatusOficio } from '../services/oficio/oficio-status.service.js'
+import { guardarRespuestaUAD as saveRespuestaUAD } from '../services/oficio/oficio-respuesta.service.js'
 
 export const registrarOficio = async (req, res, next) => {
   try {

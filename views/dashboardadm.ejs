@@ -10,6 +10,9 @@
           <a href="/dashboard?section=unidades" class="nav-item <%= section === 'unidades' ? 'active' : '' %>">
             Unidades
           </a>
+          <a href="/dashboard?section=auditoria" class="nav-item <%= section === 'auditoria' ? 'active' : '' %>">
+            Logs
+          </a>
         </nav>
       </div>
       <div class="sidebar-bottom">
@@ -296,6 +299,87 @@
               <button class="btn-primary" id="btnUadGuardar">Guardar</button>
             </div>
           </div>
+        </div>
+      <% } %>
+
+      <% if (section === 'auditoria') { %>
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="section-title">Logs</h2>
+          </div>
+          <div class="filter-bar" id="auditFilters">
+            <div class="filter-group">
+              <label for="filtroFecha">Fecha</label>
+              <input type="date" id="filtroFecha">
+            </div>
+            <div class="filter-group">
+              <label for="filtroUsuario">Usuario</label>
+              <select id="filtroUsuario">
+                <option value="">Todos los usuarios</option>
+                <% auditUsers.forEach(u => { %>
+                  <option value="<%= u.id %>">
+                    <%= u.email %> — <%= u.rol %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="table audit-table" id="auditTable">
+              <thead>
+                <tr>
+                  <th>Fecha/Hora</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Acción</th>
+                  <th>Detalle</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% logs.forEach(log => { %>
+                  <tr class="<%= log.accion === 'LOGIN_FAIL' ? 'row-error' : '' %>">
+                    <td class="fecha-cell">
+                      <%= new Date(log.timestamp).toLocaleString('es-MX', {
+                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                      }) %>
+                    </td>
+                    <td>
+                      <span class="user-badge" data-user-id="<%= log.usuarioId || '' %>">
+                        <%= log.usuarioId || '—' %>
+                      </span>
+                      <span class="user-email"><%= log.usuarioEmail || '—' %></span>
+                    </td>
+                    <td><%= log.rol || '—' %></td>
+                    <td class="accion-cell"><%= log.accion %></td>
+                    <td class="detalle-cell">
+                      <% if (log.accion === 'LOGIN_FAIL' && log.detalle?.razon) { %>
+                        <%= log.detalle.razon %>
+                      <% } else if (log.accion === 'OFICIO_REGISTRADO' && log.detalle?.noOficio) { %>
+                        <%= log.detalle.noOficio %><%= log.detalle.asunto ? ' - ' + log.detalle.asunto : '' %>
+                      <% } else if (log.accion === 'OFICIO_EDITADO' && log.detalle?.noOficio) { %>
+                        <%= log.detalle.noOficio %>
+                      <% } else if (log.accion === 'OFICIO_ESTATUS_CAMBIADO' && log.detalle?.noOficio) { %>
+                        <%= log.detalle.noOficio %> → <%= log.detalle.estatusNuevo || '' %>
+                      <% } else if (log.accion === 'RESPUESTA_UAD_GUARDADA' && log.detalle?.noOficio) { %>
+                        <%= log.detalle.noOficio %>
+                      <% } else if (log.accion === 'USUARIO_CREADO' && log.detalle?.nuevoUsuarioEmail) { %>
+                        <%= log.detalle.nuevoUsuarioEmail %> (<%= log.detalle.nuevoRol %>)
+                      <% } else if (log.accion === 'USUARIO_EDITADO' && log.detalle?.usuarioEditado) { %>
+                        <%= log.detalle.usuarioEditado %>
+                      <% } else { %>
+                        —
+                      <% } %>
+                    </td>
+                    <td class="ip-cell"><%= log.ip || '—' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% if (logs.length === 0) { %>
+            <p class="empty-state">No hay registros.</p>
+          <% } %>
         </div>
       <% } %>
 

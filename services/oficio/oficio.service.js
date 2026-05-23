@@ -1,8 +1,8 @@
-import { OficioRepository } from '../repositories/oficio.repository.js'
-import { UADRepository } from '../repositories/uad.repository.js'
-import { AuditRepository } from '../repositories/audit.repository.js'
-import { OficioValidation } from '../validations/oficio.validation.js'
-import { ValidationError } from '../utils/errors.js'
+import { OficioRepository } from '../../repositories/oficio.repository.js'
+import { UADRepository } from '../../repositories/uad.repository.js'
+import { AuditRepository } from '../../repositories/audit.repository.js'
+import { OficioValidation } from '../../validations/oficio.validation.js'
+import { ValidationError } from '../../utils/errors.js'
 
 function parseUnidadIds (raw) {
   if (Array.isArray(raw)) return raw
@@ -130,50 +130,6 @@ export const editarOficio = async (id, datos, archivo, auditInfo) => {
     usuarioEmail: null,
     rol: auditInfo.rol,
     detalle: { oficioId: id, noOficio: datos.noOficio, unidadIds, unidadAlias, asunto: datos.asunto, estatus: datos.estatus, tipoArchivo: datos.tipoArchivo, modo: datos.modo, responsableIds, cooresponsableIds },
-    ip: auditInfo.ip
-  })
-
-  return id
-}
-
-export const actualizarEstatusOficio = async (id, estatus, auditInfo) => {
-  await OficioRepository.updateEstatus(id, estatus)
-
-  await AuditRepository.registrar({
-    accion: 'OFICIO_ESTATUS_CAMBIADO',
-    usuarioId: auditInfo.usuarioId,
-    usuarioEmail: null,
-    rol: auditInfo.rol,
-    detalle: { oficioId: id, nuevoEstatus: estatus },
-    ip: auditInfo.ip
-  })
-
-  return id
-}
-
-export const guardarRespuestaUAD = async (id, unidadCtx, comentario, archivos, auditInfo) => {
-  const archivosValidos = archivos || []
-  OficioValidation.validateRespuestaArchivos(archivosValidos)
-
-  await OficioRepository.guardarRespuesta(id, {
-    unidadId: unidadCtx.unidadId,
-    unidadAlias: unidadCtx.unidadAlias,
-    comentario,
-    archivos: archivosValidos
-  })
-
-  await AuditRepository.registrar({
-    accion: 'RESPUESTA_UAD_GUARDADA',
-    usuarioId: auditInfo.usuarioId,
-    usuarioEmail: null,
-    rol: auditInfo.rol,
-    detalle: {
-      oficioId: id,
-      unidadId: unidadCtx.unidadId,
-      unidadAlias: unidadCtx.unidadAlias,
-      totalArchivos: archivosValidos.length,
-      tieneComentario: !!(comentario?.trim())
-    },
     ip: auditInfo.ip
   })
 

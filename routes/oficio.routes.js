@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { registrarOficio, editarOficio, actualizarEstatusOficio, guardarRespuestaUAD } from '../controllers/oficio.controller.js'
+import { registrarOficio, editarOficio, actualizarEstatusOficio, guardarRespuestaUAD, marcarVisto } from '../controllers/oficio.controller.js'
 import { authMiddleware, requireAOF, requireUAD } from '../middlewares/auth.middleware.js'
 import { csrfProtection } from '../middlewares/security.middleware.js'
 import { uploadPDF, uploadEvidencias } from '../middlewares/upload.js'
@@ -23,5 +23,9 @@ router.post('/oficios/:id/respuesta',
   uploadEvidencias.array('archivos', 10),
   csrfProtection,
   guardarRespuestaUAD)
+
+router.post('/oficios/:id/visto',
+  authMiddleware, requireUAD, csrfProtection,
+  marcarVisto)
 
 export default router

@@ -2,6 +2,7 @@ import { getIp } from '../utils/ip.js'
 import { registrarOficio as createOficio, editarOficio as updateOficio } from '../services/oficio/oficio.service.js'
 import { actualizarEstatusOficio as changeEstatusOficio } from '../services/oficio/oficio-status.service.js'
 import { guardarRespuestaUAD as saveRespuestaUAD } from '../services/oficio/oficio-respuesta.service.js'
+import { marcarVisto as markVisto } from '../services/oficio/oficio-visto.service.js'
 
 export const registrarOficio = async (req, res, next) => {
   try {
@@ -50,6 +51,19 @@ export const guardarRespuestaUAD = async (req, res, next) => {
       ip: getIp(req)
     })
     res.json({ message: 'Respuesta guardada correctamente' })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const marcarVisto = async (req, res, next) => {
+  try {
+    await markVisto(req.params.id, req.uad, {
+      usuarioId: req.user?.id,
+      rol: req.user?.role,
+      ip: getIp(req)
+    })
+    res.json({ success: true })
   } catch (error) {
     next(error)
   }

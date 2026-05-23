@@ -1,5 +1,6 @@
 import { db, bucket } from '../db.js'
 import { ValidationError, NotFoundError } from '../utils/errors.js'
+import { FieldValue } from 'firebase-admin/firestore'
 
 const OFICIOS_COLLECTION = 'oficios'
 const SIGNED_URL_EXPIRY_MINUTES = 60
@@ -242,6 +243,13 @@ export class OficioRepository {
       throw new ValidationError('Esta unidad es co-responsable y no puede responder el oficio')
     }
 
+    if (oficio.modo === 1) {
+      const vistoPor = oficio.vistoPor || []
+      if (!vistoPor.includes(unidadId)) {
+        throw new ValidationError('Debe visualizar el oficio antes de marcar como enterado')
+      }
+    }
+
     const noOficio = oficio.noOficio.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
     const aliasLimpio = unidadAlias.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
     const storageBucket = bucket()
@@ -308,6 +316,12 @@ export class OficioRepository {
 
     await ref.update({ respuestas, estatus: nuevoEstatus })
     return oficioId
+  }
+
+  static async marcarVisto (oficioId, unidadId) {
+    const firestore = db()
+    const ref = firestore.collection(OFICIOS_COLLECTION).doc(oficioId)
+    await ref.update({ vistoPor: FieldValue.arrayUnion(unidadId) })
   }
 
   static async updateEstatus (id, estatus) {

@@ -1,9 +1,11 @@
 import { UADRepository } from '../../repositories/uad.repository.js'
 import { OficioRepository } from '../../repositories/oficio.repository.js'
+import { FolioRepository } from '../../repositories/folio.repository.js'
 
 export const getDashboardAOF = async () => {
-  const [oficiosRaw, unidades] = await Promise.all([
+  const [oficiosRaw, foliosRaw, unidades] = await Promise.all([
     OficioRepository.getAll(),
+    FolioRepository.getAll(),
     UADRepository.getAll()
   ])
 
@@ -34,5 +36,8 @@ export const getDashboardAOF = async () => {
 
   const oficiosAt = oficiosRaw.filter(o => (o.respuestas || []).length > 0)
 
-  return { oficiosPend, oficiosAt, oficios: oficiosRaw, unidades }
+  const foliosPend = foliosRaw.filter(f => f.estatus === 'Pendiente')
+  const foliosAtend = foliosRaw.filter(f => f.estatus !== 'Pendiente')
+
+  return { oficiosPend, oficiosAt, oficios: oficiosRaw, foliosPend, foliosAtend, folios: foliosRaw, unidades }
 }

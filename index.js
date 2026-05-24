@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes.js'
 import userRoutes from './routes/user.routes.js'
 import uadRoutes from './routes/uad.routes.js'
 import oficioRoutes from './routes/oficio.routes.js'
+import folioRoutes from './routes/folio.routes.js'
 import dashboardRoutes from './routes/dashboard.routes.js'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -32,6 +33,7 @@ app.use(authRoutes)
 app.use(userRoutes)
 app.use(uadRoutes)
 app.use(oficioRoutes)
+app.use(folioRoutes)
 app.use(dashboardRoutes)
 
 app.use(errorHandler)

@@ -516,6 +516,11 @@ document.getElementById('btnRegistrarFolioAofGuardar').addEventListener('click',
     folioAofGuardando = false
     return
   }
+  if (!/^\d{4}$/.test(noFolio)) {
+    errorEl.textContent = 'El número de folio debe tener exactamente 4 dígitos.'
+    folioAofGuardando = false
+    return
+  }
   if (_folioAofUnidadIds.length === 0) {
     errorEl.textContent = 'Debe seleccionar al menos una unidad.'
     folioAofGuardando = false

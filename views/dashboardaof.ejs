@@ -317,16 +317,16 @@
       <div class="sidebar-top">
         <nav class="nav">
           <div class="nav-section">
-            <span class="nav-item nav-header">Oficios</span>
+            <span class="nav-item nav-header">OFICIOS EXT.</span>
             <div class="subnav">
               <a href="#" class="subnav-item active" id="navOfPendientesAof" onclick="cambiarTab('oficios-pendientes', event)">Pendientes</a>
               <a href="#" class="subnav-item" id="navOfAtendidosAof" onclick="cambiarTab('oficios-atendidos', event)">Atendidos</a>
             </div>
           </div>
           <div class="nav-section">
-            <span class="nav-item nav-header">Folios</span>
+            <span class="nav-item nav-header">OFICIOS SFDC</span>
             <div class="subnav">
-              <a href="#" class="subnav-item" id="navFolPendientesAof" onclick="cambiarTab('folios-pendientes', event)">Pendientes</a>
+              <a href="#" class="subnav-item" id="navFolPendientesAof" onclick="cambiarTab('folios-pendientes', event)">Folios</a>
               <a href="#" class="subnav-item" id="navFolAtendidosAof" onclick="cambiarTab('folios-atendidos', event)">Atendidos</a>
             </div>
           </div>
@@ -470,6 +470,9 @@
                   <span class="badge badge-prioridad badge-<%= prioridad %>">
                     <%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %>
                   </span>
+                  <% if (o.modo === 1) { %>
+                    <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
+                  <% } %>
                 </td>
                     <td class="actions-cell">
                       <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
@@ -979,7 +982,7 @@
         <p class="modal-error" id="modalRegistrarFolioAofError"></p>
         <div class="form-group">
           <label>No. Folio</label>
-          <input type="text" id="inputFolAofNoFolio" placeholder="Número de folio">
+          <input type="text" id="inputFolAofNoFolio" placeholder="Número de folio" maxlength="4">
         </div>
         <div class="form-group">
           <label>Destinatario</label>

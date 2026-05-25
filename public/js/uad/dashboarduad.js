@@ -708,9 +708,9 @@ inputEntregaPDF.addEventListener('change', () => {
     }
     entregaArchivo = file
     fileLabelEntrega.textContent = file.name
-    fileDropEntrega.classList.add('has-file')
+    fileDropEntrega.classList.add('drag-over')
     document.getElementById('listaArchivosEntrega').innerHTML =
-      `<div class="file-chip-single"><div class="file-info"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span></div><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+      `<div class="archivo-chip-selected"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
   }
 })
 fileDropEntrega.addEventListener('dragover', e => { e.preventDefault(); fileDropEntrega.classList.add('drag-over') })
@@ -726,10 +726,10 @@ fileDropEntrega.addEventListener('drop', e => {
     }
     entregaArchivo = file
     fileLabelEntrega.textContent = file.name
-    fileDropEntrega.classList.add('has-file')
+    fileDropEntrega.classList.add('drag-over')
     inputEntregaPDF.files = e.dataTransfer.files
     document.getElementById('listaArchivosEntrega').innerHTML =
-      `<div class="file-chip-single"><div class="file-info"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span></div><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+      `<div class="archivo-chip-selected"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
   }
 })
 
@@ -737,7 +737,7 @@ function eliminarEntregaPDF() {
   entregaArchivo = null
   inputEntregaPDF.value = ''
   fileLabelEntrega.textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
-  fileDropEntrega.classList.remove('has-file')
+  fileDropEntrega.classList.remove('drag-over')
   document.getElementById('listaArchivosEntrega').innerHTML = ''
 }
 

@@ -10,6 +10,7 @@ export class FolioValidation {
   static validateRegistroAOF(body) {
     const { destinatario, dependencia, cargo, asunto, noFolio, unidadIds } = body
     if (!noFolio) throw new Error('El número de folio es obligatorio')
+    if (!/^\d{4}$/.test(noFolio)) throw new Error('El folio debe tener exactamente 4 dígitos')
     if (!destinatario) throw new Error('El destinatario es obligatorio')
     if (!dependencia) throw new Error('La dependencia es obligatoria')
     if (!cargo) throw new Error('El cargo es obligatorio')

@@ -5,16 +5,16 @@
       <div class="sidebar-top">
         <nav class="nav">
           <div class="nav-section">
-            <span class="nav-item nav-header">Oficios</span>
+            <span class="nav-item nav-header">OFICIOS EXT.</span>
             <div class="subnav">
               <a href="#" class="subnav-item active" id="navOfPendientes" onclick="cambiarTab('oficios-pendientes', event)">Pendientes</a>
               <a href="#" class="subnav-item" id="navOfAtendidos" onclick="cambiarTab('oficios-atendidos', event)">Atendidos</a>
             </div>
           </div>
           <div class="nav-section">
-            <span class="nav-item nav-header">Folios</span>
+            <span class="nav-item nav-header">OFICIOS SFDC</span>
             <div class="subnav">
-              <a href="#" class="subnav-item" id="navFolPendientes" onclick="cambiarTab('folios-pendientes', event)">Pendientes</a>
+              <a href="#" class="subnav-item" id="navFolPendientes" onclick="cambiarTab('folios-pendientes', event)">Folios</a>
               <a href="#" class="subnav-item" id="navFolAtendidos" onclick="cambiarTab('folios-atendidos', event)">Atendidos</a>
             </div>
           </div>
@@ -138,6 +138,9 @@
                     <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
                     <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
                       <span class="badge-coresponsable" style="display:inline-block;font-size:0.7rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-top:3px">Co-responsable</span>
+                    <% } %>
+                    <% if (o.modo === 1) { %>
+                      <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
                     <% } %>
                   </td>
                   <td class="actions-cell">
@@ -471,12 +474,12 @@
         </div>
         <div class="form-group">
           <label>Documento PDF</label>
-          <div class="file-drop" id="fileDropEntrega">
+          <div class="file-drop-multi" id="fileDropEntrega">
             <input type="file" id="inputEntregaPDF" accept="application/pdf" hidden>
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             <span id="fileLabelEntrega">Arrastra el PDF aquí o haz clic para seleccionar</span>
           </div>
-          <div id="listaArchivosEntrega"></div>
+          <div id="listaArchivosEntrega" class="lista-archivos"></div>
         </div>
       </div>
       <div class="modal-footer">

@@ -23,7 +23,7 @@ export class FolioRepository {
       if (!isNaN(num) && num > max) max = num
     })
     const next = max + 1
-    return String(next).padStart(Math.max(3, String(next).length), '0')
+    return String(next).padStart(Math.max(4, String(next).length), '0')
   }
 
   static async create({

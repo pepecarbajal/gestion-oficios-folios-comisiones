@@ -7,7 +7,7 @@ const tiposPermitidos = [
 
 export const uploadPDF = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 30 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     file.mimetype === 'application/pdf'
       ? cb(null, true)
@@ -17,7 +17,7 @@ export const uploadPDF = multer({
 
 export const uploadEvidencias = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024, files: 10 },
+  limits: { fileSize: 30 * 1024 * 1024, files: 10 },
   fileFilter: (_req, file, cb) => {
     tiposPermitidos.includes(file.mimetype)
       ? cb(null, true)

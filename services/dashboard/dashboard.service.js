@@ -7,7 +7,7 @@ export const getDashboardData = async (role, unidadId, unidadAlias, section) => 
     case 'ADM':
       return { role, data: await getDashboardADM(section), section }
     case 'AOF':
-      return { role, data: await getDashboardAOF() }
+      return { role, data: await getDashboardAOF(unidadId, unidadAlias) }
     case 'UAD':
       return { role, data: await getDashboardUAD(unidadId, unidadAlias), unidadId, unidadAlias }
     default:

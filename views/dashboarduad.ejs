@@ -4,12 +4,20 @@
     <aside class="sidebar">
       <div class="sidebar-top">
         <nav class="nav">
-          <a href="#" class="nav-item active" id="navPendientes" onclick="cambiarTab('pendientes', event)">
-            Oficios
-          </a>
-          <a href="#" class="nav-item" id="navAtendidos" onclick="cambiarTab('atendidos', event)">
-            Atendidos
-          </a>
+          <div class="nav-section">
+            <span class="nav-item nav-header">OFICIOS EXT.</span>
+            <div class="subnav">
+              <a href="#" class="subnav-item active" id="navOfPendientes" onclick="cambiarTab('oficios-pendientes', event)">Pendientes</a>
+              <a href="#" class="subnav-item" id="navOfAtendidos" onclick="cambiarTab('oficios-atendidos', event)">Atendidos</a>
+            </div>
+          </div>
+          <div class="nav-section">
+            <span class="nav-item nav-header">OFICIOS SFDC</span>
+            <div class="subnav">
+              <a href="#" class="subnav-item" id="navFolPendientes" onclick="cambiarTab('folios-pendientes', event)">Folios</a>
+              <a href="#" class="subnav-item" id="navFolAtendidos" onclick="cambiarTab('folios-atendidos', event)">Atendidos</a>
+            </div>
+          </div>
         </nav>
       </div>
       <div class="sidebar-bottom">
@@ -29,7 +37,7 @@
       </div>
     </aside>
     <main class="main">
-      <div id="tabPendientes" class="content-card tab-panel">
+      <div id="tabOfPendientes" class="content-card tab-panel">
         <div class="card-header">
           <div class="filters">
             <div class="search-wrap">
@@ -85,19 +93,25 @@
                  const yaRespondio = !!miRespuesta;
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                 <tr class="oficio-row pend-row"
-                   data-estatus="<%= estatusGlobal %>"
-                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                   data-id="<%= o.id %>"
-                   data-ya="<%= yaRespondio %>"
-                   data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
-                   data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>">
-                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
-                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
-                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                   <td>
-
-                    <% if (esCorreo) { %>
+                  <tr class="oficio-row pend-row"
+                    data-estatus="<%= estatusGlobal %>"
+                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                    data-id="<%= o.id %>"
+                    data-ya="<%= yaRespondio %>"
+                    data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
+                    data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>"
+                    data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                    data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                    data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                    <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                       id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                     }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                    <td>
+                    <% if (o.modo === 1) { %>
+                      <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+</span>
+                    <% } else if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                       </span>
@@ -122,6 +136,12 @@
                   </td>
                   <td>
                     <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
+                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                      <span class="badge-coresponsable" style="display:inline-block;font-size:0.7rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-top:3px">Co-responsable</span>
+                    <% } %>
+                    <% if (o.modo === 1) { %>
+                      <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
+                    <% } %>
                   </td>
                   <td class="actions-cell">
                     <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
@@ -139,7 +159,7 @@
           <div class="page-controls" id="pageControlsPend"></div>
         </div>
       </div>
-      <div id="tabAtendidos" class="content-card tab-panel" style="display:none">
+      <div id="tabOfAtendidos" class="content-card tab-panel" style="display:none">
         <div class="card-header">
           <div class="filters">
             <div class="search-wrap">
@@ -180,21 +200,27 @@
               <% oficiosAtend.forEach(o => {
                  const miRespuesta = (o.respuestas || []).find(r => r.unidadId === unidadId);
                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-                 const archivos = miRespuesta.archivos || [];
+                 const archivos = (miRespuesta?.archivos) || [];
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                  <tr class="oficio-row atend-row atendido-row"
-                    data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                    data-id="<%= o.id %>"
-                    data-ya="true"
-                    data-comentario="<%= miRespuesta.comentario || '' %>"
-                    data-archivos="<%= JSON.stringify(miRespuesta.archivos || []) %>">
-                   <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
-                      id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || ""
-                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                   <td>
-
-                    <% if (esCorreo) { %>
+                   <tr class="oficio-row atend-row atendido-row"
+                     data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                     data-id="<%= o.id %>"
+                     data-ya="true"
+                     data-comentario="<%= miRespuesta?.comentario || '' %>"
+                     data-archivos="<%= JSON.stringify(miRespuesta?.archivos || []) %>"
+                     data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                     data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                     data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                    <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                       id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                     }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                    <td>
+                    <% if (o.modo === 1) { %>
+                      <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+</span>
+                    <% } else if (esCorreo) { %>
                       <span class="tipo-icon tipo-icon-correo" title="Correo electrónico">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                       </span>
@@ -215,11 +241,15 @@
                       : '—' %>
                   </td>
                   <td class="fecha-cell">
-                    <span class="respondido-fecha">
-                      <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
-                    </span>
-                    <% if (miRespuesta.comentario) { %>
-                      <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
+                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                      <span class="respondido-fecha">Atendido por <%= coresponsableMap[o.id]?.aliasResponsable || '—' %></span>
+                    <% } else { %>
+                      <span class="respondido-fecha">
+                        <%= new Date(miRespuesta.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                      </span>
+                      <% if (miRespuesta.comentario) { %>
+                        <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
+                      <% } %>
                     <% } %>
                   </td>
                   <td class="actions-cell">
@@ -239,11 +269,228 @@
           </div>
         <% } %>
       </div>
+
+      <%# ════════════ FOLIOS PENDIENTES ════════════ %>
+      <div id="tabFolPendientes" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="searchFolPend" placeholder="Buscar..." class="search-input">
+            </div>
+            <button class="btn-primary" id="btnSolicitarFolio" onclick="abrirModalSolicitarFolio()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Solicitar
+            </button>
+          </div>
+        </div>
+        <table class="table">
+          <colgroup>
+            <col style="width:12%">
+            <col style="width:24%">
+            <col style="width:30%">
+            <col style="width:20%">
+            <col style="width:80px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>No. Folio</th>
+              <th>Destinatario</th>
+              <th>Asunto</th>
+              <th>Fecha solicitud</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFolPend">
+            <% if (foliosPend.length === 0) { %>
+              <tr><td colspan="5" class="empty-state">No hay folios pendientes.</td></tr>
+            <% } %>
+            <% foliosPend.forEach(f => { %>
+              <tr class="folio-row fol-pend-row"
+                data-search="<%= (f.noFolio + ' ' + f.destinatario + ' ' + f.dependencia + ' ' + f.cargo + ' ' + f.asunto).toLowerCase() %>"
+                data-id="<%= f.id %>"
+                data-estatus="<%= f.estatus %>">
+                <script type="application/json" id="folio-data-<%= f.id %>"><%- JSON.stringify({
+                   id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                 }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                <td class="no-cell"><%= f.noFolio %></td>
+                <td>
+                  <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
+                </td>
+                <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
+                <td class="fecha-cell">
+                  <%= new Date(f.fechaSolicitud).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                </td>
+                <td class="actions-cell">
+                  <button class="menu-btn" onclick="toggleFolioActionMenu(event, '<%= f.id %>')" title="Acciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoFolPend">Mostrando 0 de 0</span>
+          <div class="page-controls" id="pageControlsFolPend"></div>
+        </div>
+      </div>
+
+      <%# ════════════ FOLIOS ATENDIDOS ════════════ %>
+      <div id="tabFolAtendidos" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="searchFolAtend" placeholder="Buscar..." class="search-input">
+            </div>
+          </div>
+        </div>
+        <% if (foliosAtend.length === 0) { %>
+          <div class="empty-state-full">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <p>No hay folios atendidos.</p>
+          </div>
+        <% } else { %>
+          <table class="table">
+            <colgroup>
+              <col style="width:10%">
+              <col style="width:20%">
+              <col style="width:24%">
+              <col style="width:12%">
+              <col style="width:12%">
+              <col style="width:14%">
+              <col style="width:80px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>No. Folio</th>
+                <th>Destinatario</th>
+                <th>Asunto</th>
+                <th>Fecha solicitud</th>
+                <th>Fecha entrega</th>
+                <th>Comentario</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyFolAtend">
+              <% foliosAtend.forEach(f => { %>
+                <tr class="folio-row fol-atend-row<%= f.estatus === 'Cancelado' ? ' folio-cancelado' : '' %>"
+                  data-search="<%= (f.noFolio + ' ' + f.destinatario + ' ' + f.dependencia + ' ' + f.cargo + ' ' + f.asunto).toLowerCase() %>"
+                  data-id="<%= f.id %>"
+                  data-estatus="<%= f.estatus %>">
+                  <script type="application/json" id="folio-data-<%= f.id %>"><%- JSON.stringify({
+                     id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                   }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                  <td class="no-cell"><%= f.noFolio %></td>
+                  <td>
+                    <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
+                  </td>
+                  <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
+                  <td class="fecha-cell">
+                    <%= new Date(f.fechaSolicitud).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                  </td>
+                  <td class="fecha-cell">
+                    <% if (f.estatus === 'Cancelado') { %>
+                      <span class="badge-cancelado">Cancelado</span>
+                    <% } else { %>
+                      <%= f.fechaEntrega ? new Date(f.fechaEntrega).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
+                    <% } %>
+                  </td>
+                  <td><% if (f.estatus === 'Cancelado') { %><span class="badge-cancelado">Cancelado</span><% } else { %><%= f.comentario || '—' %><% } %></td>
+                  <td class="actions-cell">
+                    <button class="menu-btn" onclick="toggleFolioActionMenu(event, '<%= f.id %>')" title="Acciones">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <span id="paginacionInfoFolAtend">Mostrando 0 de 0</span>
+            <div class="page-controls" id="pageControlsFolAtend"></div>
+          </div>
+        <% } %>
+      </div>
     </main>
   </div>
 
   <%# MODAL VISOR DE ARCHIVOS %>
   <%- include('partials/viewer-modal') %>
+
+  <%# MODAL SOLICITAR FOLIO %>
+  <div class="modal-overlay" id="modalSolicitarFolioOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Solicitar Folio</h3>
+        <button class="modal-close" id="modalSolicitarFolioClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalSolicitarFolioError"></p>
+        <div class="form-group">
+          <label>Destinatario</label>
+          <input type="text" id="inputFolDestinatario" placeholder="Nombre del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Dependencia</label>
+          <input type="text" id="inputFolDependencia" placeholder="Dependencia">
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="inputFolCargo" placeholder="Cargo del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <textarea id="inputFolAsunto" placeholder="Asunto del folio" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnSolicitarFolioCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnSolicitarFolioGuardar">
+          <span id="btnSolicitarFolioText">Solicitar</span>
+          <span id="btnSolicitarFolioLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL REGISTRAR ENTREGA %>
+  <div class="modal-overlay" id="modalEntregaOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Registrar Entrega</h3>
+        <button class="modal-close" id="modalEntregaClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalEntregaError"></p>
+        <div class="form-group">
+          <label>Fecha de entrega</label>
+          <input type="date" id="inputFechaEntrega">
+        </div>
+        <div class="form-group">
+          <label>Comentario <span class="label-hint">(opcional)</span></label>
+          <textarea id="inputEntregaComentario" placeholder="Comentario sobre la entrega..." rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Documento PDF</label>
+          <div class="file-drop-multi" id="fileDropEntrega">
+            <input type="file" id="inputEntregaPDF" accept="application/pdf" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            <span id="fileLabelEntrega">Arrastra el PDF aquí o haz clic para seleccionar</span>
+          </div>
+          <div id="listaArchivosEntrega" class="lista-archivos"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnEntregaCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnEntregaGuardar">
+          <span id="btnEntregaText">Registrar</span>
+          <span id="btnEntregaLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <%# MODAL RESPUESTA %>
   <div class="modal-overlay" id="modalRespuestaOverlay">
@@ -300,6 +547,6 @@
   </div>
 
   <script src="/js/viewer.js"></script>
-  <script src="/js/dashboarduad.js"></script>
+  <script src="/js/uad/dashboarduad.js"></script>
 
 <%- include('partials/footer') %>

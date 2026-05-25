@@ -1,3 +1,110 @@
+// ── Logs — colores por usuario ──
+const USER_COLORS = {}
+
+function stringToColor (str) {
+  if (!str) return '#6b7280'
+  if (USER_COLORS[str]) return USER_COLORS[str]
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const hue = Math.abs(hash) % 360
+  const color = `hsl(${hue}, 55%, 40%)`
+  USER_COLORS[str] = color
+  return color
+}
+
+function assignUserColors () {
+  document.querySelectorAll('#auditTable .user-badge').forEach(el => {
+    const uid = el.dataset.userId
+    if (uid) {
+      el.style.backgroundColor = stringToColor(uid)
+      el.style.color = '#fff'
+    }
+  })
+}
+
+function renderAuditTable (logs) {
+  const tbody = document.querySelector('#auditTable tbody')
+  if (!tbody) return
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros.</td></tr>'
+    return
+  }
+  tbody.innerHTML = logs.map(log => {
+    const isError = log.accion === 'LOGIN_FAIL'
+    const ts = new Date(log.timestamp)
+    const fecha = ts.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })
+    const hora = ts.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    const uid = log.usuarioId || ''
+    const uidDisplay = uid || '—'
+
+    let detalle = '—'
+    if (log.accion === 'LOGIN_FAIL' && log.detalle?.razon) detalle = log.detalle.razon
+    else if (log.detalle?.noOficio) {
+      detalle = log.detalle.noOficio
+      if (log.detalle.asunto) detalle += ' - ' + log.detalle.asunto
+    } else if (log.accion === 'USUARIO_CREADO' && log.detalle?.nuevoUsuarioEmail) {
+      detalle = log.detalle.nuevoUsuarioEmail + ' (' + (log.detalle.nuevoRol || '') + ')'
+    } else if (log.accion === 'USUARIO_EDITADO' && log.detalle?.usuarioEditado) {
+      detalle = log.detalle.usuarioEditado
+    }
+
+    return `<tr class="${isError ? 'row-error' : ''}">
+      <td class="fecha-cell">${fecha} ${hora}</td>
+      <td>
+        <span class="user-badge" data-user-id="${uid}">${uidDisplay}</span>
+        <span class="user-email">${log.usuarioEmail || '—'}</span>
+      </td>
+      <td>${log.rol || '—'}</td>
+      <td class="accion-cell">${log.accion}</td>
+      <td class="detalle-cell">${detalle}</td>
+      <td class="ip-cell">${log.ip || '—'}</td>
+    </tr>`
+  }).join('')
+  assignUserColors()
+}
+
+// ── Logs — filtros ──
+function initAuditFilters () {
+  const filterBar = document.getElementById('auditFilters')
+  if (!filterBar) return
+
+  const filtroFecha = document.getElementById('filtroFecha')
+  const filtroUsuario = document.getElementById('filtroUsuario')
+
+  filtroFecha.valueAsDate = new Date()
+
+  async function applyFilters () {
+    const params = new URLSearchParams()
+    if (filtroFecha.value) {
+      params.set('fechaDesde', filtroFecha.value)
+      params.set('fechaHasta', filtroFecha.value)
+    }
+    if (filtroUsuario.value) params.set('usuarioId', filtroUsuario.value)
+    params.set('limite', '200')
+
+    try {
+      const res = await fetch(`/api/auditoria?${params}`)
+      const logs = await res.json()
+      renderAuditTable(logs)
+    } catch {
+      console.error('Error al filtrar logs')
+    }
+  }
+
+  filtroFecha.addEventListener('change', applyFilters)
+  filtroUsuario.addEventListener('change', applyFilters)
+
+  applyFilters()
+}
+
+// Inicializar logs
+window.addEventListener('DOMContentLoaded', () => {
+  assignUserColors()
+  initAuditFilters()
+})
+
 // ── Paginación de Usuarios ──
 let currentPage = 1
 const pageSize = 10

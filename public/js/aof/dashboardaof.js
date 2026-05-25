@@ -44,15 +44,29 @@ document.getElementById('modalRespuestasClose').addEventListener('click', () => 
 document.getElementById('btnRespuestasCerrar').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
 modalRespOverlay.addEventListener('click', e => { if (e.target === modalRespOverlay) modalRespOverlay.classList.remove('active') })
 
-// ... (previous code remains unchanged until line 46)
-
+// ── TAB / SIDEBAR ──
 function cambiarTab(tab, e) {
   if (e) e.preventDefault()
-  const esOf = tab === 'oficios'
-  document.getElementById('tabOficios').style.display = esOf ? '' : 'none'
-  document.getElementById('tabAtendidos').style.display = esOf ? 'none' : ''
-  document.getElementById('navOficios').classList.toggle('active', esOf)
-  document.getElementById('navAtendidos').classList.toggle('active', !esOf)
+  const tabMap = {
+    'oficios-pendientes': { panel: 'tabOfPendientesAof', nav: 'navOfPendientesAof', section: 'OficiosAof' },
+    'oficios-atendidos': { panel: 'tabOfAtendidosAof', nav: 'navOfAtendidosAof', section: 'OficiosAof' },
+    'folios-pendientes': { panel: 'tabFolPendientesAof', nav: 'navFolPendientesAof', section: 'FoliosAof' },
+    'folios-atendidos': { panel: 'tabFolAtendidosAof', nav: 'navFolAtendidosAof', section: 'FoliosAof' }
+  }
+
+  const navIds = ['navOfPendientesAof', 'navOfAtendidosAof', 'navFolPendientesAof', 'navFolAtendidosAof']
+  const panelIds = ['tabOfPendientesAof', 'tabOfAtendidosAof', 'tabFolPendientesAof', 'tabFolAtendidosAof']
+
+  panelIds.forEach(pid => { document.getElementById(pid).style.display = 'none' })
+  navIds.forEach(nid => { document.getElementById(nid).classList.remove('active') })
+
+  const target = tabMap[tab]
+  if (target) {
+    document.getElementById(target.panel).style.display = ''
+    document.getElementById(target.nav).classList.add('active')
+  }
+
+  sessionStorage.setItem('aofActiveTab', tab)
 }
 
 // ── ACTION DROPDOWN LOGIC ──
@@ -202,7 +216,7 @@ function filtrarOficios(resetPage = true) {
   const filtered = allRows.filter(row => {
     const matchTexto = !texto || row.dataset.search.includes(texto);
     const matchEstatus = !estatus || row.dataset.estatus === estatus;
-    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
     return matchTexto && matchEstatus && matchUnidad;
   });
 
@@ -239,7 +253,7 @@ function filtrarAtendidos(resetPage = true) {
   const allRows = Array.from(document.querySelectorAll('.at-row'));
   const filtered = allRows.filter(row => {
     const matchTexto = !texto || row.dataset.search.includes(texto);
-    const matchUnidad = !unidad || row.dataset.unidad === unidad;
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
     return matchTexto && matchUnidad;
   });
 
@@ -263,6 +277,278 @@ if (filterUnidadAt) filterUnidadAt.addEventListener('change', () => filtrarAtend
 
 filtrarOficios(false);
 filtrarAtendidos(false);
+
+// ── FOLIO PAGINATION ──
+let pageFolPendAof = 1;
+let pageFolAtendAof = 1;
+
+function filtrarFolPendAof(resetPage = true) {
+  if (resetPage) pageFolPendAof = 1;
+  const searchEl = document.getElementById('searchFolPendAof')
+  const texto = searchEl ? searchEl.value.toLowerCase() : '';
+  const allRows = Array.from(document.querySelectorAll('.fol-pend-row-aof'));
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageFolPendAof > totalPages) pageFolPendAof = totalPages;
+  const start = (pageFolPendAof - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  renderPagination(total, pageFolPendAof, 'pageControlsFolPendAof', 'paginacionInfoFolPendAof', (np) => {
+    pageFolPendAof = np;
+    filtrarFolPendAof(false);
+  });
+}
+
+function filtrarFolAtendAof(resetPage = true) {
+  if (resetPage) pageFolAtendAof = 1;
+  const searchEl = document.getElementById('searchFolAtendAof')
+  const texto = searchEl ? searchEl.value.toLowerCase() : '';
+  const allRows = Array.from(document.querySelectorAll('.fol-atend-row-aof'));
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageFolAtendAof > totalPages) pageFolAtendAof = totalPages;
+  const start = (pageFolAtendAof - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  renderPagination(total, pageFolAtendAof, 'pageControlsFolAtendAof', 'paginacionInfoFolAtendAof', (np) => {
+    pageFolAtendAof = np;
+    filtrarFolAtendAof(false);
+  });
+}
+
+document.getElementById('searchFolPendAof')?.addEventListener('input', () => filtrarFolPendAof(true));
+document.getElementById('searchFolAtendAof')?.addEventListener('input', () => filtrarFolAtendAof(true));
+
+filtrarFolPendAof(false);
+filtrarFolAtendAof(false);
+
+// ── CANCELAR FOLIO ──
+async function cancelarFolioAOF(id) {
+  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) return;
+  try {
+    const res = await fetch(`/folios/${id}/cancelar`, { method: 'PUT' })
+    const data = await res.json()
+    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); return }
+    window.location.reload()
+  } catch {
+    alert('Error de conexión.')
+  }
+}
+
+const savedTabAOF = sessionStorage.getItem('aofActiveTab')
+if (savedTabAOF) cambiarTab(savedTabAOF, null)
+
+// ── FOLIO ACTION DROPDOWN (AOF) ──
+function toggleFolioActionMenuAof(e, id) {
+  e.stopPropagation();
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'action-dropdown active';
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+
+  const dataEl = document.getElementById(`folio-data-aof-${id}`);
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+  const row = document.querySelector(`.folio-row-aof[data-id="${id}"]`);
+  const estatus = row && row.dataset.estatus;
+  const isAtendido = estatus === 'Atendido';
+  const isCancelado = estatus === 'Cancelado';
+
+  const actions = [];
+
+  if ((isAtendido || isCancelado) && data.archivoUrl) {
+    actions.push({
+      label: 'Ver Oficio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => openFileViewer(data.archivoUrl, `Folio ${data.noFolio}`)
+    });
+  }
+
+  if (estatus === 'Pendiente') {
+    actions.push({
+      label: 'Cancelar folio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      action: () => cancelarFolioAOF(id)
+    });
+  }
+
+  menu.innerHTML = actions.length
+    ? actions.map((a, index) => `
+      <button class="dropdown-item" data-index="${index}">
+        ${a.icon} <span>${a.label}</span>
+      </button>
+    `).join('')
+    : '<div class="dropdown-item" style="cursor:default;color:#9ca3af;font-style:italic">Sin acciones disponibles</div>';
+
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item');
+    if (item && item.dataset.index !== undefined) {
+      const index = item.dataset.index;
+      actions[index].action();
+      menu.remove();
+      currentActionMenu = null;
+    }
+  });
+
+  document.body.appendChild(menu);
+  currentActionMenu = menu;
+}
+
+// ── MODAL REGISTRAR FOLIO (AOF) ──
+const modalRegFolioAof = document.getElementById('modalRegistrarFolioAofOverlay')
+let _folioAofUnidadIds = []
+let _folioAofSelectorTempIds = []
+let folioAofGuardando = false
+
+function abrirModalRegistrarFolioAof() {
+  document.getElementById('inputFolAofNoFolio').value = ''
+  document.getElementById('inputFolAofDestinatario').value = ''
+  document.getElementById('inputFolAofDependencia').value = ''
+  document.getElementById('inputFolAofCargo').value = ''
+  document.getElementById('inputFolAofAsunto').value = ''
+  document.getElementById('modalRegistrarFolioAofError').textContent = ''
+  _folioAofUnidadIds = []
+  document.getElementById('btnFolAofUnidadText').textContent = 'Seleccionar unidades'
+  modalRegFolioAof.classList.add('active')
+
+  fetch('/folios/next').then(r => r.json()).then(data => {
+    if (data.noFolio) document.getElementById('inputFolAofNoFolio').value = data.noFolio
+  }).catch(() => {})
+}
+
+function cerrarModalRegistrarFolioAof() {
+  modalRegFolioAof.classList.remove('active')
+  _folioAofUnidadIds = []
+  _folioAofSelectorTempIds = []
+  folioAofGuardando = false
+}
+
+document.getElementById('modalRegistrarFolioAofClose').addEventListener('click', cerrarModalRegistrarFolioAof)
+document.getElementById('btnRegistrarFolioAofCancelar').addEventListener('click', cerrarModalRegistrarFolioAof)
+modalRegFolioAof.addEventListener('click', e => { if (e.target === modalRegFolioAof) cerrarModalRegistrarFolioAof() })
+
+// Folio AOF unit selector (reuses same modal but with different data)
+function abrirSelectorUnidadesFolios() {
+  _folioAofSelectorTempIds = [..._folioAofUnidadIds]
+  // Render the same selector list
+  const list = document.getElementById('selectorList')
+  if (!list.children.length) {
+    // If selector items don't exist yet (first time), they should have been rendered server-side
+  }
+  refreshSelectorSelectionFolios()
+  document.getElementById('searchUnidadesSelector').value = ''
+  renderSelectorItems()
+  document.getElementById('modalSelectorUnidades').classList.add('active')
+  // Override the aplicar function temporarily
+  const originalAplicar = document.getElementById('btnSelectorAplicar').onclick
+  document.getElementById('btnSelectorAplicar').onclick = () => {
+    _folioAofUnidadIds = [..._folioAofSelectorTempIds]
+    const count = _folioAofUnidadIds.length
+    const btnText = document.getElementById('btnFolAofUnidadText')
+    if (count === 0) {
+      btnText.textContent = 'Seleccionar unidades'
+    } else if (count === 1) {
+      const item = document.querySelector(`#selectorList [data-value="${_folioAofUnidadIds[0]}"]`)
+      const alias = item ? item.dataset.alias || item.querySelector('.selector-item-text')?.textContent?.trim() : _folioAofUnidadIds[0]
+      btnText.textContent = `1 unidad: ${alias}`
+    } else {
+      btnText.textContent = `${count} unidades`
+    }
+    document.getElementById('modalSelectorUnidades').classList.remove('active')
+    document.getElementById('btnSelectorAplicar').onclick = aplicarSelectorUnidades // restore
+  }
+}
+
+function refreshSelectorSelectionFolios() {
+  const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
+  const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+  const tempSet = new Set(_folioAofSelectorTempIds)
+  const allSelected = Array.from(items).every(item => tempSet.has(item.dataset.value))
+  if (todasItem) todasItem.classList.toggle('selected', allSelected)
+  items.forEach(item => item.classList.toggle('selected', tempSet.has(item.dataset.value)))
+}
+
+// Intercept selector list clicks for folio context
+document.getElementById('selectorList').addEventListener('click', e => {
+  // If folio selector is open, use its state
+  if (modalRegFolioAof.classList.contains('active')) {
+    const item = e.target.closest('.selector-item')
+    if (!item) return
+    const value = item.dataset.value
+    if (value === '__TODAS__') {
+      const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+      const currentlyAll = _folioAofSelectorTempIds.length === items.length
+      _folioAofSelectorTempIds = currentlyAll ? [] : Array.from(items).map(it => it.dataset.value)
+    } else {
+      const idx = _folioAofSelectorTempIds.indexOf(value)
+      if (idx >= 0) _folioAofSelectorTempIds.splice(idx, 1)
+      else _folioAofSelectorTempIds.push(value)
+    }
+    refreshSelectorSelectionFolios()
+    return
+  }
+  // Otherwise use the original toggle (the one registered earlier still handles it via capture)
+})
+
+document.getElementById('btnRegistrarFolioAofGuardar').addEventListener('click', async () => {
+  if (folioAofGuardando) return
+  folioAofGuardando = true
+
+  const noFolio = document.getElementById('inputFolAofNoFolio').value.trim()
+  const destinatario = document.getElementById('inputFolAofDestinatario').value.trim()
+  const dependencia = document.getElementById('inputFolAofDependencia').value.trim()
+  const cargo = document.getElementById('inputFolAofCargo').value.trim()
+  const asunto = document.getElementById('inputFolAofAsunto').value.trim()
+  const errorEl = document.getElementById('modalRegistrarFolioAofError')
+
+  if (!noFolio || !destinatario || !dependencia || !cargo || !asunto) {
+    errorEl.textContent = 'Todos los campos son obligatorios.'
+    folioAofGuardando = false
+    return
+  }
+  if (!/^\d{4}$/.test(noFolio)) {
+    errorEl.textContent = 'El número de folio debe tener exactamente 4 dígitos.'
+    folioAofGuardando = false
+    return
+  }
+  if (_folioAofUnidadIds.length === 0) {
+    errorEl.textContent = 'Debe seleccionar al menos una unidad.'
+    folioAofGuardando = false
+    return
+  }
+
+  document.getElementById('btnRegistrarFolioAofText').style.display = 'none'
+  document.getElementById('btnRegistrarFolioAofLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+
+  try {
+    const res = await fetch('/folios/aof', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ noFolio, destinatario, dependencia, cargo, asunto, unidadIds: _folioAofUnidadIds })
+    })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar folio.'; return }
+    cerrarModalRegistrarFolioAof()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnRegistrarFolioAofText').style.display = ''
+    document.getElementById('btnRegistrarFolioAofLoader').style.display = 'none'
+    folioAofGuardando = false
+  }
+})
 
 // ── FILE DROP NUEVO OFICIO ──
 const modalOverlay = document.getElementById('modalOficioOverlay')
@@ -324,6 +610,159 @@ function updateFileDropUI(file) {
   }
 }
 
+// ── SELECTOR MODAL DE UNIDADES ──
+// Each context (create/edit) has its own snapshot of selected IDs
+let _unidadesSeleccionadas = []
+let _cooresponsablesSeleccionadas = []
+let _selectorContext = null // 'create-resp' | 'create-cooresp' | 'edit-resp' | 'edit-cooresp'
+let _selectorTempIds = []
+
+function updateUnidadesButton (context) {
+  const isCreate = context.startsWith('create')
+  const isResp = context.endsWith('-resp')
+  const textId = isCreate
+    ? (isResp ? 'btnUnidadesText' : 'btnCoorespText')
+    : (isResp ? 'btnEditUnidadesText' : 'btnEditCoorespText')
+  const countId = isCreate
+    ? (isResp ? 'btnUnidadesCount' : 'btnCoorespCount')
+    : (isResp ? 'btnEditUnidadesCount' : 'btnEditCoorespCount')
+  const ids = isCreate
+    ? (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+    : (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+  const textEl = document.getElementById(textId)
+  const countEl = document.getElementById(countId)
+  if (!textEl) return
+
+  if (ids.length === 0) {
+    textEl.textContent = isResp ? 'Seleccionar unidades' : 'Seleccionar co-responsables'
+    if (countEl) { countEl.textContent = ''; countEl.style.display = 'none' }
+  } else {
+    const aliases = ids.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias || item.querySelector('.selector-item-text')?.textContent?.trim() : id
+    })
+    if (ids.length === 1) {
+      textEl.textContent = `1 unidad: ${aliases[0]}`
+    } else {
+      textEl.textContent = `${ids.length} unidades`
+    }
+    if (countEl) { countEl.textContent = ids.length; countEl.style.display = '' }
+  }
+}
+
+function renderSelectorItems () {
+  const query = (document.getElementById('searchUnidadesSelector').value || '').toLowerCase().trim()
+  const items = document.querySelectorAll('#selectorList .selector-item')
+  let visibleCount = 0
+  const emptyEl = document.getElementById('selectorEmpty')
+
+  items.forEach(item => {
+    if (item.dataset.value === '__TODAS__') {
+      item.style.display = ''
+      visibleCount++
+      return
+    }
+    const search = (item.dataset.search || '').toLowerCase()
+    const match = !query || search.includes(query)
+    item.style.display = match ? '' : 'none'
+    if (match) visibleCount++
+  })
+
+  emptyEl.style.display = visibleCount === 0 ? '' : 'none'
+}
+
+function refreshSelectorSelection () {
+  const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
+  const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+  const tempSet = new Set(_selectorTempIds)
+
+  // Check "TODAS" if all selected, else uncheck
+  const allSelected = Array.from(items).every(item => tempSet.has(item.dataset.value))
+  if (todasItem) {
+    todasItem.classList.toggle('selected', allSelected)
+  }
+
+  items.forEach(item => {
+    item.classList.toggle('selected', tempSet.has(item.dataset.value))
+  })
+}
+
+function toggleSelectorItem (value) {
+  if (value === '__TODAS__') {
+    const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
+    const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
+    const currentlyAll = todasItem && todasItem.classList.contains('selected')
+    if (currentlyAll) {
+      _selectorTempIds = []
+    } else {
+      _selectorTempIds = Array.from(items).map(item => item.dataset.value)
+    }
+    refreshSelectorSelection()
+    return
+  }
+
+  const idx = _selectorTempIds.indexOf(value)
+  if (idx >= 0) {
+    _selectorTempIds.splice(idx, 1)
+  } else {
+    _selectorTempIds.push(value)
+  }
+  refreshSelectorSelection()
+}
+
+function abrirSelectorUnidades (context) {
+  _selectorContext = context
+  const isCreate = context.startsWith('create')
+  const isResp = context.endsWith('-resp')
+  _selectorTempIds = [...(isCreate
+    ? (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas)
+    : (isResp ? _unidadesSeleccionadas : _cooresponsablesSeleccionadas))]
+  refreshSelectorSelection()
+  document.getElementById('searchUnidadesSelector').value = ''
+  renderSelectorItems()
+  document.getElementById('modalSelectorUnidades').classList.add('active')
+}
+
+function cerrarSelectorUnidades (cancel) {
+  document.getElementById('modalSelectorUnidades').classList.remove('active')
+  _selectorContext = null
+  if (cancel) _selectorTempIds = []
+}
+
+function aplicarSelectorUnidades () {
+  const isResp = _selectorContext.endsWith('-resp')
+  if (isResp) {
+    _unidadesSeleccionadas = [..._selectorTempIds]
+  } else {
+    _cooresponsablesSeleccionadas = [..._selectorTempIds]
+  }
+  updateUnidadesButton(_selectorContext)
+  cerrarSelectorUnidades(false)
+}
+
+// ── Eventos del modal selector ──
+document.getElementById('modalSelectorClose').addEventListener('click', () => cerrarSelectorUnidades(true))
+document.getElementById('btnSelectorCancelar').addEventListener('click', () => cerrarSelectorUnidades(true))
+document.getElementById('btnSelectorAplicar').addEventListener('click', aplicarSelectorUnidades)
+document.getElementById('modalSelectorUnidades').addEventListener('click', e => {
+  if (e.target === e.currentTarget) cerrarSelectorUnidades(true)
+})
+
+document.getElementById('searchUnidadesSelector').addEventListener('input', renderSelectorItems)
+
+document.getElementById('selectorList').addEventListener('click', e => {
+  if (modalRegFolioAof.classList.contains('active')) return
+  const item = e.target.closest('.selector-item')
+  if (!item) return
+  toggleSelectorItem(item.dataset.value)
+})
+
+// ── Botones que abren el selector ──
+document.getElementById('btnSelectUnidades').addEventListener('click', () => abrirSelectorUnidades('create-resp'))
+document.getElementById('btnEditSelectUnidades').addEventListener('click', () => abrirSelectorUnidades('edit-resp'))
+document.getElementById('btnSelectCooresponsables').addEventListener('click', () => abrirSelectorUnidades('create-cooresp'))
+document.getElementById('btnEditSelectCooresponsables').addEventListener('click', () => abrirSelectorUnidades('edit-cooresp'))
+
 const cerrarModal = () => {
   modalOverlay.classList.remove('active')
   document.getElementById('modalOficioError').textContent = ''
@@ -331,12 +770,27 @@ const cerrarModal = () => {
     'inputAsunto','inputRemitente','inputCargo','inputDependencia'].forEach(id => {
     document.getElementById(id).value = ''
   })
-  document.getElementById('inputUnidadTurnar').value = ''
-  // Reset checkbox
+  _unidadesSeleccionadas = []
+  _cooresponsablesSeleccionadas = []
+  updateUnidadesButton('create-resp')
+  updateUnidadesButton('create-cooresp')
   const chk = document.getElementById('inputEsCorreo')
   if (chk) chk.checked = false
+  const chkModo = document.getElementById('inputEsConocimiento')
+  if (chkModo) chkModo.checked = false
+  toggleCoorespRow()
   updateFileDropUI(null)
 }
+
+function toggleCoorespRow () {
+  const isConocimiento = document.getElementById('inputEsConocimiento')?.checked
+  const regRow = document.getElementById('rowCooresponsablesReg')
+  const editRow = document.getElementById('rowCooresponsablesEdit')
+  if (regRow) regRow.style.display = isConocimiento ? 'none' : ''
+  if (editRow) editRow.style.display = isConocimiento ? 'none' : ''
+}
+
+document.getElementById('inputEsConocimiento')?.addEventListener('change', toggleCoorespRow)
 
 document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
 document.getElementById('modalOficioClose').addEventListener('click', cerrarModal)
@@ -369,14 +823,17 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   const remitente = document.getElementById('inputRemitente').value.trim()
   const cargo = document.getElementById('inputCargo').value.trim()
   const dependencia = document.getElementById('inputDependencia').value.trim()
-  const unidadSelect = document.getElementById('inputUnidadTurnar')
-  const unidadId = unidadSelect.value
-  const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+  const unidadIds = _unidadesSeleccionadas
+  const unidadAlias = unidadIds.map(id => {
+    const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+    return item ? item.dataset.alias : id
+  }).join(', ')
   const archivo = inputArchivo.files[0]
   const esCorreo = document.getElementById('inputEsCorreo')?.checked ? '1' : '0'
+  const esConocimiento = document.getElementById('inputEsConocimiento')?.checked ? '1' : '0'
   const errorEl = document.getElementById('modalOficioError')
 
-  if (!noOficio || !fechaOficio || !asunto || !remitente || !unidadId) {
+  if (!noOficio || !fechaOficio || !asunto || !remitente || unidadIds.length === 0) {
     errorEl.textContent = 'No. oficio, fecha, asunto, remitente y unidad son obligatorios.'
     return
   }
@@ -386,6 +843,14 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   errorEl.textContent = ''
 
   try {
+    const responsableIds = _unidadesSeleccionadas
+    const cooresponsableIds = esConocimiento === '1' ? [] : _cooresponsablesSeleccionadas
+    const allUnitIds = [...new Set([...responsableIds, ...cooresponsableIds])]
+    const allUnitAlias = allUnitIds.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias : id
+    }).join(', ')
+
     const formData = new FormData()
     formData.append('noOficio', noOficio)
     formData.append('fechaOficio', fechaOficio)
@@ -395,9 +860,12 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
     formData.append('remitente', remitente)
     formData.append('cargo', cargo)
     formData.append('dependencia', dependencia)
-    formData.append('unidadId', unidadId)
-    formData.append('unidadAlias', unidadAlias)
+    allUnitIds.forEach(id => formData.append('unidadIds', id))
+    formData.append('unidadAlias', allUnitAlias)
+    responsableIds.forEach(id => formData.append('responsableIds', id))
+    cooresponsableIds.forEach(id => formData.append('cooresponsableIds', id))
     formData.append('tipoArchivo', esCorreo)
+    formData.append('modo', esConocimiento)
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch('/oficios', { method: 'POST', body: formData })
@@ -493,12 +961,17 @@ function abrirModalEditar(oficio) {
   document.getElementById('editRemitente').value    = oficio.remitente   || ''
   document.getElementById('editCargo').value        = oficio.cargo       || ''
   document.getElementById('editDependencia').value  = oficio.dependencia || ''
-  document.getElementById('editUnidadTurnar').value = oficio.unidadId    || ''
+  _unidadesSeleccionadas = [...(oficio.responsableIds || oficio.unidadIds || [])]
+  _cooresponsablesSeleccionadas = [...(oficio.cooresponsableIds || [])]
+  updateUnidadesButton('edit-resp')
+  updateUnidadesButton('edit-cooresp')
   document.getElementById('editEstatus').value      = oficio.estatus     || 'Pendiente'
 
-  // Set tipoArchivo checkbox
   const editChk = document.getElementById('editEsCorreo')
   if (editChk) editChk.checked = oficio.tipoArchivo === 1
+  const editChkModo = document.getElementById('editEsConocimiento')
+  if (editChkModo) editChkModo.checked = oficio.modo === 1
+  toggleCoorespRow()
 
   const avisoArchivo = document.getElementById('editArchivoActual')
   avisoArchivo.style.display = oficio.tieneArchivo ? 'block' : 'none'
@@ -512,7 +985,14 @@ function abrirModalEditar(oficio) {
 const cerrarModalEditar = () => {
   modalEditarOverlay.classList.remove('active')
   _oficioEditandoId = null
+  _unidadesSeleccionadas = []
+  _cooresponsablesSeleccionadas = []
+  updateUnidadesButton('edit-resp')
+  updateUnidadesButton('edit-cooresp')
   document.getElementById('modalEditarError').textContent = ''
+  const chkEditModo = document.getElementById('editEsConocimiento')
+  if (chkEditModo) chkEditModo.checked = false
+  toggleCoorespRow()
   editArchivo.value = ''
   updateEditFileDropUI(null)
 }
@@ -558,12 +1038,15 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   const noOficio    = document.getElementById('editNoOficio').value.trim()
   const asunto      = document.getElementById('editAsunto').value.trim()
   const remitente   = document.getElementById('editRemitente').value.trim()
-  const unidadSelect = document.getElementById('editUnidadTurnar')
-  const unidadId    = unidadSelect.value
-  const unidadAlias = unidadSelect.selectedOptions[0]?.dataset.alias || ''
+  const unidadIds   = _unidadesSeleccionadas
+  const unidadAlias = unidadIds.map(id => {
+    const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+    return item ? item.dataset.alias : id
+  }).join(', ')
   const esCorreo    = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
+  const esConocimiento = document.getElementById('editEsConocimiento')?.checked ? '1' : '0'
 
-  if (!noOficio || !asunto || !remitente || !unidadId) {
+  if (!noOficio || !asunto || !remitente || unidadIds.length === 0) {
     errorEl.textContent = 'No. oficio, asunto, remitente y unidad son obligatorios.'
     return
   }
@@ -573,6 +1056,14 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   errorEl.textContent = ''
 
   try {
+    const responsableIds = _unidadesSeleccionadas
+    const cooresponsableIds = esConocimiento === '1' ? [] : _cooresponsablesSeleccionadas
+    const allUnitIds = [...new Set([...responsableIds, ...cooresponsableIds])]
+    const allUnitAlias = allUnitIds.map(id => {
+      const item = document.querySelector(`#selectorList [data-value="${id}"]`)
+      return item ? item.dataset.alias : id
+    }).join(', ')
+
     const formData = new FormData()
     formData.append('noOficio',    noOficio)
     formData.append('fechaOficio', document.getElementById('editFechaOficio').value)
@@ -582,10 +1073,13 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     formData.append('remitente',   remitente)
     formData.append('cargo',       document.getElementById('editCargo').value.trim())
     formData.append('dependencia', document.getElementById('editDependencia').value.trim())
-    formData.append('unidadId',    unidadId)
-    formData.append('unidadAlias', unidadAlias)
+    allUnitIds.forEach(id => formData.append('unidadIds', id))
+    formData.append('unidadAlias', allUnitAlias)
+    responsableIds.forEach(id => formData.append('responsableIds', id))
+    cooresponsableIds.forEach(id => formData.append('cooresponsableIds', id))
     formData.append('estatus',     document.getElementById('editEstatus').value)
     formData.append('tipoArchivo', esCorreo)
+    formData.append('modo', esConocimiento)
     if (editArchivo.files[0]) formData.append('archivo', editArchivo.files[0])
 
     const res = await fetch(`/oficios/${_oficioEditandoId}`, { method: 'PUT', body: formData })

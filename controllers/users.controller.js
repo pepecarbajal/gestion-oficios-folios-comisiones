@@ -1,19 +1,17 @@
 import { UserRepository } from '../repositories/user.repository.js'
 import { AuditRepository } from '../repositories/audit.repository.js'
+import { getIp } from '../utils/ip.js'
 
-const getIp = (req) =>
-  req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || null
-
-export const getUsuarios = async (req, res) => {
+export const getUsuarios = async (req, res, next) => {
   try {
     const usuarios = await UserRepository.getAll()
     res.json(usuarios)
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    next(error)
   }
 }
 
-export const updateUsuario = async (req, res) => {
+export const updateUsuario = async (req, res, next) => {
   const { id } = req.params
   const { username, email, role, estatus, password } = req.body
 
@@ -36,6 +34,6 @@ export const updateUsuario = async (req, res) => {
 
     res.json({ message: 'Usuario actualizado correctamente' })
   } catch (error) {
-    res.status(400).json({ error: error.message })
+    next(error)
   }
 }

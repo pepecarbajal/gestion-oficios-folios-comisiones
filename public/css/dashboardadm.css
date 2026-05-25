@@ -1,0 +1,90 @@
+/* styles-dashboardadm.css — importa estilos compartidos */
+/* En el HTML: <link rel="stylesheet" href="/styles-base.css"> antes de este archivo */
+/* Nota: este dashboard usa Segoe UI en lugar de DM Sans */
+
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+.logout { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+/* ── CARD ── */
+.content-card { padding: 28px 32px; }
+.card-header { margin-bottom: 24px; }
+
+.section-title { font-size: 1rem; font-weight: 600; color: #1a1a2e; }
+
+/* btn-primary como <a> sin flex (ADM lo usa como enlace estático) */
+.btn-primary {
+  display: inline-block;
+  text-decoration: none;
+  padding: 10px 18px;
+}
+
+/* ── TABLE ── */
+.table td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; }
+
+/* ── BADGES ── */
+.badge { font-size: 0.78rem; }
+.badge-active  { background-color: #dcfce7; color: #16a34a; }
+.badge-inactive { background-color: #fee2e2; color: #dc2626; }
+
+/* ── ID CELL ── */
+.id-cell { color: #9ca3af; font-size: 0.82rem; font-weight: 500; }
+
+/* ── MODAL ── */
+.modal { max-width: 480px; border-radius: 12px; padding: 28px 32px; }
+.modal-header { margin-bottom: 24px; }
+.modal-header h3 { font-size: 1.1rem; }
+.modal-body { gap: 16px; }
+.modal-error { min-height: 16px; }
+.modal-footer { margin-top: 24px; }
+
+.form-group input,
+.form-group select {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+.form-group input:focus,
+.form-group select:focus { border-color: #1e3a5f; }
+
+.form-row { gap: 14px; }
+
+/* ── FILTROS LOGS ── */
+.filter-bar { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-group label { font-size: 0.78rem; color: #6b7280; font-weight: 500; }
+.filter-group input,
+.filter-group select {
+  padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem;
+  background: #fff; min-width: 160px;
+}
+.filter-group input:focus,
+.filter-group select:focus { border-color: #1e3a5f; outline: none; }
+
+/* ── AUDIT TABLE ── */
+.audit-table { font-size: 0.85rem; }
+.audit-table td { padding: 10px 12px; vertical-align: middle; }
+.fecha-cell { white-space: nowrap; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.78rem; color: #6b7280; }
+.accion-cell { font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.8rem; }
+.detalle-cell { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #374151; }
+.ip-cell { font-family: 'Consolas', 'Courier New', monospace; font-size: 0.78rem; color: #9ca3af; }
+
+/* ── USER BADGE ── */
+.user-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.72rem; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace;
+  vertical-align: middle; line-height: 1.4;
+}
+.user-email { margin-left: 6px; font-size: 0.82rem; color: #374151; }
+
+/* ── ROW ERROR ── */
+.row-error { background-color: #dc2626 !important; }
+.row-error td { color: #fff; border-bottom-color: #b91c1c; }
+.row-error .user-email { color: rgba(255,255,255,0.85); }
+.row-error .fecha-cell { color: rgba(255,255,255,0.75); }
+.row-error .ip-cell { color: rgba(255,255,255,0.6); }
+.row-error .user-badge { outline: 1px solid rgba(255,255,255,0.4); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 0.9rem; }
+
+/* ── TABLE WRAPPER ── */
+.table-wrapper { overflow-x: auto; }

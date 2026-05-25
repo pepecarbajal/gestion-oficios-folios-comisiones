@@ -191,3 +191,61 @@
   cursor: help;
   border-bottom: 1px dashed #888;
 }
+
+/* ── SIDEBAR SUBMENU ── */
+.nav-section { margin-bottom: 2px; }
+.nav-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #a0b0c0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.subnav { display: flex; flex-direction: column; }
+.subnav-item {
+  display: block;
+  padding: 8px 16px 8px 28px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+}
+.subnav-item:hover { color: #e5e7eb; background: rgba(255,255,255,0.05); }
+.subnav-item.active { color: #fff; border-left-color: #fff; background: rgba(255,255,255,0.08); }
+
+/* ── FOLIO TABLES ── */
+#tablaFolPendAof,
+#tablaFolAtendAof {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+#tablaFolPendAof th, #tablaFolPendAof td,
+#tablaFolAtendAof th, #tablaFolAtendAof td {
+  padding: 10px 10px;
+  vertical-align: middle;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ── BTN SELECTOR UNIDAD ── */
+.btn-selector-unidad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.btn-selector-unidad:hover { border-color: #2563eb; }

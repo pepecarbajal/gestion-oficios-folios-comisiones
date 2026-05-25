@@ -316,12 +316,24 @@
     <aside class="sidebar">
       <div class="sidebar-top">
         <nav class="nav">
-          <a href="#" class="nav-item active" id="navOficios" onclick="cambiarTab('oficios', event)">Oficios</a>
-          <a href="#" class="nav-item" id="navAtendidos" onclick="cambiarTab('atendidos', event)">Atendidos</a>
+          <div class="nav-section">
+            <span class="nav-item nav-header">Oficios</span>
+            <div class="subnav">
+              <a href="#" class="subnav-item active" id="navOfPendientesAof" onclick="cambiarTab('oficios-pendientes', event)">Pendientes</a>
+              <a href="#" class="subnav-item" id="navOfAtendidosAof" onclick="cambiarTab('oficios-atendidos', event)">Atendidos</a>
+            </div>
+          </div>
+          <div class="nav-section">
+            <span class="nav-item nav-header">Folios</span>
+            <div class="subnav">
+              <a href="#" class="subnav-item" id="navFolPendientesAof" onclick="cambiarTab('folios-pendientes', event)">Pendientes</a>
+              <a href="#" class="subnav-item" id="navFolAtendidosAof" onclick="cambiarTab('folios-atendidos', event)">Atendidos</a>
+            </div>
+          </div>
         </nav>
       </div>
       <div class="sidebar-bottom">
-        <span class="rol-label">Asistente de Folios</span>
+        <span class="rol-label">Asistente de Oficios</span>
         <form action="/logout" method="POST" style="margin:0" id="formLogout">
           <input type="hidden" name="_csrf" id="csrfLogout">
           <button type="submit" class="logout">
@@ -338,8 +350,8 @@
 
     <main class="main">
 
-      <!-- ═══════════════ TAB OFICIOS ═══════════════ -->
-      <div id="tabOficios" class="content-card tab-panel">
+      <!-- ═══════════════ TAB OFICIOS PENDIENTES ═══════════════ -->
+      <div id="tabOfPendientesAof" class="content-card tab-panel">
         <div class="card-header">
           <div class="filters">
             <div class="search-wrap">
@@ -502,8 +514,8 @@
         </div>
       </div>
 
-      <!-- ═══════════════ TAB ATENDIDOS ═══════════════ -->
-      <div id="tabAtendidos" class="content-card tab-panel" style="display:none">
+      <!-- ═══════════════ TAB OFICIOS ATENDIDOS ═══════════════ -->
+      <div id="tabOfAtendidosAof" class="content-card tab-panel" style="display:none">
         <div class="card-header">
           <div class="filters">
             <div class="search-wrap">
@@ -625,6 +637,148 @@
         <% } %>
       </div>
 
+      <%# ═══════════════ TAB FOLIOS PENDIENTES ═══════════════ %>
+      <div id="tabFolPendientesAof" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="searchFolPendAof" placeholder="Buscar..." class="search-input">
+            </div>
+            <button class="btn-primary" id="btnRegistrarFolioAof" onclick="abrirModalRegistrarFolioAof()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Registrar Folio
+            </button>
+          </div>
+        </div>
+        <table class="table" id="tablaFolPendAof">
+          <colgroup>
+            <col style="width:10%">
+            <col style="width:20%">
+            <col style="width:26%">
+            <col style="width:14%">
+            <col style="width:16%">
+            <col style="width:80px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>No. Folio</th>
+              <th>Destinatario</th>
+              <th>Asunto</th>
+              <th>Unidad</th>
+              <th>Fecha solicitud</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFolPendAof">
+            <% if (foliosPend.length === 0) { %>
+              <tr><td colspan="6" class="empty-state">No hay folios pendientes.</td></tr>
+            <% } %>
+            <% foliosPend.forEach(f => { %>
+              <tr class="folio-row-aof fol-pend-row-aof"
+                data-search="<%= (f.noFolio + ' ' + f.destinatario + ' ' + f.dependencia + ' ' + f.cargo + ' ' + f.asunto + ' ' + f.unidadAlias).toLowerCase() %>"
+                data-id="<%= f.id %>"
+                data-estatus="<%= f.estatus %>">
+                <script type="application/json" id="folio-data-aof-<%= f.id %>"><%- JSON.stringify({
+                   id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                 }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                <td class="no-cell"><%= f.noFolio %></td>
+                <td>
+                  <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
+                </td>
+                <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
+                <td class="unidad-cell"><%= f.unidadAlias %></td>
+                <td class="fecha-cell">
+                  <%= new Date(f.fechaSolicitud).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                </td>
+                <td class="actions-cell">
+                  <button class="menu-btn" onclick="toggleFolioActionMenuAof(event, '<%= f.id %>')" title="Acciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoFolPendAof">Mostrando 0 de 0</span>
+          <div class="page-controls" id="pageControlsFolPendAof"></div>
+        </div>
+      </div>
+
+      <%# ═══════════════ TAB FOLIOS ATENDIDOS ═══════════════ %>
+      <div id="tabFolAtendidosAof" class="content-card tab-panel" style="display:none">
+        <div class="card-header">
+          <div class="filters">
+            <div class="search-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="searchFolAtendAof" placeholder="Buscar..." class="search-input">
+            </div>
+          </div>
+        </div>
+        <table class="table" id="tablaFolAtendAof">
+          <colgroup>
+            <col style="width:8%">
+            <col style="width:18%">
+            <col style="width:22%">
+            <col style="width:14%">
+            <col style="width:12%">
+            <col style="width:12%">
+            <col style="width:80px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>No. Folio</th>
+              <th>Destinatario</th>
+              <th>Asunto</th>
+              <th>Unidad</th>
+              <th>Fecha solicitud</th>
+              <th>Fecha entrega</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFolAtendAof">
+            <% if (foliosAtend.length === 0) { %>
+              <tr><td colspan="7" class="empty-state">No hay folios atendidos.</td></tr>
+            <% } %>
+            <% foliosAtend.forEach(f => { %>
+              <tr class="folio-row-aof fol-atend-row-aof<%= f.estatus === 'Cancelado' ? ' folio-cancelado' : '' %>"
+                data-search="<%= (f.noFolio + ' ' + f.destinatario + ' ' + f.dependencia + ' ' + f.cargo + ' ' + f.asunto + ' ' + f.unidadAlias).toLowerCase() %>"
+                data-id="<%= f.id %>"
+                data-estatus="<%= f.estatus %>">
+                <script type="application/json" id="folio-data-aof-<%= f.id %>"><%- JSON.stringify({
+                   id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                 }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                <td class="no-cell"><%= f.noFolio %></td>
+                <td>
+                  <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
+                </td>
+                <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
+                <td class="unidad-cell"><%= f.unidadAlias %></td>
+                <td class="fecha-cell">
+                  <%= new Date(f.fechaSolicitud).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %>
+                </td>
+                <td class="fecha-cell">
+                  <% if (f.estatus === 'Cancelado') { %>
+                    <span class="badge-cancelado">Cancelado</span>
+                  <% } else { %>
+                    <%= f.fechaEntrega ? new Date(f.fechaEntrega).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
+                  <% } %>
+                </td>
+                <td class="actions-cell">
+                  <button class="menu-btn" onclick="toggleFolioActionMenuAof(event, '<%= f.id %>')" title="Acciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span id="paginacionInfoFolAtendAof">Mostrando 0 de 0</span>
+          <div class="page-controls" id="pageControlsFolAtendAof"></div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -798,6 +952,69 @@
     </div>
   </div>
 
+  <!-- ═══════════ MODAL RESPUESTAS ═══════════ -->
+  <div class="modal-overlay" id="modalRespuestasOverlay">
+    <div class="modal modal-respuestas">
+      <div class="modal-header">
+        <h3 id="modalRespuestasTitulo">Respuestas</h3>
+        <button class="modal-close" id="modalRespuestasClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="listaRespuestasModal"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnRespuestasCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL REGISTRAR FOLIO (AOF) %>
+  <div class="modal-overlay" id="modalRegistrarFolioAofOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Registrar Folio</h3>
+        <button class="modal-close" id="modalRegistrarFolioAofClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalRegistrarFolioAofError"></p>
+        <div class="form-group">
+          <label>No. Folio</label>
+          <input type="text" id="inputFolAofNoFolio" placeholder="Número de folio">
+        </div>
+        <div class="form-group">
+          <label>Destinatario</label>
+          <input type="text" id="inputFolAofDestinatario" placeholder="Nombre del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Dependencia</label>
+          <input type="text" id="inputFolAofDependencia" placeholder="Dependencia">
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="inputFolAofCargo" placeholder="Cargo del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <textarea id="inputFolAofAsunto" placeholder="Asunto del folio" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Turnar a unidad(es)</label>
+          <button type="button" class="btn-selector-unidad" id="btnFolAofSelectorUnidad" onclick="abrirSelectorUnidadesFolios()">
+            <span id="btnFolAofUnidadText">Seleccionar unidades</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnRegistrarFolioAofCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnRegistrarFolioAofGuardar">
+          <span id="btnRegistrarFolioAofText">Registrar</span>
+          <span id="btnRegistrarFolioAofLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════ MODAL SELECTOR DE UNIDADES ═══════════ -->
   <div class="modal-overlay" id="modalSelectorUnidades">
     <div class="modal modal-selector-unidades">
@@ -831,22 +1048,6 @@
       <div class="modal-footer">
         <button class="btn-cancel" id="btnSelectorCancelar">Cancelar</button>
         <button class="btn-primary" id="btnSelectorAplicar">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ MODAL RESPUESTAS ═══════════ -->
-  <div class="modal-overlay" id="modalRespuestasOverlay">
-    <div class="modal modal-respuestas">
-      <div class="modal-header">
-        <h3 id="modalRespuestasTitulo">Respuestas</h3>
-        <button class="modal-close" id="modalRespuestasClose">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="listaRespuestasModal"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" id="btnRespuestasCerrar">Cerrar</button>
       </div>
     </div>
   </div>

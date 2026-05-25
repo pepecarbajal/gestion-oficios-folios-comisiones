@@ -181,6 +181,7 @@ body {
 .user-cell { display: flex; flex-direction: column; gap: 2px; }
 
 .sub { display: block; font-size: 0.76rem; color: #9ca3af; margin-top: 1px; }
+.sub-dependencia { color: #b0b8c4; font-size: 0.72rem; }
 
 
 /* ── BADGES ── */
@@ -525,4 +526,29 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.folio-cancelado td {
+  color: #dc2626 !important;
+}
+.folio-cancelado td .user-cell strong {
+  color: #dc2626 !important;
+}
+.folio-cancelado td .sub-dependencia {
+  color: #fca5a5 !important;
+}
+.folio-cancelado td .cargo-txt {
+  color: #fca5a5 !important;
+}
+.badge-cancelado {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #fecaca;
 }

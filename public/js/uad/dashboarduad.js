@@ -52,13 +52,28 @@ function abrirModalResponder(oficioId, comentario = '', archivos = '[]', yaRespo
   modalOverlay.classList.add('active');
 }
 
+// ── TAB / SIDEBAR ──
 function cambiarTab(tab, e) {
   if (e) e.preventDefault()
-  const esPend = tab === 'pendientes'
-  document.getElementById('tabPendientes').style.display = esPend ? '' : 'none'
-  document.getElementById('tabAtendidos').style.display = esPend ? 'none' : ''
-  document.getElementById('navPendientes').classList.toggle('active', esPend)
-  document.getElementById('navAtendidos').classList.toggle('active', !esPend)
+  const tabMap = {
+    'oficios-pendientes': { panel: 'tabOfPendientes', nav: 'navOfPendientes' },
+    'oficios-atendidos': { panel: 'tabOfAtendidos', nav: 'navOfAtendidos' },
+    'folios-pendientes': { panel: 'tabFolPendientes', nav: 'navFolPendientes' },
+    'folios-atendidos': { panel: 'tabFolAtendidos', nav: 'navFolAtendidos' }
+  }
+  const allPanels = ['tabOfPendientes', 'tabOfAtendidos', 'tabFolPendientes', 'tabFolAtendidos']
+  const allNavs = ['navOfPendientes', 'navOfAtendidos', 'navFolPendientes', 'navFolAtendidos']
+
+  allPanels.forEach(pid => { document.getElementById(pid).style.display = 'none' })
+  allNavs.forEach(nid => { document.getElementById(nid).classList.remove('active') })
+
+  const target = tabMap[tab]
+  if (target) {
+    document.getElementById(target.panel).style.display = ''
+    document.getElementById(target.nav).classList.add('active')
+  }
+
+  sessionStorage.setItem('uadActiveTab', tab)
 }
 
 async function marcarEnterado(oficioId) {
@@ -74,7 +89,7 @@ async function marcarEnterado(oficioId) {
   }
 }
 
-// ── ACTION DROPDOWN LOGIC ──
+// ── ACTION DROPDOWN LOGIC (OFICIOS) ──
 let currentActionMenu = null;
 
 function toggleActionMenu(e, id) {
@@ -114,23 +129,24 @@ function toggleActionMenu(e, id) {
   const esConocimiento = data.modo === 1;
   const esCoResponsable = row && row.dataset.ecooresponsable === 'true';
 
-  // Co-responsables only see "Ver oficio" (already in actions above)
   if (esCoResponsable) {
-    menu.innerHTML = actions.map((a, index) => `
+  menu.innerHTML = actions.length
+    ? actions.map((a, index) => `
       <button class="dropdown-item" data-index="${index}">
         ${a.icon} <span>${a.label}</span>
       </button>
-    `).join('');
+    `).join('')
+    : '<div class="dropdown-item" style="cursor:default;color:#9ca3af;font-style:italic">Sin acciones disponibles</div>';
 
-    menu.addEventListener('click', (e) => {
-      const item = e.target.closest('.dropdown-item');
-      if (item) {
-        const index = item.dataset.index;
-        actions[index].action();
-        menu.remove();
-        currentActionMenu = null;
-      }
-    });
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item');
+    if (item && item.dataset.index !== undefined) {
+      const index = item.dataset.index;
+      actions[index].action();
+      menu.remove();
+      currentActionMenu = null;
+    }
+  });
 
     document.body.appendChild(menu);
     currentActionMenu = menu;
@@ -209,10 +225,77 @@ document.addEventListener('click', () => {
   }
 });
 
+// ── FOLIO ACTION DROPDOWN ──
+function toggleFolioActionMenu(e, id) {
+  e.stopPropagation();
+  if (currentActionMenu) {
+    currentActionMenu.remove();
+    currentActionMenu = null;
+  }
+
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'action-dropdown active';
+  menu.style.top = `${rect.bottom + window.scrollY}px`;
+  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+
+  const dataEl = document.getElementById(`folio-data-${id}`);
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+  const row = document.querySelector(`.folio-row[data-id="${id}"]`);
+  const estatus = row && row.dataset.estatus;
+  const isAtendido = estatus === 'Atendido';
+  const isCancelado = estatus === 'Cancelado';
+
+  const actions = [];
+
+  if ((isAtendido || isCancelado) && data.archivoUrl) {
+    actions.push({
+      label: 'Ver Oficio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => openFileViewer(data.archivoUrl, `Folio ${data.noFolio}`)
+    });
+  }
+
+  if (estatus === 'Pendiente') {
+    actions.push({
+      label: 'Registrar entrega',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      action: () => abrirModalEntrega(id)
+    });
+    actions.push({
+      label: 'Cancelar folio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      action: () => cancelarFolioUAD(id)
+    });
+  }
+
+  menu.innerHTML = actions.map((a, index) => `
+    <button class="dropdown-item" data-index="${index}">
+      ${a.icon} <span>${a.label}</span>
+    </button>
+  `).join('');
+
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item');
+    if (item) {
+      const index = item.dataset.index;
+      actions[index].action();
+      menu.remove();
+      currentActionMenu = null;
+    }
+  });
+
+  document.body.appendChild(menu);
+  currentActionMenu = menu;
+}
+
 // ── PAGINATION ──
 const PAGE_SIZE = 10;
-let pagePend = 1;
-let pageAtend = 1;
+let pageOfPend = 1;
+let pageOfAtend = 1;
+let pageFolPend = 1;
+let pageFolAtend = 1;
 
 function renderPagination(total, page, containerId, infoId, onPageChange) {
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
@@ -261,11 +344,12 @@ function renderPagination(total, page, containerId, infoId, onPageChange) {
   });
 }
 
+// ── FILTERS: OFICIOS PENDIENTES ──
 const searchPend = document.getElementById('searchPendientes')
 const filterEstatusPend = document.getElementById('filterEstatusPend')
 
 function filtrarPendientes(resetPage = true) {
-  if (resetPage) pagePend = 1;
+  if (resetPage) pageOfPend = 1;
 
   const texto = searchPend.value.toLowerCase();
   const estatus = filterEstatusPend.value;
@@ -279,23 +363,26 @@ function filtrarPendientes(resetPage = true) {
 
   const total = filtered.length;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pagePend > totalPages) pagePend = totalPages;
-  const start = (pagePend - 1) * PAGE_SIZE;
+  if (pageOfPend > totalPages) pageOfPend = totalPages;
+  const start = (pageOfPend - 1) * PAGE_SIZE;
   const end = start + PAGE_SIZE;
 
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pagePend, 'pageControlsPend', 'paginacionInfoPend', (np) => {
-    pagePend = np;
+  renderPagination(total, pageOfPend, 'pageControlsPend', 'paginacionInfoPend', (np) => {
+    pageOfPend = np;
     filtrarPendientes(false);
   });
 }
 
-searchPend.addEventListener('input', () => filtrarPendientes(true));
-filterEstatusPend.addEventListener('change', () => filtrarPendientes(true));
+if (searchPend) searchPend.addEventListener('input', () => filtrarPendientes(true));
+if (filterEstatusPend) filterEstatusPend.addEventListener('change', () => filtrarPendientes(true));
+
+// ── FILTERS: OFICIOS ATENDIDOS ──
+const searchAtend = document.getElementById('searchAtendidos')
 function filtrarAtendidos(resetPage = true) {
-  if (resetPage) pageAtend = 1;
+  if (resetPage) pageOfAtend = 1;
 
   const texto = searchAtend ? searchAtend.value.toLowerCase() : '';
 
@@ -306,27 +393,90 @@ function filtrarAtendidos(resetPage = true) {
 
   const total = filtered.length;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pageAtend > totalPages) pageAtend = totalPages;
-  const start = (pageAtend - 1) * PAGE_SIZE;
+  if (pageOfAtend > totalPages) pageOfAtend = totalPages;
+  const start = (pageOfAtend - 1) * PAGE_SIZE;
   const end = start + PAGE_SIZE;
 
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pageAtend, 'pageControlsAtend', 'paginacionInfoAtend', (np) => {
-    pageAtend = np;
+  renderPagination(total, pageOfAtend, 'pageControlsAtend', 'paginacionInfoAtend', (np) => {
+    pageOfAtend = np;
     filtrarAtendidos(false);
   });
 }
 
-const searchAtend = document.getElementById('searchAtendidos')
-if (searchAtend) {
-  searchAtend.addEventListener('input', () => filtrarAtendidos(true));
+if (searchAtend) searchAtend.addEventListener('input', () => filtrarAtendidos(true));
+
+// ── FILTERS: FOLIOS PENDIENTES ──
+const searchFolPend = document.getElementById('searchFolPend')
+
+function filtrarFolPend(resetPage = true) {
+  if (resetPage) pageFolPend = 1;
+  const texto = searchFolPend ? searchFolPend.value.toLowerCase() : '';
+  const allRows = Array.from(document.querySelectorAll('.fol-pend-row'));
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageFolPend > totalPages) pageFolPend = totalPages;
+  const start = (pageFolPend - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  renderPagination(total, pageFolPend, 'pageControlsFolPend', 'paginacionInfoFolPend', (np) => {
+    pageFolPend = np;
+    filtrarFolPend(false);
+  });
 }
 
+if (searchFolPend) searchFolPend.addEventListener('input', () => filtrarFolPend(true));
+
+// ── FILTERS: FOLIOS ATENDIDOS ──
+const searchFolAtend = document.getElementById('searchFolAtend')
+
+function filtrarFolAtend(resetPage = true) {
+  if (resetPage) pageFolAtend = 1;
+  const texto = searchFolAtend ? searchFolAtend.value.toLowerCase() : '';
+  const allRows = Array.from(document.querySelectorAll('.fol-atend-row'));
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (pageFolAtend > totalPages) pageFolAtend = totalPages;
+  const start = (pageFolAtend - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  allRows.forEach(row => { row.style.display = 'none'; });
+  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  renderPagination(total, pageFolAtend, 'pageControlsFolAtend', 'paginacionInfoFolAtend', (np) => {
+    pageFolAtend = np;
+    filtrarFolAtend(false);
+  });
+}
+
+if (searchFolAtend) searchFolAtend.addEventListener('input', () => filtrarFolAtend(true));
+
+// ── CANCELAR FOLIO ──
+async function cancelarFolioUAD(id) {
+  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) return;
+  try {
+    const res = await fetch(`/folios/${id}/cancelar`, { method: 'PUT' })
+    const data = await res.json()
+    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); return }
+    window.location.reload()
+  } catch {
+    alert('Error de conexión.')
+  }
+}
+
+// ── INIT ──
 filtrarPendientes(false);
 filtrarAtendidos(false);
+filtrarFolPend(false);
+filtrarFolAtend(false);
 
+const savedTabUAD = sessionStorage.getItem('uadActiveTab')
+if (savedTabUAD) cambiarTab(savedTabUAD, null)
+
+// ── MODAL RESPUESTA (oficios) ──
 const modalOverlay = document.getElementById('modalRespuestaOverlay')
 const inputEvidencias = document.getElementById('inputEvidencias')
 const fileDropMulti = document.getElementById('fileDropMulti')
@@ -452,5 +602,178 @@ document.getElementById('btnRespuestaGuardar').addEventListener('click', async (
   } finally {
     document.getElementById('btnGuardarText').style.display = ''
     document.getElementById('btnGuardarLoader').style.display = 'none'
+  }
+})
+
+// ── MODAL SOLICITAR FOLIO ──
+const modalSolicitarFolioOverlay = document.getElementById('modalSolicitarFolioOverlay')
+let folioSolicitarGuardando = false
+
+function abrirModalSolicitarFolio() {
+  document.getElementById('inputFolDestinatario').value = ''
+  document.getElementById('inputFolDependencia').value = ''
+  document.getElementById('inputFolCargo').value = ''
+  document.getElementById('inputFolAsunto').value = ''
+  document.getElementById('modalSolicitarFolioError').textContent = ''
+  modalSolicitarFolioOverlay.classList.add('active')
+}
+
+function cerrarModalSolicitarFolio() {
+  modalSolicitarFolioOverlay.classList.remove('active')
+  folioSolicitarGuardando = false
+}
+
+document.getElementById('modalSolicitarFolioClose').addEventListener('click', cerrarModalSolicitarFolio)
+document.getElementById('btnSolicitarFolioCancelar').addEventListener('click', cerrarModalSolicitarFolio)
+modalSolicitarFolioOverlay.addEventListener('click', e => { if (e.target === modalSolicitarFolioOverlay) cerrarModalSolicitarFolio() })
+
+document.getElementById('btnSolicitarFolioGuardar').addEventListener('click', async () => {
+  if (folioSolicitarGuardando) return
+  folioSolicitarGuardando = true
+
+  const destinatario = document.getElementById('inputFolDestinatario').value.trim()
+  const dependencia = document.getElementById('inputFolDependencia').value.trim()
+  const cargo = document.getElementById('inputFolCargo').value.trim()
+  const asunto = document.getElementById('inputFolAsunto').value.trim()
+  const errorEl = document.getElementById('modalSolicitarFolioError')
+
+  if (!destinatario || !dependencia || !cargo || !asunto) {
+    errorEl.textContent = 'Todos los campos son obligatorios.'
+    folioSolicitarGuardando = false
+    return
+  }
+
+  document.getElementById('btnSolicitarFolioText').style.display = 'none'
+  document.getElementById('btnSolicitarFolioLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+
+  try {
+    const res = await fetch('/folios/uad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destinatario, dependencia, cargo, asunto })
+    })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al solicitar folio.'; return }
+    cerrarModalSolicitarFolio()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnSolicitarFolioText').style.display = ''
+    document.getElementById('btnSolicitarFolioLoader').style.display = 'none'
+    folioSolicitarGuardando = false
+  }
+})
+
+// ── MODAL REGISTRAR ENTREGA ──
+const modalEntregaOverlay = document.getElementById('modalEntregaOverlay')
+let entregaFolioId = null
+let entregaArchivo = null
+let entregaGuardando = false
+
+function abrirModalEntrega(folioId) {
+  entregaFolioId = folioId
+  entregaArchivo = null
+  document.getElementById('inputFechaEntrega').value = new Date().toISOString().split('T')[0]
+  document.getElementById('inputEntregaComentario').value = ''
+  document.getElementById('modalEntregaError').textContent = ''
+  document.getElementById('fileLabelEntrega').textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
+  document.getElementById('listaArchivosEntrega').innerHTML = ''
+  modalEntregaOverlay.classList.add('active')
+}
+
+function cerrarModalEntrega() {
+  modalEntregaOverlay.classList.remove('active')
+  entregaFolioId = null
+  entregaArchivo = null
+  entregaGuardando = false
+}
+
+document.getElementById('modalEntregaClose').addEventListener('click', cerrarModalEntrega)
+document.getElementById('btnEntregaCancelar').addEventListener('click', cerrarModalEntrega)
+modalEntregaOverlay.addEventListener('click', e => { if (e.target === modalEntregaOverlay) cerrarModalEntrega() })
+
+const fileDropEntrega = document.getElementById('fileDropEntrega')
+const inputEntregaPDF = document.getElementById('inputEntregaPDF')
+const fileLabelEntrega = document.getElementById('fileLabelEntrega')
+
+fileDropEntrega.addEventListener('click', () => inputEntregaPDF.click())
+inputEntregaPDF.addEventListener('change', () => {
+  if (inputEntregaPDF.files.length > 0) {
+    const file = inputEntregaPDF.files[0]
+    if (file.type !== 'application/pdf') {
+      document.getElementById('modalEntregaError').textContent = 'Solo se permiten archivos PDF.'
+      return
+    }
+    entregaArchivo = file
+    fileLabelEntrega.textContent = file.name
+    fileDropEntrega.classList.add('has-file')
+    document.getElementById('listaArchivosEntrega').innerHTML =
+      `<div class="file-chip-single"><div class="file-info"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span></div><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+  }
+})
+fileDropEntrega.addEventListener('dragover', e => { e.preventDefault(); fileDropEntrega.classList.add('drag-over') })
+fileDropEntrega.addEventListener('dragleave', () => fileDropEntrega.classList.remove('drag-over'))
+fileDropEntrega.addEventListener('drop', e => {
+  e.preventDefault()
+  fileDropEntrega.classList.remove('drag-over')
+  if (e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0]
+    if (file.type !== 'application/pdf') {
+      document.getElementById('modalEntregaError').textContent = 'Solo se permiten archivos PDF.'
+      return
+    }
+    entregaArchivo = file
+    fileLabelEntrega.textContent = file.name
+    fileDropEntrega.classList.add('has-file')
+    inputEntregaPDF.files = e.dataTransfer.files
+    document.getElementById('listaArchivosEntrega').innerHTML =
+      `<div class="file-chip-single"><div class="file-info"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span></div><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+  }
+})
+
+function eliminarEntregaPDF() {
+  entregaArchivo = null
+  inputEntregaPDF.value = ''
+  fileLabelEntrega.textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
+  fileDropEntrega.classList.remove('has-file')
+  document.getElementById('listaArchivosEntrega').innerHTML = ''
+}
+
+document.getElementById('btnEntregaGuardar').addEventListener('click', async () => {
+  if (entregaGuardando) return
+  entregaGuardando = true
+
+  const fechaEntrega = document.getElementById('inputFechaEntrega').value
+  const comentario = document.getElementById('inputEntregaComentario').value.trim()
+  const errorEl = document.getElementById('modalEntregaError')
+
+  if (!fechaEntrega) {
+    errorEl.textContent = 'La fecha de entrega es obligatoria.'
+    entregaGuardando = false
+    return
+  }
+
+  document.getElementById('btnEntregaText').style.display = 'none'
+  document.getElementById('btnEntregaLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('fechaEntrega', fechaEntrega)
+    formData.append('comentario', comentario)
+    if (entregaArchivo) formData.append('archivo', entregaArchivo)
+    const res = await fetch(`/folios/${entregaFolioId}/entrega`, { method: 'PUT', body: formData })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar entrega.'; return }
+    cerrarModalEntrega()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnEntregaText').style.display = ''
+    document.getElementById('btnEntregaLoader').style.display = 'none'
+    entregaGuardando = false
   }
 })

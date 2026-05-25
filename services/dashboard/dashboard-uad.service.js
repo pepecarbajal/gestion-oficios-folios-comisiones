@@ -1,8 +1,12 @@
 import { UADRepository } from '../../repositories/uad.repository.js'
 import { OficioRepository } from '../../repositories/oficio.repository.js'
+import { FolioRepository } from '../../repositories/folio.repository.js'
 
 export const getDashboardUAD = async (unidadId, unidadAlias) => {
-  const oficiosRaw = await OficioRepository.getByUnidad(unidadId)
+  const [oficiosRaw, foliosRaw] = await Promise.all([
+    OficioRepository.getByUnidad(unidadId),
+    FolioRepository.getByUnidad(unidadId)
+  ])
   const ahora = new Date()
 
   const calcPrioridad = (o) => {
@@ -58,6 +62,9 @@ export const getDashboardUAD = async (unidadId, unidadAlias) => {
   const unidadMap = {}
   todasUnidades.forEach(u => { unidadMap[u.id] = u.alias })
 
+  const foliosPend = foliosRaw.filter(f => f.estatus === 'Pendiente')
+  const foliosAtend = foliosRaw.filter(f => f.estatus !== 'Pendiente')
+
   const coresponsableMap = {}
   oficiosRaw.forEach(o => {
     const cooresp = o.cooresponsableIds || []
@@ -69,5 +76,5 @@ export const getDashboardUAD = async (unidadId, unidadAlias) => {
     }
   })
 
-  return { oficiosPend, oficiosAtend, oficios: oficiosRaw, unidadId, unidadAlias, coresponsableMap }
+  return { oficiosPend, oficiosAtend, oficios: oficiosRaw, foliosPend, foliosAtend, folios: foliosRaw, unidadId, unidadAlias, coresponsableMap }
 }

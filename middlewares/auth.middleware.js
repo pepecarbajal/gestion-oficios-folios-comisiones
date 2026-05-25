@@ -55,3 +55,17 @@ export const requireUAD = (req, res, next) => {
   }
   next()
 }
+
+export const requireUADorAOF = (req, res, next) => {
+  if (!['UAD', 'AOF'].includes(req.user?.role)) {
+    return res.status(403).json({ error: 'Forbidden: acción no disponible' })
+  }
+  if (!req.user?.unidadId) {
+    return res.status(403).json({ error: 'Tu usuario no tiene una unidad administrativa asignada' })
+  }
+  req.uad = {
+    unidadId: req.user.unidadId,
+    unidadAlias: req.user.unidadAlias || ''
+  }
+  next()
+}

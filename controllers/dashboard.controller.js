@@ -19,6 +19,8 @@ export const dashboard = async (req, res, next) => {
         return res.render('dashboardaof', {
           title: 'Asistente de Oficios',
           styles: ['/css/dashboardaof.css'],
+          unidadId: result.unidadId || null,
+          unidadAlias: result.unidadAlias || null,
           ...result.data
         })
       case 'UAD':

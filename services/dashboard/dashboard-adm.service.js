@@ -53,7 +53,7 @@ export const getDashboardADM = async (section) => {
 
     const titularesAsignados = new Set(unidades.map(u => u.titularId).filter(Boolean))
     const usuariosDisponibles = usuarios
-      .filter(u => u.role === 'UAD' && !titularesAsignados.has(u.id))
+      .filter(u => ['UAD', 'AOF'].includes(u.role) && !titularesAsignados.has(u.id))
       .map(u => ({
         id: u.id,
         nombre: u.username,

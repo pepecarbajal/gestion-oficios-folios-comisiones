@@ -51,19 +51,25 @@ function cambiarTab(tab, e) {
     'oficios-pendientes': { panel: 'tabOfPendientesAof', nav: 'navOfPendientesAof', section: 'OficiosAof' },
     'oficios-atendidos': { panel: 'tabOfAtendidosAof', nav: 'navOfAtendidosAof', section: 'OficiosAof' },
     'folios-pendientes': { panel: 'tabFolPendientesAof', nav: 'navFolPendientesAof', section: 'FoliosAof' },
-    'folios-atendidos': { panel: 'tabFolAtendidosAof', nav: 'navFolAtendidosAof', section: 'FoliosAof' }
+    'folios-atendidos': { panel: 'tabFolAtendidosAof', nav: 'navFolAtendidosAof', section: 'FoliosAof' },
+    'mi-pendientes': { panel: 'tabMiPendientesAof', nav: 'navMiPendientesAof', section: 'MiUnidad' },
+    'mi-atendidos': { panel: 'tabMiAtendidosAof', nav: 'navMiAtendidosAof', section: 'MiUnidad' },
+    'mi-fol-pendientes': { panel: 'tabMiFolPendientesAof', nav: 'navMiFolPendientesAof', section: 'MiUnidad' },
+    'mi-fol-atendidos': { panel: 'tabMiFolAtendidosAof', nav: 'navMiFolAtendidosAof', section: 'MiUnidad' }
   }
 
-  const navIds = ['navOfPendientesAof', 'navOfAtendidosAof', 'navFolPendientesAof', 'navFolAtendidosAof']
-  const panelIds = ['tabOfPendientesAof', 'tabOfAtendidosAof', 'tabFolPendientesAof', 'tabFolAtendidosAof']
+  const allPanelIds = ['tabOfPendientesAof', 'tabOfAtendidosAof', 'tabFolPendientesAof', 'tabFolAtendidosAof', 'tabMiPendientesAof', 'tabMiAtendidosAof', 'tabMiFolPendientesAof', 'tabMiFolAtendidosAof']
+  const allNavIds = ['navOfPendientesAof', 'navOfAtendidosAof', 'navFolPendientesAof', 'navFolAtendidosAof', 'navMiPendientesAof', 'navMiAtendidosAof', 'navMiFolPendientesAof', 'navMiFolAtendidosAof']
 
-  panelIds.forEach(pid => { document.getElementById(pid).style.display = 'none' })
-  navIds.forEach(nid => { document.getElementById(nid).classList.remove('active') })
+  allPanelIds.forEach(pid => { const el = document.getElementById(pid); if (el) el.style.display = 'none' })
+  allNavIds.forEach(nid => { const el = document.getElementById(nid); if (el) el.classList.remove('active') })
 
   const target = tabMap[tab]
   if (target) {
-    document.getElementById(target.panel).style.display = ''
-    document.getElementById(target.nav).classList.add('active')
+    const panel = document.getElementById(target.panel)
+    const nav = document.getElementById(target.nav)
+    if (panel) panel.style.display = ''
+    if (nav) nav.classList.add('active')
   }
 
   sessionStorage.setItem('aofActiveTab', tab)
@@ -1102,3 +1108,114 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     document.getElementById('btnEditarLoader').style.display = 'none'
   }
 })
+
+// ── MODAL RESPONDER (MI UNIDAD) ──
+const modalMiRespOverlay = document.getElementById('modalMiResponderOverlay')
+if (modalMiRespOverlay) {
+  let miRespId = null
+  let miRespArchivos = []
+  const inputMiEv = document.getElementById('inputMiEvidencias')
+  const dropMi = document.getElementById('fileDropMiResponder')
+  const labelMi = document.getElementById('fileLabelMiResponder')
+  const listaMi = document.getElementById('listaArchivosMiResponder')
+  const tiposMi = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  const iconoTipoMi = tipo => tipo === 'application/pdf'
+    ? `<span class="archivo-type-badge pdf">PDF</span>`
+    : `<span class="archivo-type-badge img">IMG</span>`
+
+  function renderListaMiResp() {
+    listaMi.innerHTML = ''
+    miRespArchivos.forEach((file, i) => {
+      const chip = document.createElement('div')
+      chip.className = 'archivo-chip-selected'
+      chip.innerHTML = `${iconoTipoMi(file.type)}<span>${file.name}</span><button class="chip-remove" data-i="${i}">&times;</button>`
+      listaMi.appendChild(chip)
+    })
+    listaMi.querySelectorAll('.chip-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        miRespArchivos.splice(Number(btn.dataset.i), 1)
+        renderListaMiResp()
+      })
+    })
+    labelMi.textContent = miRespArchivos.length > 0
+      ? `${miRespArchivos.length} archivo(s) seleccionado(s)`
+      : 'Arrastra archivos aquí o haz clic para seleccionar'
+  }
+
+  function agregarArchivosMi(nuevos) {
+    const errorEl = document.getElementById('modalMiResponderError')
+    for (const file of nuevos) {
+      if (!tiposMi.includes(file.type)) {
+        errorEl.textContent = `Tipo no permitido: ${file.name}. Solo PDF e imágenes.`
+        continue
+      }
+      if (!miRespArchivos.find(f => f.name === file.name)) {
+        miRespArchivos.push(file)
+      }
+    }
+    renderListaMiResp()
+  }
+
+  document.querySelectorAll('.btn-responder-mi').forEach(btn => {
+    btn.addEventListener('click', () => {
+      miRespId = btn.dataset.id
+      miRespArchivos = []
+      document.getElementById('inputMiResponderComentario').value = ''
+      document.getElementById('modalMiResponderError').textContent = ''
+      renderListaMiResp()
+      modalMiRespOverlay.style.display = ''
+      modalMiRespOverlay.classList.add('active')
+    })
+  })
+
+  dropMi.addEventListener('click', () => inputMiEv.click())
+  inputMiEv.addEventListener('change', () => {
+    agregarArchivosMi(Array.from(inputMiEv.files))
+    inputMiEv.value = ''
+  })
+  dropMi.addEventListener('dragover', e => { e.preventDefault(); dropMi.classList.add('drag-over') })
+  dropMi.addEventListener('dragleave', () => dropMi.classList.remove('drag-over'))
+  dropMi.addEventListener('drop', e => {
+    e.preventDefault()
+    dropMi.classList.remove('drag-over')
+    agregarArchivosMi(Array.from(e.dataTransfer.files))
+  })
+
+  function cerrarMiResponder() {
+    modalMiRespOverlay.classList.remove('active')
+    modalMiRespOverlay.style.display = 'none'
+    miRespId = null
+    miRespArchivos = []
+  }
+
+  document.getElementById('modalMiResponderClose').addEventListener('click', cerrarMiResponder)
+  document.getElementById('btnMiResponderCancelar').addEventListener('click', cerrarMiResponder)
+  modalMiRespOverlay.addEventListener('click', e => { if (e.target === modalMiRespOverlay) cerrarMiResponder() })
+
+  document.getElementById('btnMiResponderGuardar').addEventListener('click', async () => {
+    const comentario = document.getElementById('inputMiResponderComentario').value.trim()
+    const errorEl = document.getElementById('modalMiResponderError')
+    if (!comentario && miRespArchivos.length === 0) {
+      errorEl.textContent = 'Debes agregar un comentario o al menos un archivo.'
+      return
+    }
+    document.getElementById('btnMiResponderText').style.display = 'none'
+    document.getElementById('btnMiResponderLoader').style.display = 'inline-block'
+    errorEl.textContent = ''
+    try {
+      const formData = new FormData()
+      formData.append('comentario', comentario)
+      miRespArchivos.forEach(file => formData.append('archivos', file))
+      const res = await fetch(`/oficios/${miRespId}/respuesta`, { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) { errorEl.textContent = data.error || 'Error al guardar respuesta.'; return }
+      cerrarMiResponder()
+      window.location.reload()
+    } catch {
+      errorEl.textContent = 'Error de conexión.'
+    } finally {
+      document.getElementById('btnMiResponderText').style.display = ''
+      document.getElementById('btnMiResponderLoader').style.display = 'none'
+    }
+  })
+}

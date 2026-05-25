@@ -23,7 +23,7 @@ export const authenticateUser = async ({ email, password, ip }) => {
   let unidadId = null
   let unidadAlias = ''
 
-  if (user.role === 'UAD') {
+  if (['UAD', 'AOF'].includes(user.role)) {
     try {
       const unidad = await UADRepository.getByTitularId(user._id)
       if (unidad) {

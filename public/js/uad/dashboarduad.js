@@ -76,16 +76,20 @@ function cambiarTab(tab, e) {
   sessionStorage.setItem('uadActiveTab', tab)
 }
 
+let marcarEnteradoGuardando = false
 async function marcarEnterado(oficioId) {
+  if (marcarEnteradoGuardando) return
+  marcarEnteradoGuardando = true
   try {
     const formData = new FormData()
     formData.append('comentario', '')
     const res = await fetch(`/oficios/${oficioId}/respuesta`, { method: 'POST', body: formData })
     const data = await res.json()
-    if (!res.ok) { alert(data.error || 'Error al marcar como enterado'); return }
+    if (!res.ok) { alert(data.error || 'Error al marcar como enterado'); marcarEnteradoGuardando = false; return }
     window.location.reload()
   } catch {
     alert('Error de conexión.')
+    marcarEnteradoGuardando = false
   }
 }
 
@@ -455,15 +459,19 @@ function filtrarFolAtend(resetPage = true) {
 if (searchFolAtend) searchFolAtend.addEventListener('input', () => filtrarFolAtend(true));
 
 // ── CANCELAR FOLIO ──
+let cancelarFolioUADGuardando = false
 async function cancelarFolioUAD(id) {
-  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) return;
+  if (cancelarFolioUADGuardando) return
+  cancelarFolioUADGuardando = true
+  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) { cancelarFolioUADGuardando = false; return; }
   try {
     const res = await fetch(`/folios/${id}/cancelar`, { method: 'PUT' })
     const data = await res.json()
-    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); return }
+    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); cancelarFolioUADGuardando = false; return }
     window.location.reload()
   } catch {
     alert('Error de conexión.')
+    cancelarFolioUADGuardando = false
   }
 }
 
@@ -484,6 +492,7 @@ const fileLabelMulti = document.getElementById('fileLabelMulti')
 const listaArchivos = document.getElementById('listaArchivos')
 let oficioRespId = null
 let archivosSeleccionados = []
+let respuestaGuardando = false
 
 const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 const iconoTipo = tipo => tipo === 'application/pdf'
@@ -585,6 +594,8 @@ document.getElementById('btnRespuestaGuardar').addEventListener('click', async (
     errorEl.textContent = 'Debes agregar un comentario o al menos un archivo.'
     return
   }
+  if (respuestaGuardando) return
+  respuestaGuardando = true
   document.getElementById('btnGuardarText').style.display = 'none'
   document.getElementById('btnGuardarLoader').style.display = 'inline-block'
   errorEl.textContent = ''
@@ -602,6 +613,7 @@ document.getElementById('btnRespuestaGuardar').addEventListener('click', async (
   } finally {
     document.getElementById('btnGuardarText').style.display = ''
     document.getElementById('btnGuardarLoader').style.display = 'none'
+    respuestaGuardando = false
   }
 })
 

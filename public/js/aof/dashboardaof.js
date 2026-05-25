@@ -1,3 +1,5 @@
+let oficioRegistrarGuardando = false
+
 const modalRespOverlay = document.getElementById('modalRespuestasOverlay')
 const listaRespModal = document.getElementById('listaRespuestasModal')
 
@@ -333,15 +335,19 @@ filtrarFolPendAof(false);
 filtrarFolAtendAof(false);
 
 // ── CANCELAR FOLIO ──
+let cancelarFolioAOFGuardando = false
 async function cancelarFolioAOF(id) {
-  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) return;
+  if (cancelarFolioAOFGuardando) return
+  cancelarFolioAOFGuardando = true
+  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) { cancelarFolioAOFGuardando = false; return; }
   try {
     const res = await fetch(`/folios/${id}/cancelar`, { method: 'PUT' })
     const data = await res.json()
-    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); return }
+    if (!res.ok) { alert(data.error || 'Error al cancelar folio.'); cancelarFolioAOFGuardando = false; return }
     window.location.reload()
   } catch {
     alert('Error de conexión.')
+    cancelarFolioAOFGuardando = false
   }
 }
 
@@ -821,6 +827,8 @@ fileDrop.addEventListener('drop', e => {
 })
 
 document.getElementById('btnOficioRegistrar').addEventListener('click', async () => {
+  if (oficioRegistrarGuardando) return
+  oficioRegistrarGuardando = true
   const noOficio = document.getElementById('inputNoOficio').value.trim()
   const fechaOficio = document.getElementById('inputFechaOficio').value
   const fechaRecibo = document.getElementById('inputFechaRecibo').value
@@ -893,6 +901,7 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
   } finally {
     document.getElementById('btnRegistrarText').style.display = ''
     document.getElementById('btnRegistrarLoader').style.display = 'none'
+    oficioRegistrarGuardando = false
   }
 })
 
@@ -901,6 +910,7 @@ const modalEditarOverlay = document.getElementById('modalEditarOverlay')
 const editFileDrop       = document.getElementById('editFileDrop')
 const editArchivo        = document.getElementById('editArchivo')
 let _oficioEditandoId    = null
+let editarGuardando      = false
 
 function updateEditFileDropUI(file) {
   const children = Array.from(editFileDrop.children)
@@ -1052,8 +1062,12 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   const esCorreo    = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
   const esConocimiento = document.getElementById('editEsConocimiento')?.checked ? '1' : '0'
 
+  if (editarGuardando) return
+  editarGuardando = true
+
   if (!noOficio || !asunto || !remitente || unidadIds.length === 0) {
     errorEl.textContent = 'No. oficio, asunto, remitente y unidad son obligatorios.'
+    editarGuardando = false
     return
   }
 
@@ -1106,6 +1120,7 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   } finally {
     document.getElementById('btnEditarText').style.display   = ''
     document.getElementById('btnEditarLoader').style.display = 'none'
+    editarGuardando = false
   }
 })
 
@@ -1114,6 +1129,7 @@ const modalMiRespOverlay = document.getElementById('modalMiResponderOverlay')
 if (modalMiRespOverlay) {
   let miRespId = null
   let miRespArchivos = []
+  let miResponderGuardando = false
   const inputMiEv = document.getElementById('inputMiEvidencias')
   const dropMi = document.getElementById('fileDropMiResponder')
   const labelMi = document.getElementById('fileLabelMiResponder')
@@ -1199,6 +1215,8 @@ if (modalMiRespOverlay) {
       errorEl.textContent = 'Debes agregar un comentario o al menos un archivo.'
       return
     }
+    if (miResponderGuardando) return
+    miResponderGuardando = true
     document.getElementById('btnMiResponderText').style.display = 'none'
     document.getElementById('btnMiResponderLoader').style.display = 'inline-block'
     errorEl.textContent = ''
@@ -1216,6 +1234,7 @@ if (modalMiRespOverlay) {
     } finally {
       document.getElementById('btnMiResponderText').style.display = ''
       document.getElementById('btnMiResponderLoader').style.display = 'none'
+      miResponderGuardando = false
     }
   })
 }

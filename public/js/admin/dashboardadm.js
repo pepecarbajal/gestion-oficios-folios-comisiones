@@ -178,7 +178,10 @@ if (overlay) {
   
   const btnAgregar = document.getElementById('btnAgregar')
   if (btnAgregar) {
+    let agregarGuardando = false
     btnAgregar.addEventListener('click', async () => {
+      if (agregarGuardando) return
+      agregarGuardando = true
       const username = document.getElementById('inputNombre').value.trim()
       const email    = document.getElementById('inputCorreo').value.trim()
       const password = document.getElementById('inputPassword').value.trim()
@@ -187,6 +190,7 @@ if (overlay) {
   
       if (!username || !email || !password || !role || !estatus) {
         if (modalError) modalError.textContent = 'Todos los campos son obligatorios.'
+        agregarGuardando = false
         return
       }
       try {
@@ -196,10 +200,10 @@ if (overlay) {
           body: JSON.stringify({ username, email, password, role })
         })
         const data = await res.json()
-        if (!res.ok) { if (modalError) modalError.textContent = data.error || 'Error al registrar usuario.'; return }
+        if (!res.ok) { if (modalError) modalError.textContent = data.error || 'Error al registrar usuario.'; agregarGuardando = false; return }
         cerrarModal()
         window.location.reload()
-      } catch { if (modalError) modalError.textContent = 'Error de conexión.' }
+      } catch { if (modalError) modalError.textContent = 'Error de conexión.'; agregarGuardando = false }
     })
   }
 }
@@ -237,7 +241,10 @@ if (editOverlay) {
   
   const btnGuardar = document.getElementById('btnGuardar')
   if (btnGuardar) {
+    let guardarUsuarioGuardando = false
     btnGuardar.addEventListener('click', async () => {
+      if (guardarUsuarioGuardando) return
+      guardarUsuarioGuardando = true
       const username = document.getElementById('editNombre').value.trim()
       const email    = document.getElementById('editCorreo').value.trim()
       const role     = document.getElementById('editRol').value
@@ -246,6 +253,7 @@ if (editOverlay) {
   
       if (!username || !email || !role || !estatus) {
         if (modalEditError) modalEditError.textContent = 'Todos los campos son obligatorios.'
+        guardarUsuarioGuardando = false
         return
       }
       try {
@@ -255,10 +263,10 @@ if (editOverlay) {
           body: JSON.stringify({ username, email, role, estatus, password })
         })
         const data = await res.json()
-        if (!res.ok) { if (modalEditError) modalEditError.textContent = data.error || 'Error al actualizar usuario.'; return }
+        if (!res.ok) { if (modalEditError) modalEditError.textContent = data.error || 'Error al actualizar usuario.'; guardarUsuarioGuardando = false; return }
         cerrarModalEdit()
         window.location.reload()
-      } catch { if (modalEditError) modalEditError.textContent = 'Error de conexión.' }
+      } catch { if (modalEditError) modalEditError.textContent = 'Error de conexión.'; guardarUsuarioGuardando = false }
     })
   }
 }
@@ -289,12 +297,15 @@ if (uadOverlay) {
   
   const btnUadAgregar = document.getElementById('btnUadAgregar')
   if (btnUadAgregar) {
+    let uadAgregarGuardando = false
     btnUadAgregar.addEventListener('click', async () => {
+      if (uadAgregarGuardando) return
+      uadAgregarGuardando = true
       const uadname   = document.getElementById('inputUadNombre').value.trim()
       const alias     = document.getElementById('inputUadAlias').value.trim()
       const titularId = document.getElementById('inputUadTitular').value || null
   
-      if (!uadname || !alias) { if (modalUadError) modalUadError.textContent = 'Nombre y alias son obligatorios.'; return }
+      if (!uadname || !alias) { if (modalUadError) modalUadError.textContent = 'Nombre y alias son obligatorios.'; uadAgregarGuardando = false; return }
   
       try {
         const res  = await fetch('/registeruad', {
@@ -303,10 +314,10 @@ if (uadOverlay) {
           body: JSON.stringify({ uadname, alias, titularId })
         })
         const data = await res.json()
-        if (!res.ok) { if (modalUadError) modalUadError.textContent = data.error || 'Error al registrar unidad.'; return }
+        if (!res.ok) { if (modalUadError) modalUadError.textContent = data.error || 'Error al registrar unidad.'; uadAgregarGuardando = false; return }
         cerrarUadModal()
         window.location.reload()
-      } catch { if (modalUadError) modalUadError.textContent = 'Error de conexión.' }
+      } catch { if (modalUadError) modalUadError.textContent = 'Error de conexión.'; uadAgregarGuardando = false }
     })
   }
 }
@@ -359,12 +370,15 @@ if (uadEditOverlay) {
   
   const btnUadGuardar = document.getElementById('btnUadGuardar')
   if (btnUadGuardar) {
+    let uadGuardarGuardando = false
     btnUadGuardar.addEventListener('click', async () => {
+      if (uadGuardarGuardando) return
+      uadGuardarGuardando = true
       const uadname   = document.getElementById('editUadNombre').value.trim()
       const alias     = document.getElementById('editUadAlias').value.trim()
       const titularId = document.getElementById('editUadTitular').value || null
   
-      if (!uadname || !alias) { if (modalUadEditError) modalUadEditError.textContent = 'Nombre y alias son obligatorios.'; return }
+      if (!uadname || !alias) { if (modalUadEditError) modalUadEditError.textContent = 'Nombre y alias son obligatorios.'; uadGuardarGuardando = false; return }
   
       try {
         const res  = await fetch(`/uads/${uadEditandoId}`, {
@@ -373,10 +387,10 @@ if (uadEditOverlay) {
           body: JSON.stringify({ uadname, alias, titularId })
         })
         const data = await res.json()
-        if (!res.ok) { if (modalUadEditError) modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; return }
+        if (!res.ok) { if (modalUadEditError) modalUadEditError.textContent = data.error || 'Error al actualizar unidad.'; uadGuardarGuardando = false; return }
         cerrarUadEditModal()
         window.location.reload()
-      } catch { if (modalUadEditError) modalUadEditError.textContent = 'Error de conexión.' }
+      } catch { if (modalUadEditError) modalUadEditError.textContent = 'Error de conexión.'; uadGuardarGuardando = false }
     })
   }
 }

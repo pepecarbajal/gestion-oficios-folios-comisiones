@@ -19,9 +19,8 @@ router.put('/oficios/:id/estatus',
   actualizarEstatusOficio)
 
 router.post('/oficios/:id/respuesta',
-  authMiddleware, requireUADorAOF,
+  authMiddleware, requireUADorAOF, csrfProtection,
   uploadEvidencias.array('archivos', 10),
-  csrfProtection,
   guardarRespuestaUAD)
 
 router.post('/oficios/:id/visto',

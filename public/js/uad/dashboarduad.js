@@ -4,19 +4,83 @@ const iconoTipoEv = tipo => tipo === 'application/pdf'
   ? `<span class="archivo-type-badge pdf">PDF</span>`
   : `<span class="archivo-type-badge img">IMG</span>`
 
-function abrirEvidencias(id, comentario = '', archivos = []) {
-  let content = '';
-  if (comentario) {
-    content += `<p class="resp-comentario">"${comentario}"</p>`;
+function renderRespuestaCard(r, esAclaracion = false) {
+  const fecha = r.fechaAtendido ? new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : ''
+  let html = ''
+  if (esAclaracion) {
+    html += `<div class="respuesta-item aclaracion-item">`
+  } else {
+    html += `<div class="respuesta-item">`
   }
+  html += `<div class="respuesta-body">`
+  html += `<div class="respuesta-header">`
+  if (esAclaracion) {
+    html += `<span class="resp-alias aclaracion-label">Nota aclaratoria</span>`
+  } else {
+    html += `<span class="resp-alias">${r.unidadAlias || '—'}</span>`
+  }
+  if (fecha) {
+    html += `<span class="resp-fecha">${fecha}</span>`
+  }
+  html += `</div>`
+  if (r.comentario) {
+    if (esAclaracion) {
+      html += `<p class="resp-comentario aclaracion-text">"${r.comentario}"</p>`
+    } else {
+      html += `<p class="resp-comentario">"${r.comentario}"</p>`
+    }
+  }
+  if (r.archivos && r.archivos.length > 0) {
+    html += `<div class="resp-archivos">`
+    html += r.archivos.map(a => {
+      const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
+      return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`
+    }).join('')
+    html += `</div>`
+  }
+  html += `</div></div>`
+  return html
+}
+
+function abrirEvidencias(id, comentario = '', archivos = []) {
+  const todasResp = (window.__respuestas && window.__respuestas[id]) || []
+  const row = document.querySelector(`.oficio-row[data-id="${id}"]`)
+  const unidadId = row && row.closest('.layout') ? null : null // not needed here
   
-  if (archivos && archivos.length > 0) {
-    content += archivos.map(a => {
-      const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
-      return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`;
-    }).join('');
-  } else if (!comentario) {
-    content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>';
+  let content = '';
+  
+  // If we have window.__respuestas, show all responses for this unit
+  if (todasResp.length > 0) {
+    const respuestasUnidad = todasResp.filter(r => {
+      // We need to figure out the current unit's ID
+      return true // show all for the evidence modal
+    })
+    const originales = todasResp.filter(r => !r.esAclaracion)
+    const aclaraciones = todasResp.filter(r => r.esAclaracion)
+    
+    originales.forEach(r => {
+      content += renderRespuestaCard(r, false)
+    })
+    aclaraciones.forEach(r => {
+      content += renderRespuestaCard(r, true)
+    })
+    
+    if (!content) {
+      content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin información.</p>'
+    }
+  } else {
+    // Fallback to the old way
+    if (comentario) {
+      content += `<p class="resp-comentario">"${comentario}"</p>`
+    }
+    if (archivos && archivos.length > 0) {
+      content += archivos.map(a => {
+        const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
+        return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoEv(a.tipo)} <span>${a.nombre}</span></a>`
+      }).join('')
+    } else if (!comentario) {
+      content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin archivos adjuntos.</p>'
+    }
   }
   
   listaEvidModal.innerHTML = content;
@@ -185,6 +249,13 @@ function toggleActionMenu(e, id) {
         abrirEvidencias(id, comentario, archivos);
       }
     });
+    if (!esCoResponsable) {
+      actions.push({
+        label: 'Agregar aclaración',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+        action: () => abrirModalAclaracion(id)
+      });
+    }
   } else {
     actions.push({
       label: yaRespondio ? 'Editar respuesta' : 'Registrar respuesta',
@@ -614,6 +685,118 @@ document.getElementById('btnRespuestaGuardar').addEventListener('click', async (
     document.getElementById('btnGuardarText').style.display = ''
     document.getElementById('btnGuardarLoader').style.display = 'none'
     respuestaGuardando = false
+  }
+})
+
+// ── MODAL ACLARACION ──
+const modalAclaracionOverlay = document.getElementById('modalAclaracionOverlay')
+let aclaracionOficioId = null
+let aclaracionArchivos = []
+let aclaracionGuardando = false
+
+const inputAclArchivos = document.getElementById('inputAclaracionArchivos')
+const dropAcl = document.getElementById('fileDropAclaracion')
+const labelAcl = document.getElementById('fileLabelAclaracion')
+const listaAcl = document.getElementById('listaArchivosAclaracion')
+
+const iconoTipoAcl = tipo => tipo === 'application/pdf'
+  ? `<span class="archivo-type-badge pdf">PDF</span>`
+  : `<span class="archivo-type-badge img">IMG</span>`
+
+function renderListaAclaracion() {
+  listaAcl.innerHTML = ''
+  aclaracionArchivos.forEach((file, i) => {
+    const chip = document.createElement('div')
+    chip.className = 'archivo-chip-selected'
+    chip.innerHTML = `${iconoTipoAcl(file.type)}<span>${file.name}</span><button class="chip-remove" data-i="${i}">&times;</button>`
+    listaAcl.appendChild(chip)
+  })
+  listaAcl.querySelectorAll('.chip-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      aclaracionArchivos.splice(Number(btn.dataset.i), 1)
+      renderListaAclaracion()
+    })
+  })
+  labelAcl.textContent = aclaracionArchivos.length > 0
+    ? `${aclaracionArchivos.length} archivo(s) seleccionado(s)`
+    : 'Arrastra archivos aquí o haz clic para seleccionar'
+}
+
+function agregarArchivosAclaracion(nuevos) {
+  const errorEl = document.getElementById('modalAclaracionError')
+  const tipos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  for (const file of nuevos) {
+    if (!tipos.includes(file.type)) {
+      errorEl.textContent = `Tipo no permitido: ${file.name}. Solo PDF e imágenes.`
+      continue
+    }
+    if (!aclaracionArchivos.find(f => f.name === file.name)) {
+      aclaracionArchivos.push(file)
+    }
+  }
+  renderListaAclaracion()
+}
+
+function abrirModalAclaracion(oficioId) {
+  aclaracionOficioId = oficioId
+  aclaracionArchivos = []
+  document.getElementById('inputAclaracionComentario').value = ''
+  document.getElementById('modalAclaracionError').textContent = ''
+  renderListaAclaracion()
+  modalAclaracionOverlay.classList.add('active')
+}
+
+function cerrarModalAclaracion() {
+  modalAclaracionOverlay.classList.remove('active')
+  aclaracionOficioId = null
+  aclaracionArchivos = []
+  aclaracionGuardando = false
+}
+
+dropAcl.addEventListener('click', () => inputAclArchivos.click())
+inputAclArchivos.addEventListener('change', () => {
+  agregarArchivosAclaracion(Array.from(inputAclArchivos.files))
+  inputAclArchivos.value = ''
+})
+dropAcl.addEventListener('dragover', e => { e.preventDefault(); dropAcl.classList.add('drag-over') })
+dropAcl.addEventListener('dragleave', () => dropAcl.classList.remove('drag-over'))
+dropAcl.addEventListener('drop', e => {
+  e.preventDefault()
+  dropAcl.classList.remove('drag-over')
+  agregarArchivosAclaracion(Array.from(e.dataTransfer.files))
+})
+
+document.getElementById('modalAclaracionClose').addEventListener('click', cerrarModalAclaracion)
+document.getElementById('btnAclaracionCancelar').addEventListener('click', cerrarModalAclaracion)
+modalAclaracionOverlay.addEventListener('click', e => { if (e.target === modalAclaracionOverlay) cerrarModalAclaracion() })
+
+document.getElementById('btnAclaracionGuardar').addEventListener('click', async () => {
+  const comentario = document.getElementById('inputAclaracionComentario').value.trim()
+  const errorEl = document.getElementById('modalAclaracionError')
+  if (!comentario) {
+    errorEl.textContent = 'La nota aclaratoria es obligatoria.'
+    return
+  }
+  if (aclaracionGuardando) return
+  aclaracionGuardando = true
+  document.getElementById('btnAclaracionText').style.display = 'none'
+  document.getElementById('btnAclaracionLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+  try {
+    const formData = new FormData()
+    formData.append('comentario', comentario)
+    aclaracionArchivos.forEach(file => formData.append('archivos', file))
+    const res = await fetch(`/oficios/${aclaracionOficioId}/aclaracion`, { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al guardar aclaración.'; return }
+    cerrarModalAclaracion()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnAclaracionText').style.display = ''
+    document.getElementById('btnAclaracionLoader').style.display = 'none'
+    aclaracionGuardando = false
   }
 })
 

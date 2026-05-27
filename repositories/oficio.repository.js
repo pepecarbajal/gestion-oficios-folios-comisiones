@@ -324,6 +324,54 @@ export class OficioRepository {
     await ref.update({ vistoPor: FieldValue.arrayUnion(unidadId) })
   }
 
+  static async agregarAclaracion (oficioId, { unidadId, unidadAlias, comentario, archivos }) {
+    const firestore = db()
+    const ref = firestore.collection(OFICIOS_COLLECTION).doc(oficioId)
+    const docSnap = await ref.get()
+
+    if (!docSnap.exists) throw new NotFoundError('Oficio no encontrado')
+
+    const oficio = docSnap.data()
+
+    const noOficio = oficio.noOficio.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
+    const aliasLimpio = unidadAlias.toUpperCase().replace(/[^A-Z0-9\-_]/g, '_')
+    const storageBucket = bucket()
+
+    const archivosGuardados = []
+    for (let i = 0; i < archivos.length; i++) {
+      const { buffer, mimetype, originalname } = archivos[i]
+      const ext = originalname.split('.').pop().toLowerCase()
+      const timestamp = Date.now()
+      const nombreArchivo = `${noOficio}_${aliasLimpio}_aclaracion_${timestamp}_${i + 1}.${ext}`
+      const filePath = `evidencias/${nombreArchivo}`
+
+      const file = storageBucket.file(filePath)
+      await file.save(buffer, {
+        metadata: { contentType: mimetype },
+        resumable: false
+      })
+
+      archivosGuardados.push({
+        filePath,
+        nombre: nombreArchivo,
+        tipo: mimetype
+      })
+    }
+
+    const respuestas = oficio.respuestas || []
+    respuestas.push({
+      unidadId,
+      unidadAlias,
+      comentario: comentario?.trim() || '',
+      fechaAtendido: new Date().toISOString(),
+      archivos: archivosGuardados,
+      esAclaracion: true
+    })
+
+    await ref.update({ respuestas })
+    return oficioId
+  }
+
   static async updateEstatus (id, estatus) {
     if (!['Pendiente', 'Atendido'].includes(estatus)) {
       throw new ValidationError('Estatus inválido')

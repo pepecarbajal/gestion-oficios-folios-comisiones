@@ -841,44 +841,59 @@
           </thead>
           <tbody id="tbodyMiPend">
             <% miUnidadPend.forEach(o => {
-               const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
-               if (limite) limite.setHours(23,59,59,999);
-               const vencido = limite && limite < new Date();
-               const urgente = !vencido && limite && (limite - new Date()) / (1000 * 60 * 60 * 24) <= 6;
-               const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
-               const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-               const esCorreo = (o.tipoArchivo === 1);
-            %>
-              <tr class="oficio-row mi-pend-row" data-id="<%= o.id %>">
-                <td>
-                  <% if (o.modo === 1) { %>
-                    <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                  <% } else if (esCorreo) { %>
-                    <span class="tipo-icon tipo-icon-correo" title="Correo electrónico"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-                  <% } else { %>
-                    <span class="tipo-icon tipo-icon-oficio" title="Oficio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
-                  <% } %>
-                </td>
-                <td class="no-cell"><%= o.noOficio %></td>
-                <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
-                <td class="asunto-cell"><%= o.asunto %></td>
-                <td class="fecha-cell">
-                  <%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
-                  <% if (o.fechaLimite) { %>
-                    <span class="fecha-limite <%= vencido ? 'vencida' : '' %>">Límite: <%= new Date(o.fechaLimite).toLocaleDateString('es-MX', {day:'2-digit',month:'short'}) %></span>
-                  <% } %>
-                </td>
-                <td>
-                  <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
-                  <% if (o.modo === 1) { %>
-                    <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
-                  <% } %>
-                </td>
-                <td class="actions-cell">
-                  <button class="btn-primary btn-responder-mi" style="padding:6px 14px;font-size:0.8rem" data-id="<%= o.id %>" data-oficio='<%- JSON.stringify(o).replace(/'/g, "&#39;") %>'>Responder</button>
-                </td>
-              </tr>
-            <% }) %>
+                const limite = o.fechaLimite ? new Date(o.fechaLimite) : null;
+                if (limite) limite.setHours(23,59,59,999);
+                const vencido = limite && limite < new Date();
+                const urgente = !vencido && limite && (limite - new Date()) / (1000 * 60 * 60 * 24) <= 6;
+                const prioridad = vencido ? 'vencido' : urgente ? 'urgente' : 'en-tiempo';
+                const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                const respuestas = o.respuestas || [];
+                const miRespuesta = respuestas.find(r => r.unidadId === unidadId);
+                const yaRespondio = !!miRespuesta;
+                const esCorreo = (o.tipoArchivo === 1);
+             %>
+               <tr class="oficio-row mi-pend-row"
+                 data-id="<%= o.id %>"
+                 data-ya="<%= yaRespondio %>"
+                 data-comentario="<%= miRespuesta ? miRespuesta.comentario || '' : '' %>"
+                 data-archivos="<%= miRespuesta ? JSON.stringify(miRespuesta.archivos || []) : '[]' %>"
+                 data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                 data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                 data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                 <script type="application/json" id="oficio-data-mi-<%= o.id %>"><%- JSON.stringify({
+                    id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                 <td>
+                   <% if (o.modo === 1) { %>
+                     <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                   <% } else if (esCorreo) { %>
+                     <span class="tipo-icon tipo-icon-correo" title="Correo electrónico"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+                   <% } else { %>
+                     <span class="tipo-icon tipo-icon-oficio" title="Oficio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
+                   <% } %>
+                 </td>
+                 <td class="no-cell"><%= o.noOficio %></td>
+                 <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
+                 <td class="asunto-cell"><%= o.asunto %></td>
+                 <td class="fecha-cell">
+                   <%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
+                   <% if (o.fechaLimite) { %>
+                     <span class="fecha-limite <%= vencido ? 'vencida' : '' %>">Límite: <%= new Date(o.fechaLimite).toLocaleDateString('es-MX', {day:'2-digit',month:'short'}) %></span>
+                   <% } %>
+                 </td>
+                 <td>
+                   <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
+                   <% if (o.modo === 1) { %>
+                     <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
+                   <% } %>
+                 </td>
+                 <td class="actions-cell">
+                   <button class="menu-btn" onclick="toggleActionMenuMi(event, '<%= o.id %>')" title="Acciones">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                   </button>
+                 </td>
+               </tr>
+             <% }) %>
           </tbody>
         </table>
         <% } %>
@@ -923,38 +938,66 @@
           </thead>
           <tbody id="tbodyMiAtend">
             <% miUnidadAt.forEach(o => {
-               const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-               const esCorreo = (o.tipoArchivo === 1);
-               const miResp = (o.respuestas || []).find(r => r.unidadId === unidadId);
-            %>
-              <tr class="oficio-row mi-atend-row" data-id="<%= o.id %>">
-                <td>
-                  <% if (o.modo === 1) { %>
-                    <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                  <% } else if (esCorreo) { %>
-                    <span class="tipo-icon tipo-icon-correo" title="Correo electrónico"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-                  <% } else { %>
-                    <span class="tipo-icon tipo-icon-oficio" title="Oficio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
-                  <% } %>
-                </td>
-                <td class="no-cell"><%= o.noOficio %></td>
-                <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
-                <td class="asunto-cell"><%= o.asunto %></td>
-                <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
-                <td>
-                  <% if (miResp) { %>
-                    <span class="resp-fecha-sm"><%= new Date(miResp.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %></span>
-                  <% } else { %>
-                    <span style="color:#9ca3af;font-size:0.82rem">—</span>
-                  <% } %>
-                </td>
-                <td class="actions-cell">
-                  <button class="menu-btn" onclick="toggleActionMenu(event, '<%= o.id %>')" title="Acciones">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                  </button>
-                </td>
-              </tr>
-            <% }) %>
+                const todasRespMi = o.respuestas || [];
+                const miRespPri = todasRespMi.find(r => r.unidadId === unidadId && !r.esAclaracion);
+                const misAclaracionesMi = todasRespMi.filter(r => r.unidadId === unidadId && r.esAclaracion);
+                const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                const esCorreo = (o.tipoArchivo === 1);
+                const miResp = todasRespMi.find(r => r.unidadId === unidadId);
+             %>
+               <tr class="oficio-row mi-atend-row"
+                 data-id="<%= o.id %>"
+                 data-ya="true"
+                 data-comentario="<%= miRespPri?.comentario || '' %>"
+                 data-archivos="<%= JSON.stringify(miRespPri?.archivos || []) %>"
+                 data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                 data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                 data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                 <script type="application/json" id="oficio-data-mi-<%= o.id %>"><%- JSON.stringify({
+                    id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                 <script type="application/json" id="resp-data-mi-<%= o.id %>"><%- JSON.stringify(todasRespMi).replace(/<\/script>/gi,'<\/script>') %></script>
+                 <script>
+                   window.__respuestasMi = window.__respuestasMi || {};
+                   window.__respuestasMi['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-mi-<%= o.id %>').textContent);
+                 </script>
+                 <td>
+                   <% if (o.modo === 1) { %>
+                     <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                   <% } else if (esCorreo) { %>
+                     <span class="tipo-icon tipo-icon-correo" title="Correo electrónico"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+                   <% } else { %>
+                     <span class="tipo-icon tipo-icon-oficio" title="Oficio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
+                   <% } %>
+                 </td>
+                 <td class="no-cell"><%= o.noOficio %></td>
+                 <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
+                 <td class="asunto-cell"><%= o.asunto %></td>
+                 <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
+                 <td>
+                   <% if (miResp) { %>
+                     <span class="resp-fecha-sm"><%= new Date(miResp.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %></span>
+                      <% if (misAclaracionesMi.length > 0) { %>
+                        <div class="aclaraciones-list">
+                          <% misAclaracionesMi.forEach(a => { %>
+                            <div class="aclaracion-item-inline">
+                              <span class="aclaracion-label">Nota aclaratoria: </span>
+                              <span><%= a.comentario %></span>
+                            </div>
+                          <% }) %>
+                        </div>
+                      <% } %>
+                   <% } else { %>
+                     <span style="color:#9ca3af;font-size:0.82rem">—</span>
+                   <% } %>
+                 </td>
+                 <td class="actions-cell">
+                   <button class="menu-btn" onclick="toggleActionMenuMi(event, '<%= o.id %>')" title="Acciones">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                   </button>
+                 </td>
+               </tr>
+             <% }) %>
           </tbody>
         </table>
         <% } %>
@@ -1261,7 +1304,7 @@
         <button class="modal-close" id="modalRespuestasClose">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="listaRespuestasModal"></div>
+        <div id="listaRespuestasModal" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" id="btnRespuestasCerrar">Cerrar</button>
@@ -1357,7 +1400,7 @@
   <div class="modal-overlay" id="modalMiResponderOverlay" style="display:none">
     <div class="modal">
       <div class="modal-header">
-        <h3>Responder Oficio</h3>
+        <h3 id="modalMiRespTitulo">Responder Oficio</h3>
         <button class="modal-close" id="modalMiResponderClose">&times;</button>
       </div>
       <div class="modal-body">
@@ -1375,12 +1418,66 @@
           </div>
           <div id="listaArchivosMiResponder" class="lista-archivos"></div>
         </div>
+        <div id="archivosExistentesMi" class="archivos-existentes" style="display:none">
+          <p class="archivos-existentes-label">Archivos ya subidos:</p>
+          <div id="listaArchivosExistentesMi"></div>
+          <p class="archivos-existentes-hint">Los nuevos archivos que subas se agregarán a los existentes.</p>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" id="btnMiResponderCancelar">Cancelar</button>
         <button class="btn-primary" id="btnMiResponderGuardar">
           <span id="btnMiResponderText">Guardar</span>
           <span id="btnMiResponderLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL EVIDENCIAS MI UNIDAD %>
+  <div class="modal-overlay" id="modalEvidenciasMiOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Evidencias</h3>
+        <button class="modal-close" id="modalEvidenciasMiClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="listaEvidenciasMiModal" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnEvidenciasMiCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL ACLARACION MI UNIDAD %>
+  <div class="modal-overlay" id="modalAclaracionMiOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Agregar Aclaración</h3>
+        <button class="modal-close" id="modalAclaracionMiClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalAclaracionMiError"></p>
+        <div class="form-group">
+          <label>Nota aclaratoria <span class="label-hint">(obligatorio)</span></label>
+          <textarea id="inputAclaracionMiComentario" placeholder="Describa la aclaración..." rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Archivo <span class="label-hint">(opcional, PDF o imagen)</span></label>
+          <div class="file-drop-multi" id="fileDropAclaracionMi">
+            <input type="file" id="inputAclaracionMiArchivos" accept="application/pdf,image/*" multiple hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            <span id="fileLabelAclaracionMi">Arrastra archivos aquí o haz clic para seleccionar</span>
+          </div>
+          <div id="listaArchivosAclaracionMi" class="lista-archivos"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnAclaracionMiCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnAclaracionMiGuardar">
+          <span id="btnAclaracionMiText">Guardar</span>
+          <span id="btnAclaracionMiLoader" class="loader" style="display:none"></span>
         </button>
       </div>
     </div>

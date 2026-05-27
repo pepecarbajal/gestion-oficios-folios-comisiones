@@ -197,24 +197,31 @@
               </tr>
             </thead>
             <tbody id="tbodyAtendidos">
-              <% oficiosAtend.forEach(o => {
-                 const miRespuesta = (o.respuestas || []).find(r => r.unidadId === unidadId);
-                 const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-                 const archivos = (miRespuesta?.archivos) || [];
-                 const esCorreo = (o.tipoArchivo === 1);
-              %>
-                   <tr class="oficio-row atend-row atendido-row"
-                     data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                     data-id="<%= o.id %>"
-                     data-ya="true"
-                     data-comentario="<%= miRespuesta?.comentario || '' %>"
-                     data-archivos="<%= JSON.stringify(miRespuesta?.archivos || []) %>"
-                     data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
-                     data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
-                     data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+               <% oficiosAtend.forEach(o => {
+                  const todasRespuestas = o.respuestas || [];
+                  const miRespuesta = todasRespuestas.find(r => r.unidadId === unidadId && !r.esAclaracion);
+                  const misAclaraciones = todasRespuestas.filter(r => r.unidadId === unidadId && r.esAclaracion);
+                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                  const archivos = (miRespuesta?.archivos) || [];
+                  const esCorreo = (o.tipoArchivo === 1);
+               %>
+                    <tr class="oficio-row atend-row atendido-row"
+                      data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                      data-id="<%= o.id %>"
+                      data-ya="true"
+                      data-comentario="<%= miRespuesta?.comentario || '' %>"
+                      data-archivos="<%= JSON.stringify(miRespuesta?.archivos || []) %>"
+                      data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                      data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                      data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
                     <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
                        id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
                      }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                    <script type="application/json" id="resp-data-<%= o.id %>"><%- JSON.stringify(todasRespuestas).replace(/<\/script>/gi,'<\/script>') %></script>
+                    <script>
+                      window.__respuestas = window.__respuestas || {};
+                      window.__respuestas['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-<%= o.id %>').textContent);
+                    </script>
                     <td>
                     <% if (o.modo === 1) { %>
                       <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
@@ -249,6 +256,16 @@
                       </span>
                       <% if (miRespuesta.comentario) { %>
                         <span class="respondido-comentario" title="<%= miRespuesta.comentario %>">"<%= miRespuesta.comentario %>"</span>
+                      <% } %>
+                      <% if (misAclaraciones.length > 0) { %>
+                        <div class="aclaraciones-list">
+                          <% misAclaraciones.forEach(a => { %>
+                            <div class="aclaracion-item-inline">
+                              <span class="aclaracion-label">Nota aclaratoria: </span>
+                              <span><%= a.comentario %></span>
+                            </div>
+                          <% }) %>
+                        </div>
                       <% } %>
                     <% } %>
                   </td>
@@ -525,6 +542,39 @@
         <button class="btn-primary" id="btnRespuestaGuardar">
           <span id="btnGuardarText">Guardar</span>
           <span id="btnGuardarLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL ACLARACION %>
+  <div class="modal-overlay" id="modalAclaracionOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Agregar Aclaración</h3>
+        <button class="modal-close" id="modalAclaracionClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalAclaracionError"></p>
+        <div class="form-group">
+          <label>Nota aclaratoria <span class="label-hint">(obligatorio)</span></label>
+          <textarea id="inputAclaracionComentario" placeholder="Describa la aclaración..." rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Archivo <span class="label-hint">(opcional, PDF o imagen)</span></label>
+          <div class="file-drop-multi" id="fileDropAclaracion">
+            <input type="file" id="inputAclaracionArchivos" accept="application/pdf,image/*" multiple hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            <span id="fileLabelAclaracion">Arrastra archivos aquí o haz clic para seleccionar</span>
+          </div>
+          <div id="listaArchivosAclaracion" class="lista-archivos"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnAclaracionCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnAclaracionGuardar">
+          <span id="btnAclaracionText">Guardar</span>
+          <span id="btnAclaracionLoader" class="loader" style="display:none"></span>
         </button>
       </div>
     </div>

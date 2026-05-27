@@ -106,12 +106,6 @@
 /* ── MODAL RESPUESTAS ── */
 .modal-respuestas { max-width: 680px; }
 
-.modal-respuestas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
-}
-
 /* ── PANEL EXPANDIBLE DE RESPUESTAS ── */
 .respuestas-row td { padding: 0 !important; border-bottom: none !important; }
 
@@ -190,6 +184,25 @@
 .unidad-varias {
   cursor: help;
   border-bottom: 1px dashed #888;
+}
+
+/* ── ACLARACIONES ── */
+.aclaracion-item {
+  border-left: 3px solid #d97706 !important;
+  padding-left: 10px !important;
+  margin-top: 8px;
+}
+.aclaracion-label {
+  color: #92400e;
+  font-weight: 700;
+}
+.aclaracion-text {
+  color: #92400e;
+}
+.aclaracion-item-inline {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 4px;
 }
 
 /* ── SIDEBAR SUBMENU ── */

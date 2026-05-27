@@ -8,9 +8,10 @@ const iconoArchivoModal = tipo => tipo === 'application/pdf'
   : `<span class="archivo-type-badge img">IMG</span>`
 
 function renderCardRespuesta(r) {
+  const esAclaracion = r.esAclaracion === true
   const fecha = new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})
   const comentario = r.comentario
-    ? `<p class="resp-comentario">"${r.comentario}"</p>`
+    ? `<p class="resp-comentario${esAclaracion ? ' aclaracion-text' : ''}">"${r.comentario}"</p>`
     : ''
   const archivos = (r.archivos || []).length > 0
     ? `<div class="resp-archivos">${(r.archivos).map(a => {
@@ -19,12 +20,16 @@ function renderCardRespuesta(r) {
         }).join('')}</div>`
     : ''
   const hasCuerpo = r.comentario || (r.archivos && r.archivos.length > 0)
+  const itemClass = esAclaracion ? 'respuesta-item aclaracion-item' : 'respuesta-item'
+  const aliasHtml = esAclaracion
+    ? `<span class="resp-alias aclaracion-label">Nota aclaratoria</span>`
+    : `<span class="resp-alias">${r.unidadAlias || '—'}</span>`
   return `
-    <div class="respuesta-item">
+    <div class="${itemClass}">
       <div class="respuesta-body">
         <div class="respuesta-header">
-          <span class="resp-alias">${r.unidadAlias || '—'}</span>
-          <span class="resp-fecha">Atendido: ${fecha}</span>
+          ${aliasHtml}
+          <span class="resp-fecha">${fecha}</span>
         </div>
         ${hasCuerpo ? '<div class="respuesta-divider"></div>' : ''}
         ${comentario}
@@ -37,7 +42,7 @@ function abrirModalRespuestas(btn) {
   const id = btn.dataset.oficioId
   const respuestas = (window.__respuestas && window.__respuestas[id]) || []
   listaRespModal.innerHTML = respuestas.length
-    ? `<div class="modal-respuestas-grid">${respuestas.map(renderCardRespuesta).join('')}</div>`
+    ? `${respuestas.map(renderCardRespuesta).join('')}`
     : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic;text-align:center;padding:20px 0">Sin respuestas registradas.</p>'
   modalRespOverlay.classList.add('active')
 }
@@ -1124,12 +1129,187 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   }
 })
 
+// ── MI UNIDAD ACTION DROPDOWN ──
+const iconoTipoMiA = tipo => tipo === 'application/pdf'
+  ? `<span class="archivo-type-badge pdf">PDF</span>`
+  : `<span class="archivo-type-badge img">IMG</span>`
+
+function renderMiRespuestaCard(r, esAclaracion = false) {
+  const fecha = r.fechaAtendido ? new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : ''
+  let html = `<div class="respuesta-item${esAclaracion ? ' aclaracion-item' : ''}">`
+  html += `<div class="respuesta-body">`
+  html += `<div class="respuesta-header">`
+  if (esAclaracion) {
+    html += `<span class="resp-alias aclaracion-label">Nota aclaratoria</span>`
+  } else {
+    html += `<span class="resp-alias">${r.unidadAlias || '—'}</span>`
+  }
+  if (fecha) html += `<span class="resp-fecha">${fecha}</span>`
+  html += `</div>`
+  if (r.comentario) {
+    html += `<p class="resp-comentario${esAclaracion ? ' aclaracion-text' : ''}">"${r.comentario}"</p>`
+  }
+  if (r.archivos && r.archivos.length > 0) {
+    html += `<div class="resp-archivos">`
+    html += r.archivos.map(a => {
+      const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
+      return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoMiA(a.tipo)} <span>${a.nombre}</span></a>`
+    }).join('')
+    html += `</div>`
+  }
+  html += `</div></div>`
+  return html
+}
+
+let marcarEnteradoGuardando = false
+
+function abrirEvidenciasMi(id) {
+  const todasResp = (window.__respuestasMi && window.__respuestasMi[id]) || []
+  const lista = document.getElementById('listaEvidenciasMiModal')
+  const overlay = document.getElementById('modalEvidenciasMiOverlay')
+  if (!lista || !overlay) return
+
+  let content = ''
+  const originales = todasResp.filter(r => !r.esAclaracion)
+  const aclaraciones = todasResp.filter(r => r.esAclaracion)
+  originales.forEach(r => { content += renderMiRespuestaCard(r, false) })
+  aclaraciones.forEach(r => { content += renderMiRespuestaCard(r, true) })
+  if (!content) content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin información.</p>'
+  lista.innerHTML = content
+  overlay.classList.add('active')
+}
+
+document.getElementById('modalEvidenciasMiClose')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))
+document.getElementById('btnEvidenciasMiCerrar')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))
+document.getElementById('modalEvidenciasMiOverlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.classList.remove('active') })
+
+function toggleActionMenuMi(e, id) {
+  e.stopPropagation()
+  if (currentActionMenu) {
+    currentActionMenu.remove()
+    currentActionMenu = null
+  }
+
+  const btn = e.currentTarget
+  const rect = btn.getBoundingClientRect()
+  const menu = document.createElement('div')
+  menu.className = 'action-dropdown active'
+  menu.style.top = `${rect.bottom + window.scrollY}px`
+  menu.style.left = `${rect.left + window.scrollX - 100}px`
+
+  const dataEl = document.getElementById(`oficio-data-mi-${id}`)
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {}
+  const row = document.querySelector(`.mi-pend-row[data-id="${id}"], .mi-atend-row[data-id="${id}"]`)
+  const isAtendido = row && row.classList.contains('mi-atend-row')
+  const yaRespondio = row && row.dataset.ya === 'true'
+  const esConocimiento = data.modo === 1
+  const esCoResponsable = row && row.dataset.ecooresponsable === 'true'
+
+  const actions = []
+  if (data.archivoUrl) {
+    actions.push({
+      label: 'Ver oficio',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      action: () => {
+        fetch(`/oficios/${id}/visto`, { method: 'POST', headers: { 'CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content } }).catch(() => {})
+        openFileViewer(data.archivoUrl, `Oficio ${data.noOficio}`)
+      }
+    })
+  }
+
+  if (esCoResponsable) {
+    menu.innerHTML = actions.length
+      ? actions.map((a, index) => `<button class="dropdown-item" data-index="${index}">${a.icon} <span>${a.label}</span></button>`).join('')
+      : '<div class="dropdown-item" style="cursor:default;color:#9ca3af;font-style:italic">Sin acciones disponibles</div>'
+    menu.addEventListener('click', (e) => {
+      const item = e.target.closest('.dropdown-item')
+      if (item && item.dataset.index !== undefined) {
+        actions[item.dataset.index].action()
+        menu.remove()
+        currentActionMenu = null
+      }
+    })
+    document.body.appendChild(menu)
+    currentActionMenu = menu
+    return
+  }
+
+  if (esConocimiento) {
+    if (yaRespondio) {
+      actions.push({
+        label: 'Ver enterado',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        action: () => abrirEvidenciasMi(id)
+      })
+    } else {
+      actions.push({
+        label: 'Enterado',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        action: () => {
+          if (marcarEnteradoGuardando) return
+          marcarEnteradoGuardando = true
+          const formData = new FormData()
+          formData.append('comentario', '')
+          fetch(`/oficios/${id}/respuesta`, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(d => { if (!d.error) window.location.reload(); else alert(d.error) })
+            .catch(() => alert('Error de conexión.'))
+            .finally(() => { marcarEnteradoGuardando = false })
+        }
+      })
+    }
+  } else if (isAtendido) {
+    actions.push({
+      label: 'Ver respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      action: () => abrirEvidenciasMi(id)
+    })
+    if (!esCoResponsable) {
+      actions.push({
+        label: 'Agregar aclaración',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+        action: () => abrirModalAclaracionMi(id)
+      })
+    }
+  } else {
+    actions.push({
+      label: yaRespondio ? 'Editar respuesta' : 'Registrar respuesta',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      action: () => {
+        const rowEl = document.querySelector(`.mi-pend-row[data-id="${id}"]`)
+        if (rowEl) {
+          abrirModalResponderMi(id, rowEl.dataset.comentario || '', rowEl.dataset.archivos || '[]', rowEl.dataset.ya === 'true')
+        }
+      }
+    })
+  }
+
+  menu.innerHTML = actions.map((a, index) => `
+    <button class="dropdown-item" data-index="${index}">
+      ${a.icon} <span>${a.label}</span>
+    </button>
+  `).join('')
+
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('.dropdown-item')
+    if (item) {
+      actions[item.dataset.index].action()
+      menu.remove()
+      currentActionMenu = null
+    }
+  })
+
+  document.body.appendChild(menu)
+  currentActionMenu = menu
+}
+
 // ── MODAL RESPONDER (MI UNIDAD) ──
+let miRespId = null
+let miRespArchivos = []
+let miResponderGuardando = false
+
 const modalMiRespOverlay = document.getElementById('modalMiResponderOverlay')
 if (modalMiRespOverlay) {
-  let miRespId = null
-  let miRespArchivos = []
-  let miResponderGuardando = false
   const inputMiEv = document.getElementById('inputMiEvidencias')
   const dropMi = document.getElementById('fileDropMiResponder')
   const labelMi = document.getElementById('fileLabelMiResponder')
@@ -1172,17 +1352,37 @@ if (modalMiRespOverlay) {
     renderListaMiResp()
   }
 
-  document.querySelectorAll('.btn-responder-mi').forEach(btn => {
-    btn.addEventListener('click', () => {
-      miRespId = btn.dataset.id
-      miRespArchivos = []
-      document.getElementById('inputMiResponderComentario').value = ''
-      document.getElementById('modalMiResponderError').textContent = ''
-      renderListaMiResp()
-      modalMiRespOverlay.style.display = ''
-      modalMiRespOverlay.classList.add('active')
-    })
-  })
+  function abrirModalResponderMi(id, comentario = '', archivosJson = '[]', yaRespondio = false) {
+    miRespId = id
+    modalMiRespOverlay.style.display = ''
+    document.getElementById('modalMiRespTitulo').textContent = yaRespondio ? 'Editar Respuesta' : 'Responder Oficio'
+    document.getElementById('inputMiResponderComentario').value = comentario
+    miRespArchivos = []
+    renderListaMiResp()
+
+    const existentesPanel = document.getElementById('archivosExistentesMi')
+    const existentesList = document.getElementById('listaArchivosExistentesMi')
+    if (yaRespondio && existentesPanel && existentesList) {
+      try {
+        const arch = JSON.parse(archivosJson)
+        if (arch.length > 0) {
+          existentesList.innerHTML = arch.map(a => {
+            const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
+            return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoMi(a.tipo)} <span>${a.nombre}</span></a>`
+          }).join('')
+          existentesPanel.style.display = 'block'
+        } else {
+          existentesPanel.style.display = 'none'
+        }
+      } catch (_) {
+        existentesPanel.style.display = 'none'
+      }
+    } else if (existentesPanel) {
+      existentesPanel.style.display = 'none'
+    }
+    document.getElementById('modalMiResponderError').textContent = ''
+    modalMiRespOverlay.classList.add('active')
+  }
 
   dropMi.addEventListener('click', () => inputMiEv.click())
   inputMiEv.addEventListener('change', () => {
@@ -1202,6 +1402,8 @@ if (modalMiRespOverlay) {
     modalMiRespOverlay.style.display = 'none'
     miRespId = null
     miRespArchivos = []
+    const p = document.getElementById('archivosExistentesMi')
+    if (p) p.style.display = 'none'
   }
 
   document.getElementById('modalMiResponderClose').addEventListener('click', cerrarMiResponder)
@@ -1235,6 +1437,119 @@ if (modalMiRespOverlay) {
       document.getElementById('btnMiResponderText').style.display = ''
       document.getElementById('btnMiResponderLoader').style.display = 'none'
       miResponderGuardando = false
+    }
+  })
+}
+
+// ── MODAL ACLARACION MI UNIDAD ──
+let aclaracionMiOficioId = null
+let aclaracionMiArchivos = []
+let aclaracionMiGuardando = false
+
+const modalAclaracionMiOverlay = document.getElementById('modalAclaracionMiOverlay')
+if (modalAclaracionMiOverlay) {
+  const inputAclMiArchivos = document.getElementById('inputAclaracionMiArchivos')
+  const dropAclMi = document.getElementById('fileDropAclaracionMi')
+  const labelAclMi = document.getElementById('fileLabelAclaracionMi')
+  const listaAclMi = document.getElementById('listaArchivosAclaracionMi')
+  const tiposAclMi = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  const iconoTipoAclMi = tipo => tipo === 'application/pdf'
+    ? `<span class="archivo-type-badge pdf">PDF</span>`
+    : `<span class="archivo-type-badge img">IMG</span>`
+
+  function renderListaAclaracionMi() {
+    listaAclMi.innerHTML = ''
+    aclaracionMiArchivos.forEach((file, i) => {
+      const chip = document.createElement('div')
+      chip.className = 'archivo-chip-selected'
+      chip.innerHTML = `${iconoTipoAclMi(file.type)}<span>${file.name}</span><button class="chip-remove" data-i="${i}">&times;</button>`
+      listaAclMi.appendChild(chip)
+    })
+    listaAclMi.querySelectorAll('.chip-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        aclaracionMiArchivos.splice(Number(btn.dataset.i), 1)
+        renderListaAclaracionMi()
+      })
+    })
+    labelAclMi.textContent = aclaracionMiArchivos.length > 0
+      ? `${aclaracionMiArchivos.length} archivo(s) seleccionado(s)`
+      : 'Arrastra archivos aquí o haz clic para seleccionar'
+  }
+
+  function agregarArchivosAclaracionMi(nuevos) {
+    const errorEl = document.getElementById('modalAclaracionMiError')
+    for (const file of nuevos) {
+      if (!tiposAclMi.includes(file.type)) {
+        errorEl.textContent = `Tipo no permitido: ${file.name}. Solo PDF e imágenes.`
+        continue
+      }
+      if (!aclaracionMiArchivos.find(f => f.name === file.name)) {
+        aclaracionMiArchivos.push(file)
+      }
+    }
+    renderListaAclaracionMi()
+  }
+
+  function abrirModalAclaracionMi(oficioId) {
+    aclaracionMiOficioId = oficioId
+    aclaracionMiArchivos = []
+    document.getElementById('inputAclaracionMiComentario').value = ''
+    document.getElementById('modalAclaracionMiError').textContent = ''
+    renderListaAclaracionMi()
+    modalAclaracionMiOverlay.classList.add('active')
+  }
+
+  function cerrarModalAclaracionMi() {
+    modalAclaracionMiOverlay.classList.remove('active')
+    aclaracionMiOficioId = null
+    aclaracionMiArchivos = []
+    aclaracionMiGuardando = false
+  }
+
+  dropAclMi.addEventListener('click', () => inputAclMiArchivos.click())
+  inputAclMiArchivos.addEventListener('change', () => {
+    agregarArchivosAclaracionMi(Array.from(inputAclMiArchivos.files))
+    inputAclMiArchivos.value = ''
+  })
+  dropAclMi.addEventListener('dragover', e => { e.preventDefault(); dropAclMi.classList.add('drag-over') })
+  dropAclMi.addEventListener('dragleave', () => dropAclMi.classList.remove('drag-over'))
+  dropAclMi.addEventListener('drop', e => {
+    e.preventDefault()
+    dropAclMi.classList.remove('drag-over')
+    agregarArchivosAclaracionMi(Array.from(e.dataTransfer.files))
+  })
+
+  document.getElementById('modalAclaracionMiClose').addEventListener('click', cerrarModalAclaracionMi)
+  document.getElementById('btnAclaracionMiCancelar').addEventListener('click', cerrarModalAclaracionMi)
+  modalAclaracionMiOverlay.addEventListener('click', e => { if (e.target === modalAclaracionMiOverlay) cerrarModalAclaracionMi() })
+
+  document.getElementById('btnAclaracionMiGuardar').addEventListener('click', async () => {
+    const comentario = document.getElementById('inputAclaracionMiComentario').value.trim()
+    const errorEl = document.getElementById('modalAclaracionMiError')
+    if (!comentario) {
+      errorEl.textContent = 'La nota aclaratoria es obligatoria.'
+      return
+    }
+    if (aclaracionMiGuardando) return
+    aclaracionMiGuardando = true
+    document.getElementById('btnAclaracionMiText').style.display = 'none'
+    document.getElementById('btnAclaracionMiLoader').style.display = 'inline-block'
+    errorEl.textContent = ''
+    try {
+      const formData = new FormData()
+      formData.append('comentario', comentario)
+      aclaracionMiArchivos.forEach(file => formData.append('archivos', file))
+      const res = await fetch(`/oficios/${aclaracionMiOficioId}/aclaracion`, { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) { errorEl.textContent = data.error || 'Error al guardar aclaración.'; return }
+      cerrarModalAclaracionMi()
+      window.location.reload()
+    } catch {
+      errorEl.textContent = 'Error de conexión.'
+    } finally {
+      document.getElementById('btnAclaracionMiText').style.display = ''
+      document.getElementById('btnAclaracionMiLoader').style.display = 'none'
+      aclaracionMiGuardando = false
     }
   })
 }

@@ -20,6 +20,20 @@ export const getDashboardAOF = async (unidadId, unidadAlias) => {
     return dias <= 6 ? 1 : 2
   }
 
+  const coresponsableMap = {}
+  oficiosRaw.forEach(o => {
+    const cooresp = o.cooresponsableIds || []
+    const responsables = o.responsableIds || []
+    coresponsableMap[o.id] = {
+      esResponsable: unidadId ? responsables.includes(unidadId) : false,
+      esCoResponsable: unidadId ? cooresp.includes(unidadId) : false,
+      aliasResponsable: responsables.map(id => {
+        const u = unidades.find(uu => uu.id === id)
+        return u ? u.alias : id
+      }).join(', ')
+    }
+  })
+
   const oficiosPend = oficiosRaw
     .filter(o => {
       const limite = o.fechaLimite ? new Date(o.fechaLimite) : null
@@ -72,5 +86,5 @@ export const getDashboardAOF = async (unidadId, unidadAlias) => {
     miFolAtend = miFolRaw.filter(f => f.estatus !== 'Pendiente')
   }
 
-  return { oficiosPend, oficiosAt, oficios: oficiosRaw, foliosPend, foliosAtend, folios: foliosRaw, unidades, miUnidadPend, miUnidadAt, miFolPend, miFolAtend, unidadId, unidadAlias }
+  return { oficiosPend, oficiosAt, oficios: oficiosRaw, foliosPend, foliosAtend, folios: foliosRaw, unidades, miUnidadPend, miUnidadAt, miFolPend, miFolAtend, unidadId, unidadAlias, coresponsableMap }
 }

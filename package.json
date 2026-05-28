@@ -7,11 +7,7 @@
   "scripts": {
     "test": "vitest run --config tests/vitest.config.js",
     "test:watch": "vitest --config tests/vitest.config.js",
-    "dev": "node --watch index.js",
-    "migrar-unidad-ids": "node scripts/migrar-unidad-ids.js",
-    "backup": "node scripts/backup.js",
-    "restore": "node scripts/backup.js restore",
-    "migrate:safe": "node scripts/backup.js && node scripts/migrar-unidad-ids.js"
+    "dev": "node --watch index.js"
   },
   "keywords": [],
   "author": "",

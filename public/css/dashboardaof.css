@@ -278,7 +278,7 @@
 #tablaFolAtendAof .actions-cell,
 #tablaMiFolPend .actions-cell,
 #tablaMiFolAtend .actions-cell {
-  justify-content: flex-end;
+  text-align: right;
   padding-right: 6px;
 }
 #tablaFolPendAof th:last-child,

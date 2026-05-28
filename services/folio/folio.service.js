@@ -2,21 +2,12 @@ import { FolioRepository } from '../../repositories/folio.repository.js'
 import { UADRepository } from '../../repositories/uad.repository.js'
 import { AuditRepository } from '../../repositories/audit.repository.js'
 import { FolioValidation } from '../../validations/folio.validation.js'
+import { StorageService } from '../storage.service.js'
+import { parseUnidadIds, buildUnidadAlias } from '../../utils/helpers.js'
 import { ValidationError } from '../../utils/errors.js'
 
-function parseUnidadIds(raw) {
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string' && raw) return [raw]
-  return []
-}
-
-function buildUnidadAlias(unidadIds, unidades) {
-  return unidadIds
-    .map(id => {
-      const u = unidades.find(u => u.id === id)
-      return u ? u.alias : id
-    })
-    .join(', ')
+export const getNextFolioNumber = async () => {
+  return FolioRepository.getNextNoFolio()
 }
 
 export const solicitarFolioUAD = async (datos, uad, auditInfo) => {
@@ -96,18 +87,26 @@ export const registrarFolioAOF = async (datos, auditInfo) => {
 export const registrarEntregaFolio = async (id, datos, archivo, auditInfo) => {
   FolioValidation.validateEntrega(datos, archivo)
 
-  let archivoBuffer = null
-  let archivoMime = null
-  if (archivo) {
-    archivoBuffer = archivo.buffer
-    archivoMime = archivo.mimetype
+  const folio = await FolioRepository.getById(id)
+
+  if (folio.estatus === 'Atendido') {
+    throw new ValidationError('Este folio ya fue atendido')
+  }
+  if (folio.estatus === 'Cancelado') {
+    throw new ValidationError('Este folio fue cancelado')
+  }
+
+  let archivoPath = null
+  if (archivo && archivo.mimetype === 'application/pdf') {
+    archivoPath = StorageService.folioFilePath(folio.noFolio)
+    await StorageService.uploadFile(archivoPath, archivo.buffer, archivo.mimetype)
   }
 
   await FolioRepository.registrarEntrega(id, {
+    estatus: 'Atendido',
     fechaEntrega: datos.fechaEntrega,
     comentario: datos.comentario || '',
-    archivoBuffer,
-    archivoMime
+    archivoPath
   })
 
   await AuditRepository.registrar({
@@ -123,6 +122,12 @@ export const registrarEntregaFolio = async (id, datos, archivo, auditInfo) => {
 }
 
 export const cancelarFolioService = async (id, auditInfo) => {
+  const folio = await FolioRepository.getById(id)
+
+  if (folio.estatus !== 'Pendiente') {
+    throw new ValidationError('Solo se pueden cancelar folios pendientes')
+  }
+
   await FolioRepository.cancelar(id)
 
   await AuditRepository.registrar({

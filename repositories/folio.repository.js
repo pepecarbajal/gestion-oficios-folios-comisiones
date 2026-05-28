@@ -1,20 +1,19 @@
-import { db, bucket } from '../db.js'
+import { db } from '../db.js'
 import { ValidationError, NotFoundError } from '../utils/errors.js'
+import { StorageService } from '../services/storage.service.js'
 
 const FOLIOS_COLLECTION = 'folios'
-const SIGNED_URL_EXPIRY_MINUTES = 60
-
-async function getSignedUrl(storageBucket, filePath) {
-  const file = storageBucket.file(filePath)
-  const [url] = await file.getSignedUrl({
-    action: 'read',
-    expires: Date.now() + SIGNED_URL_EXPIRY_MINUTES * 60 * 1000
-  })
-  return url
-}
 
 export class FolioRepository {
-  static async getNextNoFolio() {
+  static async getById (id) {
+    const firestore = db()
+    const ref = firestore.collection(FOLIOS_COLLECTION).doc(id)
+    const docSnap = await ref.get()
+    if (!docSnap.exists) throw new NotFoundError('Folio no encontrado')
+    return { id: docSnap.id, ...docSnap.data() }
+  }
+
+  static async getNextNoFolio () {
     const firestore = db()
     const snapshot = await firestore.collection(FOLIOS_COLLECTION).get()
     let max = 0
@@ -26,7 +25,7 @@ export class FolioRepository {
     return String(next).padStart(Math.max(4, String(next).length), '0')
   }
 
-  static async create({
+  static async create ({
     noFolio, destinatario, dependencia, cargo, asunto,
     unidadIds, unidadAlias, creadoPor, creadoPorId
   }) {
@@ -63,34 +62,14 @@ export class FolioRepository {
     return docRef.id
   }
 
-  static async registrarEntrega(id, { fechaEntrega, comentario, archivoBuffer, archivoMime }) {
+  static async registrarEntrega (id, { estatus, fechaEntrega, comentario, archivoPath }) {
     const firestore = db()
     const ref = firestore.collection(FOLIOS_COLLECTION).doc(id)
     const docSnap = await ref.get()
     if (!docSnap.exists) throw new NotFoundError('Folio no encontrado')
 
-    const actual = docSnap.data()
-    if (actual.estatus === 'Atendido') {
-      throw new ValidationError('Este folio ya fue atendido')
-    }
-    if (actual.estatus === 'Cancelado') {
-      throw new ValidationError('Este folio fue cancelado')
-    }
-
-    let archivoPath = null
-    if (archivoBuffer && archivoMime === 'application/pdf') {
-      const storageBucket = bucket()
-      const nombreArchivo = `folio_${actual.noFolio}.pdf`
-      archivoPath = `folios/${nombreArchivo}`
-      const file = storageBucket.file(archivoPath)
-      await file.save(archivoBuffer, {
-        metadata: { contentType: 'application/pdf' },
-        resumable: false
-      })
-    }
-
     await ref.update({
-      estatus: 'Atendido',
+      estatus: estatus || 'Atendido',
       fechaEntrega: fechaEntrega || new Date().toISOString(),
       comentario: comentario?.trim() || '',
       archivoPath,
@@ -100,16 +79,11 @@ export class FolioRepository {
     return id
   }
 
-  static async cancelar(id) {
+  static async cancelar (id) {
     const firestore = db()
     const ref = firestore.collection(FOLIOS_COLLECTION).doc(id)
     const docSnap = await ref.get()
     if (!docSnap.exists) throw new NotFoundError('Folio no encontrado')
-
-    const actual = docSnap.data()
-    if (actual.estatus !== 'Pendiente') {
-      throw new ValidationError('Solo se pueden cancelar folios pendientes')
-    }
 
     await ref.update({
       estatus: 'Cancelado',
@@ -120,7 +94,7 @@ export class FolioRepository {
     return id
   }
 
-  static async getAll() {
+  static async getAll () {
     const firestore = db()
     const snapshot = await firestore
       .collection(FOLIOS_COLLECTION)
@@ -128,10 +102,10 @@ export class FolioRepository {
       .get()
 
     const folios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    return FolioRepository._hydratarUrls(folios)
+    return Promise.all(folios.map(f => StorageService.hydrateFolioUrl(f)))
   }
 
-  static async getByUnidad(unidadId) {
+  static async getByUnidad (unidadId) {
     const firestore = db()
 
     const snapshot = await firestore
@@ -156,22 +130,6 @@ export class FolioRepository {
     }
 
     folios.sort((a, b) => new Date(a.fechaSolicitud) - new Date(b.fechaSolicitud))
-    return FolioRepository._hydratarUrls(folios)
-  }
-
-  static async _hydratarUrls(folios) {
-    const storageBucket = bucket()
-    return Promise.all(folios.map(async folio => {
-      if (folio.archivoPath) {
-        try {
-          folio.archivoUrl = await getSignedUrl(storageBucket, folio.archivoPath)
-        } catch {
-          folio.archivoUrl = null
-        }
-      } else {
-        folio.archivoUrl = null
-      }
-      return folio
-    }))
+    return Promise.all(folios.map(f => StorageService.hydrateFolioUrl(f)))
   }
 }

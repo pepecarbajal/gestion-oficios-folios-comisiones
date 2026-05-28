@@ -374,9 +374,9 @@ function toggleFolioActionMenuAof(e, id) {
   menu.style.top = `${rect.bottom + window.scrollY}px`;
   menu.style.left = `${rect.left + window.scrollX - 100}px`;
 
-  const dataEl = document.getElementById(`folio-data-aof-${id}`);
+  const dataEl = document.getElementById(`folio-data-aof-${id}`) || document.getElementById(`folio-data-mi-${id}`);
   const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-  const row = document.querySelector(`.folio-row-aof[data-id="${id}"]`);
+  const row = document.querySelector(`.folio-row-aof[data-id="${id}"], .mi-fol-row[data-id="${id}"]`);
   const estatus = row && row.dataset.estatus;
   const isAtendido = estatus === 'Atendido';
   const isCancelado = estatus === 'Cancelado';
@@ -392,6 +392,11 @@ function toggleFolioActionMenuAof(e, id) {
   }
 
   if (estatus === 'Pendiente') {
+    actions.push({
+      label: 'Registrar entrega',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      action: () => abrirModalEntrega(id)
+    });
     actions.push({
       label: 'Cancelar folio',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
@@ -420,6 +425,123 @@ function toggleFolioActionMenuAof(e, id) {
   document.body.appendChild(menu);
   currentActionMenu = menu;
 }
+
+// ── MODAL REGISTRAR ENTREGA (AOF) ──
+const modalEntregaOverlay = document.getElementById('modalEntregaOverlay')
+let entregaFolioId = null
+let entregaArchivo = null
+let entregaGuardando = false
+
+function abrirModalEntrega(folioId) {
+  entregaFolioId = folioId
+  entregaArchivo = null
+  document.getElementById('inputFechaEntrega').value = new Date().toISOString().split('T')[0]
+  document.getElementById('inputEntregaComentario').value = ''
+  document.getElementById('modalEntregaError').textContent = ''
+  document.getElementById('fileLabelEntrega').textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
+  document.getElementById('listaArchivosEntrega').innerHTML = ''
+  modalEntregaOverlay.classList.add('active')
+}
+
+function cerrarModalEntrega() {
+  modalEntregaOverlay.classList.remove('active')
+  entregaFolioId = null
+  entregaArchivo = null
+  entregaGuardando = false
+}
+
+document.getElementById('modalEntregaClose').addEventListener('click', cerrarModalEntrega)
+document.getElementById('btnEntregaCancelar').addEventListener('click', cerrarModalEntrega)
+modalEntregaOverlay.addEventListener('click', e => { if (e.target === modalEntregaOverlay) cerrarModalEntrega() })
+
+const fileDropEntrega = document.getElementById('fileDropEntrega')
+const inputEntregaPDF = document.getElementById('inputEntregaPDF')
+const fileLabelEntrega = document.getElementById('fileLabelEntrega')
+
+fileDropEntrega.addEventListener('click', () => inputEntregaPDF.click())
+inputEntregaPDF.addEventListener('change', () => {
+  if (inputEntregaPDF.files.length > 0) {
+    const file = inputEntregaPDF.files[0]
+    if (file.type !== 'application/pdf') {
+      document.getElementById('modalEntregaError').textContent = 'Solo se permiten archivos PDF.'
+      return
+    }
+    entregaArchivo = file
+    fileLabelEntrega.textContent = file.name
+    fileDropEntrega.classList.add('drag-over')
+    document.getElementById('listaArchivosEntrega').innerHTML =
+      `<div class="archivo-chip-selected"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+  }
+})
+fileDropEntrega.addEventListener('dragover', e => { e.preventDefault(); fileDropEntrega.classList.add('drag-over') })
+fileDropEntrega.addEventListener('dragleave', () => fileDropEntrega.classList.remove('drag-over'))
+fileDropEntrega.addEventListener('drop', e => {
+  e.preventDefault()
+  fileDropEntrega.classList.remove('drag-over')
+  if (e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0]
+    if (file.type !== 'application/pdf') {
+      document.getElementById('modalEntregaError').textContent = 'Solo se permiten archivos PDF.'
+      return
+    }
+    entregaArchivo = file
+    fileLabelEntrega.textContent = file.name
+    fileDropEntrega.classList.add('drag-over')
+    inputEntregaPDF.files = e.dataTransfer.files
+    document.getElementById('listaArchivosEntrega').innerHTML =
+      `<div class="archivo-chip-selected"><span class="archivo-type-badge pdf">PDF</span><span>${file.name}</span><button class="chip-remove" onclick="eliminarEntregaPDF()">&times;</button></div>`
+  }
+})
+
+function eliminarEntregaPDF() {
+  entregaArchivo = null
+  inputEntregaPDF.value = ''
+  fileLabelEntrega.textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
+  fileDropEntrega.classList.remove('drag-over')
+  document.getElementById('listaArchivosEntrega').innerHTML = ''
+}
+
+document.getElementById('btnEntregaGuardar').addEventListener('click', async () => {
+  if (entregaGuardando) return
+  entregaGuardando = true
+
+  const fechaEntrega = document.getElementById('inputFechaEntrega').value
+  const comentario = document.getElementById('inputEntregaComentario').value.trim()
+  const errorEl = document.getElementById('modalEntregaError')
+
+  if (!fechaEntrega) {
+    errorEl.textContent = 'La fecha de entrega es obligatoria.'
+    entregaGuardando = false
+    return
+  }
+  if (!entregaArchivo) {
+    errorEl.textContent = 'El archivo PDF es obligatorio.'
+    entregaGuardando = false
+    return
+  }
+
+  document.getElementById('btnEntregaText').style.display = 'none'
+  document.getElementById('btnEntregaLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('fechaEntrega', fechaEntrega)
+    formData.append('comentario', comentario)
+    if (entregaArchivo) formData.append('archivo', entregaArchivo)
+    const res = await fetch(`/folios/${entregaFolioId}/entrega`, { method: 'PUT', body: formData })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al registrar entrega.'; return }
+    cerrarModalEntrega()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnEntregaText').style.display = ''
+    document.getElementById('btnEntregaLoader').style.display = 'none'
+    entregaGuardando = false
+  }
+})
 
 // ── MODAL REGISTRAR FOLIO (AOF) ──
 const modalRegFolioAof = document.getElementById('modalRegistrarFolioAofOverlay')
@@ -564,6 +686,67 @@ document.getElementById('btnRegistrarFolioAofGuardar').addEventListener('click',
     document.getElementById('btnRegistrarFolioAofText').style.display = ''
     document.getElementById('btnRegistrarFolioAofLoader').style.display = 'none'
     folioAofGuardando = false
+  }
+})
+
+// ── SOLICITAR FOLIO (Mi Unidad AOF) ──
+let folioSolicitarAOFGuardando = false
+const modalSolicitarFolioAOF = document.getElementById('modalSolicitarFolioAOFOverlay')
+
+function abrirModalSolicitarFolioAOF() {
+  document.getElementById('inputSolicitarFolioAOFDestinatario').value = ''
+  document.getElementById('inputSolicitarFolioAOFDependencia').value = ''
+  document.getElementById('inputSolicitarFolioAOFCargo').value = ''
+  document.getElementById('inputSolicitarFolioAOFAsunto').value = ''
+  document.getElementById('modalSolicitarFolioAOFError').textContent = ''
+  modalSolicitarFolioAOF.classList.add('active')
+}
+
+function cerrarModalSolicitarFolioAOF() {
+  modalSolicitarFolioAOF.classList.remove('active')
+  folioSolicitarAOFGuardando = false
+}
+
+document.getElementById('modalSolicitarFolioAOFClose').addEventListener('click', cerrarModalSolicitarFolioAOF)
+document.getElementById('btnSolicitarFolioAOFCancelar').addEventListener('click', cerrarModalSolicitarFolioAOF)
+modalSolicitarFolioAOF.addEventListener('click', e => { if (e.target === modalSolicitarFolioAOF) cerrarModalSolicitarFolioAOF() })
+
+document.getElementById('btnSolicitarFolioAOFGuardar').addEventListener('click', async () => {
+  if (folioSolicitarAOFGuardando) return
+  folioSolicitarAOFGuardando = true
+
+  const destinatario = document.getElementById('inputSolicitarFolioAOFDestinatario').value.trim()
+  const dependencia = document.getElementById('inputSolicitarFolioAOFDependencia').value.trim()
+  const cargo = document.getElementById('inputSolicitarFolioAOFCargo').value.trim()
+  const asunto = document.getElementById('inputSolicitarFolioAOFAsunto').value.trim()
+  const errorEl = document.getElementById('modalSolicitarFolioAOFError')
+
+  if (!destinatario || !dependencia || !cargo || !asunto) {
+    errorEl.textContent = 'Todos los campos son obligatorios.'
+    folioSolicitarAOFGuardando = false
+    return
+  }
+
+  document.getElementById('btnSolicitarFolioAOFText').style.display = 'none'
+  document.getElementById('btnSolicitarFolioAOFLoader').style.display = 'inline-block'
+  errorEl.textContent = ''
+
+  try {
+    const res = await fetch('/folios/uad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destinatario, dependencia, cargo, asunto })
+    })
+    const data = await res.json()
+    if (!res.ok) { errorEl.textContent = data.error || 'Error al solicitar folio.'; return }
+    cerrarModalSolicitarFolioAOF()
+    window.location.reload()
+  } catch {
+    errorEl.textContent = 'Error de conexión.'
+  } finally {
+    document.getElementById('btnSolicitarFolioAOFText').style.display = ''
+    document.getElementById('btnSolicitarFolioAOFLoader').style.display = 'none'
+    folioSolicitarAOFGuardando = false
   }
 })
 

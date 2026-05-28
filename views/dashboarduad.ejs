@@ -198,30 +198,35 @@
             </thead>
             <tbody id="tbodyAtendidos">
                <% oficiosAtend.forEach(o => {
-                  const todasRespuestas = o.respuestas || [];
-                  const miRespuesta = todasRespuestas.find(r => r.unidadId === unidadId && !r.esAclaracion);
-                  const misAclaraciones = todasRespuestas.filter(r => r.unidadId === unidadId && r.esAclaracion);
-                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-                  const archivos = (miRespuesta?.archivos) || [];
-                  const esCorreo = (o.tipoArchivo === 1);
-               %>
-                    <tr class="oficio-row atend-row atendido-row"
-                      data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
-                      data-id="<%= o.id %>"
-                      data-ya="true"
-                      data-comentario="<%= miRespuesta?.comentario || '' %>"
-                      data-archivos="<%= JSON.stringify(miRespuesta?.archivos || []) %>"
-                      data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
-                      data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
-                      data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
-                    <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
-                       id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
-                     }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                    <script type="application/json" id="resp-data-<%= o.id %>"><%- JSON.stringify(todasRespuestas).replace(/<\/script>/gi,'<\/script>') %></script>
-                    <script>
-                      window.__respuestas = window.__respuestas || {};
-                      window.__respuestas['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-<%= o.id %>').textContent);
-                    </script>
+                   const todasRespuestas = o.respuestas || [];
+                   const miRespuesta = todasRespuestas.find(r => r.unidadId === unidadId && !r.esAclaracion);
+                   const misAclaraciones = todasRespuestas.filter(r => r.unidadId === unidadId && r.esAclaracion);
+                   const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                   const archivos = (miRespuesta?.archivos) || [];
+                   const esCorreo = (o.tipoArchivo === 1);
+                   const esCoResponsable = coresponsableMap[o.id]?.esCoResponsable;
+                   // co-responsables should not see response details
+                   const respuestasVisibles = esCoResponsable ? [] : todasRespuestas;
+                   const comentarioVisible = esCoResponsable ? '' : (miRespuesta?.comentario || '');
+                   const archivosVisibles = esCoResponsable ? '[]' : JSON.stringify(miRespuesta?.archivos || []);
+                %>
+                     <tr class="oficio-row atend-row atendido-row"
+                       data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto).toLowerCase() %>"
+                       data-id="<%= o.id %>"
+                       data-ya="true"
+                       data-comentario="<%= comentarioVisible %>"
+                       data-archivos="<%= archivosVisibles %>"
+                       data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                       data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                       data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                     <script type="application/json" id="oficio-data-<%= o.id %>"><%- JSON.stringify({
+                        id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                      }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                     <script type="application/json" id="resp-data-<%= o.id %>"><%- JSON.stringify(respuestasVisibles).replace(/<\/script>/gi,'<\/script>') %></script>
+                     <script>
+                       window.__respuestas = window.__respuestas || {};
+                       window.__respuestas['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-<%= o.id %>').textContent);
+                     </script>
                     <td>
                     <% if (o.modo === 1) { %>
                       <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento">
@@ -301,13 +306,13 @@
             Solicitar
           </button>
         </div>
-        <table class="table">
+        <table class="table" id="tablaUadFolPend">
           <colgroup>
             <col style="width:12%">
             <col style="width:24%">
-            <col style="width:30%">
-            <col style="width:20%">
-            <col style="width:80px">
+            <col style="width:44%">
+            <col style="width:16%">
+            <col style="width:4%">
           </colgroup>
           <thead>
             <tr>
@@ -369,15 +374,15 @@
             <p>No hay folios atendidos.</p>
           </div>
         <% } else { %>
-          <table class="table">
+          <table class="table" id="tablaUadFolAtend">
             <colgroup>
               <col style="width:10%">
               <col style="width:20%">
-              <col style="width:24%">
-              <col style="width:12%">
-              <col style="width:12%">
+              <col style="width:32%">
+              <col style="width:10%">
+              <col style="width:10%">
               <col style="width:14%">
-              <col style="width:80px">
+              <col style="width:4%">
             </colgroup>
             <thead>
               <tr>

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { solicitarFolio, registrarFolio, getNextFolio, registrarEntrega, cancelarFolio } from '../controllers/folio.controller.js'
-import { authMiddleware, requireAOF, requireUAD } from '../middlewares/auth.middleware.js'
+import { authMiddleware, requireAOF, requireUAD, requireUADorAOF } from '../middlewares/auth.middleware.js'
 import { csrfProtection } from '../middlewares/security.middleware.js'
 import { uploadPDF } from '../middlewares/upload.js'
 
@@ -15,11 +15,11 @@ router.post('/folios/aof',
   registrarFolio)
 
 router.post('/folios/uad',
-  authMiddleware, requireUAD, csrfProtection,
+  authMiddleware, requireUADorAOF, csrfProtection,
   solicitarFolio)
 
 router.put('/folios/:id/entrega',
-  authMiddleware, requireUAD, csrfProtection,
+  authMiddleware, requireUADorAOF, csrfProtection,
   uploadPDF.single('archivo'), registrarEntrega)
 
 router.put('/folios/:id/cancelar',

@@ -58,7 +58,11 @@ export class OficioRepository {
       unidadIds,
       unidadId: unidadIds[0],
       unidadAlias: unidadAlias || '',
-      responsableIds: responsableIds || unidadIds,
+      responsableIds: responsableIds && responsableIds.length > 0
+        ? responsableIds
+        : (cooresponsableIds && cooresponsableIds.length > 0
+            ? unidadIds.filter(id => !cooresponsableIds.includes(id))
+            : unidadIds),
       cooresponsableIds: cooresponsableIds || [],
       estatus: 'Pendiente',
       archivoPath,
@@ -145,7 +149,11 @@ export class OficioRepository {
       unidadIds,
       unidadId: unidadIds[0],
       unidadAlias: unidadAlias || '',
-      responsableIds: responsableIds || unidadIds,
+      responsableIds: responsableIds && responsableIds.length > 0
+        ? responsableIds
+        : (cooresponsableIds && cooresponsableIds.length > 0
+            ? unidadIds.filter(id => !cooresponsableIds.includes(id))
+            : unidadIds),
       cooresponsableIds: cooresponsableIds || [],
       estatus: estatus || actual.estatus,
       archivoPath,

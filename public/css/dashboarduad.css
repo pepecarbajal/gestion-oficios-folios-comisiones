@@ -69,6 +69,16 @@
   white-space: nowrap;
 }
 
+/* Folio tables: acción pegado al borde derecho */
+#tablaUadFolPend .actions-cell,
+#tablaUadFolAtend .actions-cell {
+  justify-content: flex-end;
+}
+#tablaUadFolPend th:last-child,
+#tablaUadFolAtend th:last-child {
+  text-align: right;
+}
+
 /* ── TABLA PENDIENTES ── */
 .table tr.oficio-row:has(+ .respuestas-row) td,
 .table tr.atendido-row:has(+ .archivos-row) td { border-bottom: none; }

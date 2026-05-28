@@ -60,19 +60,10 @@
 .tipo-icon-correo { background: #eff6ff; color: #2563eb; }
 .tipo-icon-conocimiento { background: #fef3c7; color: #92400e; }
 
-/* ── ACCIONES ── */
-.actions-cell {
-  display: flex !important;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 1px;
-  white-space: nowrap;
-}
-
 /* Folio tables: acción pegado al borde derecho */
 #tablaUadFolPend .actions-cell,
 #tablaUadFolAtend .actions-cell {
-  justify-content: flex-end;
+  text-align: right;
 }
 #tablaUadFolPend th:last-child,
 #tablaUadFolAtend th:last-child {

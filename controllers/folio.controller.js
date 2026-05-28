@@ -1,6 +1,8 @@
 import { getIp } from '../utils/ip.js'
-import { solicitarFolioUAD, registrarFolioAOF, registrarEntregaFolio, cancelarFolioService } from '../services/folio/folio.service.js'
-import { FolioRepository } from '../repositories/folio.repository.js'
+import {
+  solicitarFolioUAD, registrarFolioAOF, registrarEntregaFolio,
+  cancelarFolioService, getNextFolioNumber
+} from '../services/folio/folio.service.js'
 
 export const solicitarFolio = async (req, res, next) => {
   try {
@@ -30,7 +32,7 @@ export const registrarFolio = async (req, res, next) => {
 
 export const getNextFolio = async (req, res, next) => {
   try {
-    const noFolio = await FolioRepository.getNextNoFolio()
+    const noFolio = await getNextFolioNumber()
     res.json({ noFolio })
   } catch (error) {
     next(error)

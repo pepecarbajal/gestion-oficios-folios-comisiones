@@ -2,22 +2,9 @@ import { OficioRepository } from '../../repositories/oficio.repository.js'
 import { UADRepository } from '../../repositories/uad.repository.js'
 import { AuditRepository } from '../../repositories/audit.repository.js'
 import { OficioValidation } from '../../validations/oficio.validation.js'
+import { StorageService } from '../storage.service.js'
+import { parseUnidadIds, buildUnidadAlias } from '../../utils/helpers.js'
 import { ValidationError } from '../../utils/errors.js'
-
-function parseUnidadIds (raw) {
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string' && raw) return [raw]
-  return []
-}
-
-function buildUnidadAlias (unidadIds, unidades) {
-  return unidadIds
-    .map(id => {
-      const u = unidades.find(u => u.id === id)
-      return u ? u.alias : id
-    })
-    .join(', ')
-}
 
 export const registrarOficio = async (datos, archivo, auditInfo) => {
   OficioValidation.validateRegistro(datos, archivo)
@@ -38,11 +25,10 @@ export const registrarOficio = async (datos, archivo, auditInfo) => {
   const responsableIds = parseUnidadIds(datos.responsableIds)
   const cooresponsableIds = parseUnidadIds(datos.cooresponsableIds)
 
-  let archivoBuffer = null
-  let archivoMime = null
-  if (archivo) {
-    archivoBuffer = archivo.buffer
-    archivoMime = archivo.mimetype
+  let archivoPath = null
+  if (archivo && archivo.mimetype === 'application/pdf') {
+    archivoPath = StorageService.oficioFilePath(datos.noOficio)
+    await StorageService.uploadFile(archivoPath, archivo.buffer, archivo.mimetype)
   }
 
   const id = await OficioRepository.create({
@@ -56,8 +42,7 @@ export const registrarOficio = async (datos, archivo, auditInfo) => {
     dependencia: datos.dependencia,
     unidadIds,
     unidadAlias,
-    archivoBuffer,
-    archivoMime,
+    archivoPath,
     tipoArchivo: datos.tipoArchivo === '1' ? 1 : 0,
     modo: datos.modo === '1' ? 1 : 0,
     responsableIds: datos.modo === '1' ? unidadIds : responsableIds,
@@ -94,14 +79,20 @@ export const editarOficio = async (id, datos, archivo, auditInfo) => {
 
   const responsableIds = parseUnidadIds(datos.responsableIds)
   const cooresponsableIds = parseUnidadIds(datos.cooresponsableIds)
-
   const modoFinal = datos.modo !== undefined ? (datos.modo === '1' ? 1 : 0) : undefined
 
-  let archivoBuffer = null
-  let archivoMime = null
-  if (archivo) {
-    archivoBuffer = archivo.buffer
-    archivoMime = archivo.mimetype
+  const actual = await OficioRepository.getById(id)
+  let archivoPath = actual.archivoPath
+
+  if (archivo && archivo.mimetype === 'application/pdf') {
+    if (actual.archivoPath) {
+      await StorageService.deleteFile(actual.archivoPath)
+    }
+    archivoPath = StorageService.oficioFilePath(datos.noOficio)
+    await StorageService.uploadFile(archivoPath, archivo.buffer, archivo.mimetype)
+  } else if (!archivo && datos.noOficio !== actual.noOficio && actual.archivoPath) {
+    const newPath = StorageService.oficioFilePath(datos.noOficio)
+    archivoPath = await StorageService.renameFile(actual.archivoPath, newPath)
   }
 
   await OficioRepository.update(id, {
@@ -116,8 +107,7 @@ export const editarOficio = async (id, datos, archivo, auditInfo) => {
     unidadIds,
     unidadAlias,
     estatus: datos.estatus,
-    archivoBuffer,
-    archivoMime,
+    archivoPath,
     tipoArchivo: datos.tipoArchivo !== undefined ? (datos.tipoArchivo === '1' ? 1 : 0) : undefined,
     modo: modoFinal,
     responsableIds: modoFinal === 1 ? unidadIds : responsableIds,

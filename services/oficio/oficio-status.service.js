@@ -1,7 +1,12 @@
 import { OficioRepository } from '../../repositories/oficio.repository.js'
 import { AuditRepository } from '../../repositories/audit.repository.js'
+import { ValidationError } from '../../utils/errors.js'
 
 export const actualizarEstatusOficio = async (id, estatus, auditInfo) => {
+  if (!['Pendiente', 'Atendido'].includes(estatus)) {
+    throw new ValidationError('Estatus inválido')
+  }
+
   await OficioRepository.updateEstatus(id, estatus)
 
   await AuditRepository.registrar({

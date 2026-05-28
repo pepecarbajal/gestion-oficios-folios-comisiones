@@ -487,6 +487,9 @@
                   <span class="badge badge-prioridad badge-<%= prioridad %>">
                     <%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %>
                   </span>
+                  <% if (o.cooresponsableIds && o.cooresponsableIds.length > 0) { %>
+                    <br><span style="display:inline-block;font-size:0.7rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-top:3px">Co-responsable</span>
+                  <% } %>
                   <% if (o.modo === 1) { %>
                     <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
                   <% } %>
@@ -675,10 +678,10 @@
           <colgroup>
             <col style="width:10%">
             <col style="width:20%">
-            <col style="width:26%">
-            <col style="width:14%">
-            <col style="width:16%">
-            <col style="width:80px">
+            <col style="width:46%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:4%">
           </colgroup>
           <thead>
             <tr>
@@ -740,11 +743,11 @@
           <colgroup>
             <col style="width:8%">
             <col style="width:18%">
-            <col style="width:22%">
-            <col style="width:14%">
-            <col style="width:12%">
-            <col style="width:12%">
-            <col style="width:80px">
+            <col style="width:40%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:4%">
           </colgroup>
           <thead>
             <tr>
@@ -820,13 +823,13 @@
         <% } else { %>
         <table class="table" id="tablaMiPend">
           <colgroup>
-            <col style="width:48px">
+            <col style="width:6%">
             <col style="width:13%">
             <col style="width:18%">
             <col style="width:32%">
             <col style="width:11%">
             <col style="width:10%">
-            <col style="width:80px">
+            <col style="width:10%">
           </colgroup>
           <thead>
             <tr>
@@ -883,9 +886,12 @@
                  </td>
                  <td>
                    <span class="badge badge-prioridad badge-<%= prioridad %>"><%= prioridad === 'vencido' ? 'Vencido' : prioridad === 'urgente' ? 'Urgente' : 'En tiempo' %></span>
-                   <% if (o.modo === 1) { %>
-                     <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
-                   <% } %>
+                  <% if (o.cooresponsableIds && o.cooresponsableIds.length > 0) { %>
+                    <br><span style="display:inline-block;font-size:0.7rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-top:3px">Co-responsable</span>
+                  <% } %>
+                  <% if (o.modo === 1) { %>
+                    <br><span style="display:inline-block;font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;margin-top:3px">De conocimiento</span>
+                  <% } %>
                  </td>
                  <td class="actions-cell">
                    <button class="menu-btn" onclick="toggleActionMenuMi(event, '<%= o.id %>')" title="Acciones">
@@ -917,13 +923,13 @@
         <% } else { %>
         <table class="table" id="tablaMiAtend">
           <colgroup>
-            <col style="width:48px">
+            <col style="width:6%">
             <col style="width:13%">
             <col style="width:18%">
             <col style="width:34%">
             <col style="width:11%">
             <col style="width:12%">
-            <col style="width:80px">
+            <col style="width:6%">
           </colgroup>
           <thead>
             <tr>
@@ -937,30 +943,34 @@
             </tr>
           </thead>
           <tbody id="tbodyMiAtend">
-            <% miUnidadAt.forEach(o => {
-                const todasRespMi = o.respuestas || [];
-                const miRespPri = todasRespMi.find(r => r.unidadId === unidadId && !r.esAclaracion);
-                const misAclaracionesMi = todasRespMi.filter(r => r.unidadId === unidadId && r.esAclaracion);
-                const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
-                const esCorreo = (o.tipoArchivo === 1);
-                const miResp = todasRespMi.find(r => r.unidadId === unidadId);
-             %>
-               <tr class="oficio-row mi-atend-row"
-                 data-id="<%= o.id %>"
-                 data-ya="true"
-                 data-comentario="<%= miRespPri?.comentario || '' %>"
-                 data-archivos="<%= JSON.stringify(miRespPri?.archivos || []) %>"
-                 data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
-                 data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
-                 data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
-                 <script type="application/json" id="oficio-data-mi-<%= o.id %>"><%- JSON.stringify({
-                    id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
-                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                 <script type="application/json" id="resp-data-mi-<%= o.id %>"><%- JSON.stringify(todasRespMi).replace(/<\/script>/gi,'<\/script>') %></script>
-                 <script>
-                   window.__respuestasMi = window.__respuestasMi || {};
-                   window.__respuestasMi['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-mi-<%= o.id %>').textContent);
-                 </script>
+             <% miUnidadAt.forEach(o => {
+                 const todasRespMi = o.respuestas || [];
+                 const miRespPri = todasRespMi.find(r => r.unidadId === unidadId && !r.esAclaracion);
+                 const misAclaracionesMi = todasRespMi.filter(r => r.unidadId === unidadId && r.esAclaracion);
+                 const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
+                 const esCorreo = (o.tipoArchivo === 1);
+                 const miResp = todasRespMi.find(r => r.unidadId === unidadId);
+                 const esCoResponsable = coresponsableMap[o.id]?.esCoResponsable;
+                 const respVisibles = esCoResponsable ? [] : todasRespMi;
+                 const comentarioVisible = esCoResponsable ? '' : (miRespPri?.comentario || '');
+                 const archivosVisibles = esCoResponsable ? '[]' : JSON.stringify(miRespPri?.archivos || []);
+              %>
+                <tr class="oficio-row mi-atend-row"
+                  data-id="<%= o.id %>"
+                  data-ya="true"
+                  data-comentario="<%= comentarioVisible %>"
+                  data-archivos="<%= archivosVisibles %>"
+                  data-esresponsable="<%= coresponsableMap[o.id]?.esResponsable || false %>"
+                  data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
+                  data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
+                  <script type="application/json" id="oficio-data-mi-<%= o.id %>"><%- JSON.stringify({
+                     id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
+                   }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                  <script type="application/json" id="resp-data-mi-<%= o.id %>"><%- JSON.stringify(respVisibles).replace(/<\/script>/gi,'<\/script>') %></script>
+                  <script>
+                    window.__respuestasMi = window.__respuestasMi || {};
+                    window.__respuestasMi['<%= o.id %>'] = JSON.parse(document.getElementById('resp-data-mi-<%= o.id %>').textContent);
+                  </script>
                  <td>
                    <% if (o.modo === 1) { %>
                      <span class="tipo-icon tipo-icon-conocimiento" title="De conocimiento"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -974,23 +984,25 @@
                  <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
                  <td class="asunto-cell"><%= o.asunto %></td>
                  <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
-                 <td>
-                   <% if (miResp) { %>
-                     <span class="resp-fecha-sm"><%= new Date(miResp.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %></span>
-                      <% if (misAclaracionesMi.length > 0) { %>
-                        <div class="aclaraciones-list">
-                          <% misAclaracionesMi.forEach(a => { %>
-                            <div class="aclaracion-item-inline">
-                              <span class="aclaracion-label">Nota aclaratoria: </span>
-                              <span><%= a.comentario %></span>
-                            </div>
-                          <% }) %>
-                        </div>
-                      <% } %>
-                   <% } else { %>
-                     <span style="color:#9ca3af;font-size:0.82rem">—</span>
-                   <% } %>
-                 </td>
+                  <td>
+                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                      <span class="resp-fecha-sm">Atendido por <%= coresponsableMap[o.id]?.aliasResponsable || '—' %></span>
+                    <% } else if (miResp) { %>
+                      <span class="resp-fecha-sm"><%= new Date(miResp.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %></span>
+                       <% if (misAclaracionesMi.length > 0) { %>
+                         <div class="aclaraciones-list">
+                           <% misAclaracionesMi.forEach(a => { %>
+                             <div class="aclaracion-item-inline">
+                               <span class="aclaracion-label">Nota aclaratoria: </span>
+                               <span><%= a.comentario %></span>
+                             </div>
+                           <% }) %>
+                         </div>
+                       <% } %>
+                    <% } else { %>
+                      <span style="color:#9ca3af;font-size:0.82rem">—</span>
+                    <% } %>
+                  </td>
                  <td class="actions-cell">
                    <button class="menu-btn" onclick="toggleActionMenuMi(event, '<%= o.id %>')" title="Acciones">
                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
@@ -1012,15 +1024,19 @@
               <input type="text" id="searchMiFolPend" placeholder="Buscar..." class="search-input">
             </div>
           </div>
+          <button class="btn-primary" onclick="abrirModalSolicitarFolioAOF()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Solicitar
+          </button>
         </div>
         <table class="table" id="tablaMiFolPend">
           <colgroup>
             <col style="width:10%">
             <col style="width:20%">
-            <col style="width:26%">
-            <col style="width:14%">
-            <col style="width:16%">
-            <col style="width:80px">
+            <col style="width:46%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:4%">
           </colgroup>
           <thead>
             <tr>
@@ -1037,7 +1053,10 @@
               <tr><td colspan="6" class="empty-state">No hay folios pendientes para <%= unidadAlias %>.</td></tr>
             <% } %>
             <% miFolPend.forEach(f => { %>
-              <tr class="mi-fol-row mi-fol-pend-row" data-id="<%= f.id %>">
+              <tr class="mi-fol-row mi-fol-pend-row" data-id="<%= f.id %>" data-estatus="<%= f.estatus %>">
+                <script type="application/json" id="folio-data-mi-<%= f.id %>"><%- JSON.stringify({
+                   id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                 }).replace(/<\/script>/gi, '<\\/script>') %></script>
                 <td class="no-cell"><%= f.noFolio %></td>
                 <td><%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %></td>
                 <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
@@ -1072,11 +1091,11 @@
           <colgroup>
             <col style="width:8%">
             <col style="width:18%">
-            <col style="width:22%">
-            <col style="width:14%">
-            <col style="width:12%">
-            <col style="width:12%">
-            <col style="width:80px">
+            <col style="width:40%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:10%">
+            <col style="width:4%">
           </colgroup>
           <thead>
             <tr>
@@ -1095,6 +1114,9 @@
             <% } %>
             <% miFolAtend.forEach(f => { %>
               <tr class="mi-fol-row mi-fol-atend-row<%= f.estatus === 'Cancelado' ? ' folio-cancelado' : '' %>" data-id="<%= f.id %>" data-estatus="<%= f.estatus %>">
+                <script type="application/json" id="folio-data-mi-<%= f.id %>"><%- JSON.stringify({
+                   id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
+                 }).replace(/<\/script>/gi, '<\\/script>') %></script>
                 <td class="no-cell"><%= f.noFolio %></td>
                 <td><%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %></td>
                 <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
@@ -1359,6 +1381,42 @@
     </div>
   </div>
 
+  <%# MODAL SOLICITAR FOLIO (Mi Unidad AOF) %>
+  <div class="modal-overlay" id="modalSolicitarFolioAOFOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Solicitar Folio — <%= unidadAlias || '' %></h3>
+        <button class="modal-close" id="modalSolicitarFolioAOFClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalSolicitarFolioAOFError"></p>
+        <div class="form-group">
+          <label>Destinatario</label>
+          <input type="text" id="inputSolicitarFolioAOFDestinatario" placeholder="Nombre del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Dependencia</label>
+          <input type="text" id="inputSolicitarFolioAOFDependencia" placeholder="Dependencia">
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="inputSolicitarFolioAOFCargo" placeholder="Cargo del destinatario">
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <textarea id="inputSolicitarFolioAOFAsunto" placeholder="Asunto del folio" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnSolicitarFolioAOFCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnSolicitarFolioAOFGuardar">
+          <span id="btnSolicitarFolioAOFText">Solicitar</span>
+          <span id="btnSolicitarFolioAOFLoader" class="loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════ MODAL SELECTOR DE UNIDADES ═══════════ -->
   <div class="modal-overlay" id="modalSelectorUnidades">
     <div class="modal modal-selector-unidades">
@@ -1392,6 +1450,43 @@
       <div class="modal-footer">
         <button class="btn-cancel" id="btnSelectorCancelar">Cancelar</button>
         <button class="btn-primary" id="btnSelectorAplicar">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <%# MODAL REGISTRAR ENTREGA (Mi Unidad AOF) %>
+  <div class="modal-overlay" id="modalEntregaOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Registrar Entrega</h3>
+        <button class="modal-close" id="modalEntregaClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-error" id="modalEntregaError"></p>
+        <div class="form-group">
+          <label>Fecha de entrega</label>
+          <input type="date" id="inputFechaEntrega">
+        </div>
+        <div class="form-group">
+          <label>Comentario <span class="label-hint">(opcional)</span></label>
+          <textarea id="inputEntregaComentario" placeholder="Comentario sobre la entrega..." rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Archivo PDF</label>
+          <div class="file-drop-multi" id="fileDropEntrega">
+            <input type="file" id="inputEntregaPDF" accept="application/pdf" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="fileLabelEntrega">Arrastra el PDF aquí o haz clic para seleccionar</span>
+          </div>
+          <div id="listaArchivosEntrega" class="lista-archivos"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnEntregaCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnEntregaGuardar">
+          <span id="btnEntregaText">Registrar</span>
+          <span id="btnEntregaLoader" class="loader" style="display:none"></span>
+        </button>
       </div>
     </div>
   </div>

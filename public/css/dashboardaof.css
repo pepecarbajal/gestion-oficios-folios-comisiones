@@ -5,7 +5,9 @@
 
 /* Layout fijo: los anchos los define el <colgroup> en el EJS */
 #tablaOficios,
-#tablaAtendidos {
+#tablaAtendidos,
+#tablaMiPend,
+#tablaMiAtend {
   table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
@@ -13,7 +15,9 @@
 
 /* Todas las celdas: padding uniforme y corte de texto seguro */
 #tablaOficios th,  #tablaOficios td,
-#tablaAtendidos th, #tablaAtendidos td {
+#tablaAtendidos th, #tablaAtendidos td,
+#tablaMiPend th, #tablaMiPend td,
+#tablaMiAtend th, #tablaMiAtend td {
   padding: 10px 10px;
   vertical-align: middle;
   overflow: hidden;
@@ -23,7 +27,9 @@
 
 /* Col 1 — icono tipo: centrado */
 #tablaOficios th:nth-child(1),  #tablaOficios td:nth-child(1),
-#tablaAtendidos th:nth-child(1), #tablaAtendidos td:nth-child(1) {
+#tablaAtendidos th:nth-child(1), #tablaAtendidos td:nth-child(1),
+#tablaMiPend th:nth-child(1), #tablaMiPend td:nth-child(1),
+#tablaMiAtend th:nth-child(1), #tablaMiAtend td:nth-child(1) {
   text-align: center;
   padding-left: 12px;
   padding-right: 4px;
@@ -91,6 +97,14 @@
 
 /* ── CELDA FECHA ── */
 .fecha-cell { font-size: 0.875rem; line-height: 1.4; }
+
+/* ── CELDA UNIDAD ── */
+.unidad-cell {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .fecha-limite {
   display: block;
@@ -242,18 +256,37 @@
 
 /* ── FOLIO TABLES ── */
 #tablaFolPendAof,
-#tablaFolAtendAof {
+#tablaFolAtendAof,
+#tablaMiFolPend,
+#tablaMiFolAtend {
   table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
 }
 #tablaFolPendAof th, #tablaFolPendAof td,
-#tablaFolAtendAof th, #tablaFolAtendAof td {
-  padding: 10px 10px;
+#tablaFolAtendAof th, #tablaFolAtendAof td,
+#tablaMiFolPend th, #tablaMiFolPend td,
+#tablaMiFolAtend th, #tablaMiFolAtend td {
   vertical-align: middle;
   overflow: hidden;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Folio tables: botón acción pegado al borde derecho */
+#tablaFolPendAof .actions-cell,
+#tablaFolAtendAof .actions-cell,
+#tablaMiFolPend .actions-cell,
+#tablaMiFolAtend .actions-cell {
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+#tablaFolPendAof th:last-child,
+#tablaFolAtendAof th:last-child,
+#tablaMiFolPend th:last-child,
+#tablaMiFolAtend th:last-child {
+  text-align: right;
+  padding-right: 6px;
 }
 
 /* ── BTN SELECTOR UNIDAD ── */

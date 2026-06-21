@@ -45,25 +45,41 @@ export const getDashboardUAD = async (unidadId, unidadAlias) => {
       return la - lb
     })
 
-  const oficiosAtend = oficiosRaw.filter(o => {
-    const respuestas = o.respuestas || []
-    const cooresp = o.cooresponsableIds || []
-    const esCoResponsable = cooresp.includes(unidadId)
+  const oficiosAtend = oficiosRaw
+    .filter(o => {
+      const respuestas = o.respuestas || []
+      const cooresp = o.cooresponsableIds || []
+      const esCoResponsable = cooresp.includes(unidadId)
 
-    if (esCoResponsable) {
-      const responsables = o.responsableIds || []
-      return responsables.every(id => respuestas.some(r => r.unidadId === id))
-    }
+      if (esCoResponsable) {
+        const responsables = o.responsableIds || []
+        return responsables.every(id => respuestas.some(r => r.unidadId === id))
+      }
 
-    return respuestas.some(r => r.unidadId === unidadId)
-  })
+      return respuestas.some(r => r.unidadId === unidadId)
+    })
+    .sort((a, b) => {
+      const getLatest = (resp, uid) => (resp || [])
+        .filter(r => r.unidadId === uid)
+        .reduce((max, r) => {
+          const d = new Date(r.fechaAtendido)
+          return d > max ? d : max
+        }, new Date(0))
+      return getLatest(b.respuestas, unidadId) - getLatest(a.respuestas, unidadId)
+    })
 
   const todasUnidades = await UADRepository.getAll()
   const unidadMap = {}
   todasUnidades.forEach(u => { unidadMap[u.id] = u.alias })
 
   const foliosPend = foliosRaw.filter(f => f.estatus === 'Pendiente')
-  const foliosAtend = foliosRaw.filter(f => f.estatus !== 'Pendiente')
+  const foliosAtend = foliosRaw
+    .filter(f => f.estatus !== 'Pendiente')
+    .sort((a, b) => {
+      if (!a.fechaEntrega) return 1
+      if (!b.fechaEntrega) return -1
+      return new Date(b.fechaEntrega) - new Date(a.fechaEntrega)
+    })
 
   const coresponsableMap = {}
   oficiosRaw.forEach(o => {

@@ -219,10 +219,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoOf">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsOf"></div>
-        </div>
       </div>
 
       <!-- ═══════════════ TAB OFICIOS ATENDIDOS ═══════════════ -->
@@ -316,7 +312,15 @@
                       </span>
                     <% } %>
                   </td>
-                  <td class="no-cell"><%= o.noOficio %></td>
+                  <td>
+                    <span class="resp-fecha-cell"><%
+                      const __lr = respuestas.reduce((__a, __r) => {
+                        const __d = new Date(__r.fechaAtendido);
+                        return (!__a || __d > __a) ? __d : __a;
+                      }, null);
+                      %><%= __lr ? __lr.toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                    <span class="no-cell"><%= o.noOficio %></span>
+                  </td>
                   <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
                   <td class="asunto-cell"><%= o.asunto %></td>
                   <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
@@ -341,10 +345,6 @@
               <% }) %>
             </tbody>
           </table>
-          <div class="pagination">
-            <span id="paginacionInfoAt">Mostrando 0 de 0</span>
-            <div class="page-controls" id="pageControlsAt"></div>
-          </div>
         <% } %>
       </div>
 
@@ -411,10 +411,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoFolPendAof">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsFolPendAof"></div>
-        </div>
       </div>
 
       <%# ═══════════════ TAB FOLIOS ATENDIDOS ═══════════════ %>
@@ -460,7 +456,10 @@
                 <script type="application/json" id="folio-data-aof-<%= f.id %>"><%- JSON.stringify({
                    id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                <td class="no-cell"><%= f.noFolio %></td>
+                <td>
+                  <span class="resp-fecha-cell"><%= f.estatus !== 'Cancelado' && f.fechaEntrega ? new Date(f.fechaEntrega).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                  <span class="no-cell"><%= f.noFolio %></span>
+                </td>
                 <td>
                   <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
                 </td>
@@ -485,10 +484,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoFolAtendAof">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsFolAtendAof"></div>
-        </div>
       </div>
 
       <% if (unidadAlias) { %>
@@ -668,12 +663,20 @@
                      <span class="tipo-icon tipo-icon-oficio" title="Oficio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
                    <% } %>
                  </td>
-                 <td class="no-cell"><%= o.noOficio %></td>
-                 <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
-                 <td class="asunto-cell"><%= o.asunto %></td>
-                 <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
                   <td>
-                    <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
+                    <span class="resp-fecha-cell"><%
+                      const __lr = todasRespMi.reduce((__a, __r) => {
+                        const __d = new Date(__r.fechaAtendido);
+                        return (!__a || __d > __a) ? __d : __a;
+                      }, null);
+                      %><%= __lr ? __lr.toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                    <span class="no-cell"><%= o.noOficio %></span>
+                  </td>
+                  <td><%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %></td>
+                  <td class="asunto-cell"><%= o.asunto %></td>
+                  <td class="fecha-cell"><%= o.fechaOficio ? new Date(o.fechaOficio).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
+                   <td>
+                     <% if (coresponsableMap[o.id]?.esCoResponsable) { %>
                       <span class="resp-fecha-sm">Atendido por <%= coresponsableMap[o.id]?.aliasResponsable || '—' %></span>
                     <% } else if (miResp) { %>
                       <span class="resp-fecha-sm"><%= new Date(miResp.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) %></span>
@@ -759,10 +762,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoMiFolPend">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsMiFolPend"></div>
-        </div>
       </div>
 
       <%# ═══════════════ TAB MI FOLIOS ATENDIDOS ═══════════════ %>
@@ -805,7 +804,10 @@
                 <script type="application/json" id="folio-data-mi-<%= f.id %>"><%- JSON.stringify({
                    id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
                  }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                <td class="no-cell"><%= f.noFolio %></td>
+                <td>
+                  <span class="resp-fecha-cell"><%= f.estatus !== 'Cancelado' && f.fechaEntrega ? new Date(f.fechaEntrega).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                  <span class="no-cell"><%= f.noFolio %></span>
+                </td>
                 <td><%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %></td>
                 <td class="asunto-cell" title="<%= f.asunto %>"><%= f.asunto %></td>
                 <td class="unidad-cell"><%= f.unidadAlias %></td>
@@ -826,14 +828,15 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoMiFolAtend">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsMiFolAtend"></div>
-        </div>
       </div>
 
       <% } %>
     </main>
+
+    <div class="pagination-fixed-wrap" id="unifiedPagination">
+      <span id="paginacionInfoUnified">Mostrando 0 de 0</span>
+      <div class="page-controls" id="pageControlsUnified"></div>
+    </div>
   </div>
 
   <%# MODAL VISOR %>

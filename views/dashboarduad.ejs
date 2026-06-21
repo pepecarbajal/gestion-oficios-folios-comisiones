@@ -154,10 +154,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoPend">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsPend"></div>
-        </div>
       </div>
       <div id="tabOfAtendidos" class="content-card tab-panel" style="display:none">
         <div class="card-header">
@@ -242,7 +238,15 @@
                       </span>
                     <% } %>
                   </td>
-                  <td class="no-cell"><%= o.noOficio %></td>
+                   <td>
+                    <span class="resp-fecha-cell"><%
+                      const __lrUad = todasRespuestas.filter(r => r.unidadId === unidadId).reduce((__a, __r) => {
+                        const __d = new Date(__r.fechaAtendido);
+                        return (!__a || __d > __a) ? __d : __a;
+                      }, null);
+                      %><%= __lrUad ? __lrUad.toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                    <span class="no-cell"><%= o.noOficio %></span>
+                  </td>
                   <td>
                     <%- include('partials/user-cell', { name: o.remitente, initials: initials, cargo: o.cargo }) %>
                   </td>
@@ -285,10 +289,6 @@
               <% }) %>
             </tbody>
           </table>
-          <div class="pagination">
-            <span id="paginacionInfoAtend">Mostrando 0 de 0</span>
-            <div class="page-controls" id="pageControlsAtend"></div>
-          </div>
         <% } %>
       </div>
 
@@ -352,10 +352,6 @@
             <% }) %>
           </tbody>
         </table>
-        <div class="pagination">
-          <span id="paginacionInfoFolPend">Mostrando 0 de 0</span>
-          <div class="page-controls" id="pageControlsFolPend"></div>
-        </div>
       </div>
 
       <%# ════════════ FOLIOS ATENDIDOS ════════════ %>
@@ -404,7 +400,10 @@
                   <script type="application/json" id="folio-data-<%= f.id %>"><%- JSON.stringify({
                      id: f.id, noFolio: f.noFolio, archivoUrl: f.archivoUrl || ""
                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
-                  <td class="no-cell"><%= f.noFolio %></td>
+                   <td>
+                    <span class="resp-fecha-cell"><%= f.estatus !== 'Cancelado' && f.fechaEntrega ? new Date(f.fechaEntrega).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '' %></span>
+                    <span class="no-cell"><%= f.noFolio %></span>
+                  </td>
                   <td>
                     <%- include('partials/user-cell', { name: f.destinatario, cargo: f.cargo, dependencia: f.dependencia }) %>
                   </td>
@@ -429,11 +428,11 @@
               <% }) %>
             </tbody>
           </table>
-          <div class="pagination">
-            <span id="paginacionInfoFolAtend">Mostrando 0 de 0</span>
-            <div class="page-controls" id="pageControlsFolAtend"></div>
-          </div>
         <% } %>
+      </div>
+      <div class="pagination-fixed-wrap" id="unifiedPagination" style="display:none">
+        <span id="paginacionInfoUnified">Mostrando 0 de 0</span>
+        <div class="page-controls" id="pageControlsUnified"></div>
       </div>
     </main>
   </div>

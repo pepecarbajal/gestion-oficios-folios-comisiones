@@ -79,6 +79,24 @@ function cambiarTab(tab, e) {
     if (nav) nav.classList.add('active')
   }
 
+  const pagEl = document.getElementById('unifiedPagination')
+  const tabsWithPagination = ['oficios-pendientes', 'oficios-atendidos', 'folios-pendientes', 'folios-atendidos', 'mi-fol-pendientes', 'mi-fol-atendidos']
+  if (pagEl) {
+    if (tabsWithPagination.includes(tab)) {
+      pagEl.style.display = 'flex'
+      switch (tab) {
+        case 'oficios-pendientes': filtrarOficios(false); break
+        case 'oficios-atendidos': filtrarAtendidos(false); break
+        case 'folios-pendientes': filtrarFolPendAof(false); break
+        case 'folios-atendidos': filtrarFolAtendAof(false); break
+        case 'mi-fol-pendientes': filtrarMiFolPend(false); break
+        case 'mi-fol-atendidos': filtrarMiFolAtend(false); break
+      }
+    } else {
+      pagEl.style.display = 'none'
+    }
+  }
+
   sessionStorage.setItem('aofActiveTab', tab)
 }
 
@@ -167,10 +185,10 @@ const PAGE_SIZE = 10;
 let pageOf = 1;
 let pageAt = 1;
 
-function renderPagination(total, page, containerId, infoId, onPageChange) {
+function renderUnifiedPagination(total, page, onPageChange) {
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  const container = document.getElementById(containerId);
-  const info = document.getElementById(infoId);
+  const container = document.getElementById('pageControlsUnified');
+  const info = document.getElementById('paginacionInfoUnified');
   if (!container) return;
 
   const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -244,7 +262,7 @@ function filtrarOficios(resetPage = true) {
 
   document.querySelectorAll('.respuestas-row').forEach(r => { r.style.display = 'none'; });
 
-  renderPagination(total, pageOf, 'pageControlsOf', 'paginacionInfoOf', (np) => {
+  renderUnifiedPagination(total, pageOf, (np) => {
     pageOf = np;
     filtrarOficios(false);
   });
@@ -279,7 +297,7 @@ function filtrarAtendidos(resetPage = true) {
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pageAt, 'pageControlsAt', 'paginacionInfoAt', (np) => {
+  renderUnifiedPagination(total, pageAt, (np) => {
     pageAt = np;
     filtrarAtendidos(false);
   });
@@ -308,7 +326,7 @@ function filtrarFolPendAof(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolPendAof, 'pageControlsFolPendAof', 'paginacionInfoFolPendAof', (np) => {
+  renderUnifiedPagination(total, pageFolPendAof, (np) => {
     pageFolPendAof = np;
     filtrarFolPendAof(false);
   });
@@ -327,7 +345,7 @@ function filtrarFolAtendAof(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolAtendAof, 'pageControlsFolAtendAof', 'paginacionInfoFolAtendAof', (np) => {
+  renderUnifiedPagination(total, pageFolAtendAof, (np) => {
     pageFolAtendAof = np;
     filtrarFolAtendAof(false);
   });
@@ -335,6 +353,42 @@ function filtrarFolAtendAof(resetPage = true) {
 
 document.getElementById('searchFolPendAof')?.addEventListener('input', () => filtrarFolPendAof(true));
 document.getElementById('searchFolAtendAof')?.addEventListener('input', () => filtrarFolAtendAof(true));
+
+// ── MI UNIDAD FOLIOS PAGINATION ──
+let pageMiFolPend = 1
+let pageMiFolAtend = 1
+
+function filtrarMiFolPend(resetPage = true) {
+  if (resetPage) pageMiFolPend = 1
+  const allRows = Array.from(document.querySelectorAll('.mi-fol-pend-row'))
+  const total = allRows.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageMiFolPend > totalPages) pageMiFolPend = totalPages
+  const start = (pageMiFolPend - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  allRows.slice(start, end).forEach(row => { row.style.display = '' })
+  renderUnifiedPagination(total, pageMiFolPend, (np) => {
+    pageMiFolPend = np
+    filtrarMiFolPend(false)
+  })
+}
+
+function filtrarMiFolAtend(resetPage = true) {
+  if (resetPage) pageMiFolAtend = 1
+  const allRows = Array.from(document.querySelectorAll('.mi-fol-atend-row'))
+  const total = allRows.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageMiFolAtend > totalPages) pageMiFolAtend = totalPages
+  const start = (pageMiFolAtend - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  allRows.slice(start, end).forEach(row => { row.style.display = '' })
+  renderUnifiedPagination(total, pageMiFolAtend, (np) => {
+    pageMiFolAtend = np
+    filtrarMiFolAtend(false)
+  })
+}
 
 filtrarFolPendAof(false);
 filtrarFolAtendAof(false);

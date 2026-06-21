@@ -289,6 +289,22 @@
   padding-right: 6px;
 }
 
+/* ── PAGINACIÓN FIJA ── */
+.pagination-fixed-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 200px;
+  right: 0;
+  background: #fff;
+  padding: 12px 32px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.main { padding-bottom: 70px; }
+
 /* ── BTN SELECTOR UNIDAD ── */
 .btn-selector-unidad {
   display: flex;
@@ -344,6 +360,17 @@
 }
 .chip-remove:hover { color: #1d4ed8; }
 .resp-fecha-sm { font-size: 0.78rem; color: #16a34a; font-weight: 500; }
+
+.resp-fecha-cell {
+  display: block;
+  font-size: 0.62rem;
+  color: #9ca3af;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ── USER CELL (override base) ── */
 .user-cell { align-items: flex-start; }

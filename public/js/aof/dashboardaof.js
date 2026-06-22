@@ -38,6 +38,49 @@ function renderCardRespuesta(r) {
     </div>`
 }
 
+function marcarVistoAOF(id) {
+  const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+
+  aofVisto.push(AOF_USER_ID)
+  data.aofVisto = aofVisto
+  dataEl.textContent = JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>')
+
+  const row = document.querySelector(`.at-row[data-id="${id}"], .mi-atend-row[data-id="${id}"]`)
+  if (row) row.classList.add('visto-aof')
+
+  fetch(`/oficios/${id}/aof-visto`, {
+    method: 'POST',
+    headers: { 'CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content }
+  }).catch(() => {})
+}
+
+function marcarVistoAOFSiAplica(id, respuestas) {
+  const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+  if (data.modo === 1) { marcarVistoAOF(id); return }
+
+  const tieneArchivos = respuestas.some(r => r.archivos && r.archivos.length > 0)
+  if (!tieneArchivos) {
+    marcarVistoAOF(id)
+  } else {
+    const chips = document.querySelectorAll('#listaRespuestasModal .archivo-chip')
+    chips.forEach(chip => {
+      chip.addEventListener('click', function onClick() {
+        marcarVistoAOF(id)
+        chip.removeEventListener('click', onClick)
+      })
+    })
+  }
+}
+
 function abrirModalRespuestas(btn) {
   const id = btn.dataset.oficioId
   const respuestas = (window.__respuestas && window.__respuestas[id]) || []
@@ -45,6 +88,7 @@ function abrirModalRespuestas(btn) {
     ? `${respuestas.map(renderCardRespuesta).join('')}`
     : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic;text-align:center;padding:20px 0">Sin respuestas registradas.</p>'
   modalRespOverlay.classList.add('active')
+  marcarVistoAOFSiAplica(id, respuestas)
 }
 
 document.getElementById('modalRespuestasClose').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
@@ -1414,6 +1458,26 @@ function abrirEvidenciasMi(id) {
   if (!content) content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin información.</p>'
   lista.innerHTML = content
   overlay.classList.add('active')
+
+  const dataEl = document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+  if (data.modo === 1) { marcarVistoAOF(id); return }
+
+  const tieneArchivos = todasResp.some(r => r.archivos && r.archivos.length > 0)
+  if (!tieneArchivos) {
+    marcarVistoAOF(id)
+  } else {
+    const chips = document.querySelectorAll('#listaEvidenciasMiModal .archivo-chip')
+    chips.forEach(chip => {
+      chip.addEventListener('click', function onClick() {
+        marcarVistoAOF(id)
+        chip.removeEventListener('click', onClick)
+      })
+    })
+  }
 }
 
 document.getElementById('modalEvidenciasMiClose')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))

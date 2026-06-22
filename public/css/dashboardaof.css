@@ -114,6 +114,18 @@
 }
 .fecha-limite.vencida { color: #dc2626; font-weight: 600; }
 
+/* ── VISTO AOF ── */
+.oficio-row.visto-aof {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.oficio-row.visto-aof:hover {
+  opacity: 0.8;
+}
+.oficio-row.visto-aof td {
+  background: #f3f4f6;
+}
+
 /* ── RESPUESTAS ── */
 .resp-label { font-size: 0.82rem; font-weight: 600; color: #059669; }
 

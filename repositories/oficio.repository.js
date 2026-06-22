@@ -185,6 +185,12 @@ export class OficioRepository {
     await ref.update({ vistoPor: FieldValue.arrayUnion(unidadId) })
   }
 
+  static async marcarVistoAOF (oficioId, userId) {
+    const firestore = db()
+    const ref = firestore.collection(OFICIOS_COLLECTION).doc(oficioId)
+    await ref.update({ aofVisto: FieldValue.arrayUnion(userId) })
+  }
+
   static async updateEstatus (id, estatus) {
     const firestore = db()
     const ref = firestore.collection(OFICIOS_COLLECTION).doc(id)

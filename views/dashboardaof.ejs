@@ -276,7 +276,7 @@
                  const initials = o.remitente ? o.remitente.slice(0,2).toUpperCase() : '??';
                  const esCorreo = (o.tipoArchivo === 1);
               %>
-                <tr class="oficio-row at-row"
+                <tr class="oficio-row at-row<%= (o.aofVisto || []).includes(String(userId)) ? ' visto-aof' : '' %>"
                   data-unidad="<%= o.unidadAlias || '' %>"
                   data-search="<%= (o.noOficio + ' ' + o.remitente + ' ' + o.asunto + ' ' + (o.unidadAlias || '')).toLowerCase() %>"
                   data-id="<%= o.id %>">
@@ -293,7 +293,8 @@
                         estatus: o.estatus, tipoArchivo: o.tipoArchivo || 0,
                         modo: o.modo || 0,
                         tieneArchivo: !!o.archivoPath,
-                        archivoUrl: o.archivoUrl || ""
+                        archivoUrl: o.archivoUrl || "",
+                        aofVisto: o.aofVisto || []
                       }).replace(/<\/script>/gi, '<\\/script>') %></script>
 
 
@@ -638,7 +639,7 @@
                  const comentarioVisible = esCoResponsable ? '' : (miRespPri?.comentario || '');
                  const archivosVisibles = esCoResponsable ? '[]' : JSON.stringify(miRespPri?.archivos || []);
               %>
-                <tr class="oficio-row mi-atend-row"
+                <tr class="oficio-row mi-atend-row<%= (o.aofVisto || []).includes(String(userId)) ? ' visto-aof' : '' %>"
                   data-id="<%= o.id %>"
                   data-ya="true"
                   data-comentario="<%= comentarioVisible %>"
@@ -647,8 +648,9 @@
                   data-ecooresponsable="<%= coresponsableMap[o.id]?.esCoResponsable || false %>"
                   data-aliasresponsable="<%= coresponsableMap[o.id]?.aliasResponsable || '' %>">
                   <script type="application/json" id="oficio-data-mi-<%= o.id %>"><%- JSON.stringify({
-                     id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0
-                   }).replace(/<\/script>/gi, '<\\/script>') %></script>
+                     id: o.id, noOficio: o.noOficio, archivoUrl: o.archivoUrl || "", modo: o.modo || 0,
+                     aofVisto: o.aofVisto || []
+                    }).replace(/<\/script>/gi, '<\\/script>') %></script>
                   <script type="application/json" id="resp-data-mi-<%= o.id %>"><%- JSON.stringify(respVisibles).replace(/<\/script>/gi,'<\/script>') %></script>
                   <script>
                     window.__respuestasMi = window.__respuestasMi || {};
@@ -1269,6 +1271,7 @@
     </div>
   </div>
 
+  <script>window.AOF_USER_ID = '<%= userId %>';</script>
   <script src="/js/viewer.js"></script>
   <script src="/js/aof/dashboardaof.js"></script>
 

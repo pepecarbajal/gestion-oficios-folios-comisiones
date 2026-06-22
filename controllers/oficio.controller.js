@@ -2,7 +2,7 @@ import { getIp } from '../utils/ip.js'
 import { registrarOficio as createOficio, editarOficio as updateOficio } from '../services/oficio/oficio.service.js'
 import { actualizarEstatusOficio as changeEstatusOficio } from '../services/oficio/oficio-status.service.js'
 import { guardarRespuestaUAD as saveRespuestaUAD, agregarAclaracionUAD as saveAclaracionUAD } from '../services/oficio/oficio-respuesta.service.js'
-import { marcarVisto as markVisto } from '../services/oficio/oficio-visto.service.js'
+import { marcarVisto as markVisto, marcarVistoAOF as markVistoAOF } from '../services/oficio/oficio-visto.service.js'
 
 export const registrarOficio = async (req, res, next) => {
   try {
@@ -72,6 +72,19 @@ export const agregarAclaracionUAD = async (req, res, next) => {
 export const marcarVisto = async (req, res, next) => {
   try {
     await markVisto(req.params.id, req.uad, {
+      usuarioId: req.user?.id,
+      rol: req.user?.role,
+      ip: getIp(req)
+    })
+    res.json({ success: true })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const marcarVistoAOF = async (req, res, next) => {
+  try {
+    await markVistoAOF(req.params.id, req.user.id, {
       usuarioId: req.user?.id,
       rol: req.user?.role,
       ip: getIp(req)

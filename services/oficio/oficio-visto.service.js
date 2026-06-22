@@ -19,3 +19,21 @@ export const marcarVisto = async (id, unidadCtx, auditInfo) => {
 
   return id
 }
+
+export const marcarVistoAOF = async (id, userId, auditInfo) => {
+  await OficioRepository.marcarVistoAOF(id, userId)
+
+  await AuditRepository.registrar({
+    accion: 'OFICIO_VISTO_AOF',
+    usuarioId: auditInfo.usuarioId,
+    usuarioEmail: null,
+    rol: auditInfo.rol,
+    detalle: {
+      oficioId: id,
+      userId
+    },
+    ip: auditInfo.ip
+  })
+
+  return id
+}

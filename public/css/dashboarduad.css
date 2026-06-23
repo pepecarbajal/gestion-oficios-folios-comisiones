@@ -284,3 +284,28 @@
 }
 .subnav-item:hover { color: #e5e7eb; background: rgba(255,255,255,0.05); }
 .subnav-item.active { color: #fff; border-left-color: #fff; background: rgba(255,255,255,0.08); }
+
+.resp-fecha-cell {
+  display: block;
+  font-size: 0.62rem;
+  color: #9ca3af;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pagination-fixed-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 200px;
+  right: 0;
+  background: #fff;
+  padding: 12px 32px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.main { padding-bottom: 70px; }

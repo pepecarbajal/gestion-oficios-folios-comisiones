@@ -38,6 +38,49 @@ function renderCardRespuesta(r) {
     </div>`
 }
 
+function marcarVistoAOF(id) {
+  const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+
+  aofVisto.push(AOF_USER_ID)
+  data.aofVisto = aofVisto
+  dataEl.textContent = JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>')
+
+  const row = document.querySelector(`.at-row[data-id="${id}"], .mi-atend-row[data-id="${id}"]`)
+  if (row) row.classList.add('visto-aof')
+
+  fetch(`/oficios/${id}/aof-visto`, {
+    method: 'POST',
+    headers: { 'CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content }
+  }).catch(() => {})
+}
+
+function marcarVistoAOFSiAplica(id, respuestas) {
+  const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+  if (data.modo === 1) { marcarVistoAOF(id); return }
+
+  const tieneArchivos = respuestas.some(r => r.archivos && r.archivos.length > 0)
+  if (!tieneArchivos) {
+    marcarVistoAOF(id)
+  } else {
+    const chips = document.querySelectorAll('#listaRespuestasModal .archivo-chip')
+    chips.forEach(chip => {
+      chip.addEventListener('click', function onClick() {
+        marcarVistoAOF(id)
+        chip.removeEventListener('click', onClick)
+      })
+    })
+  }
+}
+
 function abrirModalRespuestas(btn) {
   const id = btn.dataset.oficioId
   const respuestas = (window.__respuestas && window.__respuestas[id]) || []
@@ -45,6 +88,7 @@ function abrirModalRespuestas(btn) {
     ? `${respuestas.map(renderCardRespuesta).join('')}`
     : '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic;text-align:center;padding:20px 0">Sin respuestas registradas.</p>'
   modalRespOverlay.classList.add('active')
+  marcarVistoAOFSiAplica(id, respuestas)
 }
 
 document.getElementById('modalRespuestasClose').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
@@ -77,6 +121,24 @@ function cambiarTab(tab, e) {
     const nav = document.getElementById(target.nav)
     if (panel) panel.style.display = ''
     if (nav) nav.classList.add('active')
+  }
+
+  const pagEl = document.getElementById('unifiedPagination')
+  const tabsWithPagination = ['oficios-pendientes', 'oficios-atendidos', 'folios-pendientes', 'folios-atendidos', 'mi-fol-pendientes', 'mi-fol-atendidos']
+  if (pagEl) {
+    if (tabsWithPagination.includes(tab)) {
+      pagEl.style.display = 'flex'
+      switch (tab) {
+        case 'oficios-pendientes': filtrarOficios(false); break
+        case 'oficios-atendidos': filtrarAtendidos(false); break
+        case 'folios-pendientes': filtrarFolPendAof(false); break
+        case 'folios-atendidos': filtrarFolAtendAof(false); break
+        case 'mi-fol-pendientes': filtrarMiFolPend(false); break
+        case 'mi-fol-atendidos': filtrarMiFolAtend(false); break
+      }
+    } else {
+      pagEl.style.display = 'none'
+    }
   }
 
   sessionStorage.setItem('aofActiveTab', tab)
@@ -167,10 +229,10 @@ const PAGE_SIZE = 10;
 let pageOf = 1;
 let pageAt = 1;
 
-function renderPagination(total, page, containerId, infoId, onPageChange) {
+function renderUnifiedPagination(total, page, onPageChange) {
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  const container = document.getElementById(containerId);
-  const info = document.getElementById(infoId);
+  const container = document.getElementById('pageControlsUnified');
+  const info = document.getElementById('paginacionInfoUnified');
   if (!container) return;
 
   const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -244,7 +306,7 @@ function filtrarOficios(resetPage = true) {
 
   document.querySelectorAll('.respuestas-row').forEach(r => { r.style.display = 'none'; });
 
-  renderPagination(total, pageOf, 'pageControlsOf', 'paginacionInfoOf', (np) => {
+  renderUnifiedPagination(total, pageOf, (np) => {
     pageOf = np;
     filtrarOficios(false);
   });
@@ -279,7 +341,7 @@ function filtrarAtendidos(resetPage = true) {
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pageAt, 'pageControlsAt', 'paginacionInfoAt', (np) => {
+  renderUnifiedPagination(total, pageAt, (np) => {
     pageAt = np;
     filtrarAtendidos(false);
   });
@@ -308,7 +370,7 @@ function filtrarFolPendAof(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolPendAof, 'pageControlsFolPendAof', 'paginacionInfoFolPendAof', (np) => {
+  renderUnifiedPagination(total, pageFolPendAof, (np) => {
     pageFolPendAof = np;
     filtrarFolPendAof(false);
   });
@@ -327,7 +389,7 @@ function filtrarFolAtendAof(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolAtendAof, 'pageControlsFolAtendAof', 'paginacionInfoFolAtendAof', (np) => {
+  renderUnifiedPagination(total, pageFolAtendAof, (np) => {
     pageFolAtendAof = np;
     filtrarFolAtendAof(false);
   });
@@ -335,6 +397,42 @@ function filtrarFolAtendAof(resetPage = true) {
 
 document.getElementById('searchFolPendAof')?.addEventListener('input', () => filtrarFolPendAof(true));
 document.getElementById('searchFolAtendAof')?.addEventListener('input', () => filtrarFolAtendAof(true));
+
+// ── MI UNIDAD FOLIOS PAGINATION ──
+let pageMiFolPend = 1
+let pageMiFolAtend = 1
+
+function filtrarMiFolPend(resetPage = true) {
+  if (resetPage) pageMiFolPend = 1
+  const allRows = Array.from(document.querySelectorAll('.mi-fol-pend-row'))
+  const total = allRows.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageMiFolPend > totalPages) pageMiFolPend = totalPages
+  const start = (pageMiFolPend - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  allRows.slice(start, end).forEach(row => { row.style.display = '' })
+  renderUnifiedPagination(total, pageMiFolPend, (np) => {
+    pageMiFolPend = np
+    filtrarMiFolPend(false)
+  })
+}
+
+function filtrarMiFolAtend(resetPage = true) {
+  if (resetPage) pageMiFolAtend = 1
+  const allRows = Array.from(document.querySelectorAll('.mi-fol-atend-row'))
+  const total = allRows.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageMiFolAtend > totalPages) pageMiFolAtend = totalPages
+  const start = (pageMiFolAtend - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  allRows.slice(start, end).forEach(row => { row.style.display = '' })
+  renderUnifiedPagination(total, pageMiFolAtend, (np) => {
+    pageMiFolAtend = np
+    filtrarMiFolAtend(false)
+  })
+}
 
 filtrarFolPendAof(false);
 filtrarFolAtendAof(false);
@@ -1360,6 +1458,26 @@ function abrirEvidenciasMi(id) {
   if (!content) content = '<p style="color:#9ca3af;font-size:0.85rem;font-style:italic">Sin información.</p>'
   lista.innerHTML = content
   overlay.classList.add('active')
+
+  const dataEl = document.getElementById(`oficio-data-mi-${id}`)
+  if (!dataEl) return
+  const data = JSON.parse(dataEl.textContent)
+  const aofVisto = data.aofVisto || []
+  if (aofVisto.includes(AOF_USER_ID)) return
+  if (data.modo === 1) { marcarVistoAOF(id); return }
+
+  const tieneArchivos = todasResp.some(r => r.archivos && r.archivos.length > 0)
+  if (!tieneArchivos) {
+    marcarVistoAOF(id)
+  } else {
+    const chips = document.querySelectorAll('#listaEvidenciasMiModal .archivo-chip')
+    chips.forEach(chip => {
+      chip.addEventListener('click', function onClick() {
+        marcarVistoAOF(id)
+        chip.removeEventListener('click', onClick)
+      })
+    })
+  }
 }
 
 document.getElementById('modalEvidenciasMiClose')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))

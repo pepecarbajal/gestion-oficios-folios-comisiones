@@ -48,10 +48,24 @@ export const getDashboardAOF = async (unidadId, unidadAlias) => {
       return la - lb
     })
 
-  const oficiosAt = oficiosRaw.filter(o => (o.respuestas || []).length > 0)
+  const oficiosAt = oficiosRaw
+    .filter(o => (o.respuestas || []).length > 0)
+    .sort((a, b) => {
+      const getLatest = (resp) => (resp || []).reduce((max, r) => {
+        const d = new Date(r.fechaAtendido)
+        return d > max ? d : max
+      }, new Date(0))
+      return getLatest(b.respuestas) - getLatest(a.respuestas)
+    })
 
   const foliosPend = foliosRaw.filter(f => f.estatus === 'Pendiente')
-  const foliosAtend = foliosRaw.filter(f => f.estatus !== 'Pendiente')
+  const foliosAtend = foliosRaw
+    .filter(f => f.estatus !== 'Pendiente')
+    .sort((a, b) => {
+      if (!a.fechaEntrega) return 1
+      if (!b.fechaEntrega) return -1
+      return new Date(b.fechaEntrega) - new Date(a.fechaEntrega)
+    })
 
   let miUnidadPend = []
   let miUnidadAt = []
@@ -76,14 +90,28 @@ export const getDashboardAOF = async (unidadId, unidadAlias) => {
         const lb = b.fechaLimite ? new Date(b.fechaLimite) : new Date('9999-12-31')
         return la - lb
       })
-    miUnidadAt = miOfRaw.filter(o => {
-      const yaRespondio = (o.responsableIds || []).includes(unidadId)
-        ? (o.respuestas || []).some(r => r.unidadId === unidadId)
-        : (o.respuestas || []).length > 0
-      return yaRespondio
-    })
+    miUnidadAt = miOfRaw
+      .filter(o => {
+        const yaRespondio = (o.responsableIds || []).includes(unidadId)
+          ? (o.respuestas || []).some(r => r.unidadId === unidadId)
+          : (o.respuestas || []).length > 0
+        return yaRespondio
+      })
+      .sort((a, b) => {
+        const getLatest = (resp) => (resp || []).reduce((max, r) => {
+          const d = new Date(r.fechaAtendido)
+          return d > max ? d : max
+        }, new Date(0))
+        return getLatest(b.respuestas) - getLatest(a.respuestas)
+      })
     miFolPend = miFolRaw.filter(f => f.estatus === 'Pendiente')
-    miFolAtend = miFolRaw.filter(f => f.estatus !== 'Pendiente')
+    miFolAtend = miFolRaw
+      .filter(f => f.estatus !== 'Pendiente')
+      .sort((a, b) => {
+        if (!a.fechaEntrega) return 1
+        if (!b.fechaEntrega) return -1
+        return new Date(b.fechaEntrega) - new Date(a.fechaEntrega)
+      })
   }
 
   return { oficiosPend, oficiosAt, oficios: oficiosRaw, foliosPend, foliosAtend, folios: foliosRaw, unidades, miUnidadPend, miUnidadAt, miFolPend, miFolAtend, unidadId, unidadAlias, coresponsableMap }

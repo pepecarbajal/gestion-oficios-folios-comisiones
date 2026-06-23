@@ -137,6 +137,19 @@ function cambiarTab(tab, e) {
     document.getElementById(target.nav).classList.add('active')
   }
 
+  const unifiedP = document.getElementById('unifiedPagination')
+  const showPagination = tab === 'folios-atendidos' || tab === 'folios-pendientes' || tab === 'oficios-atendidos' || tab === 'oficios-pendientes'
+  if (unifiedP) unifiedP.style.display = showPagination ? '' : 'none'
+
+  const tabFilterMap = {
+    'oficios-pendientes': 'filtrarPendientes',
+    'oficios-atendidos': 'filtrarAtendidos',
+    'folios-pendientes': 'filtrarFolPend',
+    'folios-atendidos': 'filtrarFolAtend'
+  }
+  const fnName = tabFilterMap[tab]
+  if (fnName && window[fnName]) window[fnName](true)
+
   sessionStorage.setItem('uadActiveTab', tab)
 }
 
@@ -372,10 +385,10 @@ let pageOfAtend = 1;
 let pageFolPend = 1;
 let pageFolAtend = 1;
 
-function renderPagination(total, page, containerId, infoId, onPageChange) {
+function renderUnifiedPagination(total, page, onPageChange) {
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  const container = document.getElementById(containerId);
-  const info = document.getElementById(infoId);
+  const container = document.getElementById('pageControlsUnified');
+  const info = document.getElementById('paginacionInfoUnified');
   if (!container) return;
 
   const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -445,7 +458,7 @@ function filtrarPendientes(resetPage = true) {
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pageOfPend, 'pageControlsPend', 'paginacionInfoPend', (np) => {
+  renderUnifiedPagination(total, pageOfPend, (np) => {
     pageOfPend = np;
     filtrarPendientes(false);
   });
@@ -475,7 +488,7 @@ function filtrarAtendidos(resetPage = true) {
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
 
-  renderPagination(total, pageOfAtend, 'pageControlsAtend', 'paginacionInfoAtend', (np) => {
+  renderUnifiedPagination(total, pageOfAtend, (np) => {
     pageOfAtend = np;
     filtrarAtendidos(false);
   });
@@ -498,7 +511,7 @@ function filtrarFolPend(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolPend, 'pageControlsFolPend', 'paginacionInfoFolPend', (np) => {
+  renderUnifiedPagination(total, pageFolPend, (np) => {
     pageFolPend = np;
     filtrarFolPend(false);
   });
@@ -521,7 +534,7 @@ function filtrarFolAtend(resetPage = true) {
   const end = start + PAGE_SIZE;
   allRows.forEach(row => { row.style.display = 'none'; });
   filtered.slice(start, end).forEach(row => { row.style.display = ''; });
-  renderPagination(total, pageFolAtend, 'pageControlsFolAtend', 'paginacionInfoFolAtend', (np) => {
+  renderUnifiedPagination(total, pageFolAtend, (np) => {
     pageFolAtend = np;
     filtrarFolAtend(false);
   });

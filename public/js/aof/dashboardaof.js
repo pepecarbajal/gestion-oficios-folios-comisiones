@@ -351,7 +351,6 @@ if (searchAt) searchAt.addEventListener('input', () => filtrarAtendidos(true));
 if (filterUnidadAt) filterUnidadAt.addEventListener('change', () => filtrarAtendidos(true));
 
 filtrarOficios(false);
-filtrarAtendidos(false);
 
 // ── FOLIO PAGINATION ──
 let pageFolPendAof = 1;

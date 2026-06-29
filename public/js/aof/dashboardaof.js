@@ -4,25 +4,25 @@ const modalRespOverlay = document.getElementById('modalRespuestasOverlay')
 const listaRespModal = document.getElementById('listaRespuestasModal')
 
 const iconoArchivoModal = tipo => tipo === 'application/pdf'
-  ? `<span class="archivo-type-badge pdf">PDF</span>`
-  : `<span class="archivo-type-badge img">IMG</span>`
+  ? '<span class="archivo-type-badge pdf">PDF</span>'
+  : '<span class="archivo-type-badge img">IMG</span>'
 
-function renderCardRespuesta(r) {
+function renderCardRespuesta (r) {
   const esAclaracion = r.esAclaracion === true
-  const fecha = new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})
+  const fecha = new Date(r.fechaAtendido).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const comentario = r.comentario
     ? `<p class="resp-comentario${esAclaracion ? ' aclaracion-text' : ''}">"${r.comentario}"</p>`
     : ''
   const archivos = (r.archivos || []).length > 0
     ? `<div class="resp-archivos">${(r.archivos).map(a => {
-          const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img';
-          return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoArchivoModal(a.tipo)} <span>${a.nombre}</span></a>`;
+          const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
+          return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoArchivoModal(a.tipo)} <span>${a.nombre}</span></a>`
         }).join('')}</div>`
     : ''
   const hasCuerpo = r.comentario || (r.archivos && r.archivos.length > 0)
   const itemClass = esAclaracion ? 'respuesta-item aclaracion-item' : 'respuesta-item'
   const aliasHtml = esAclaracion
-    ? `<span class="resp-alias aclaracion-label">Nota aclaratoria</span>`
+    ? '<span class="resp-alias aclaracion-label">Nota aclaratoria</span>'
     : `<span class="resp-alias">${r.unidadAlias || '—'}</span>`
   return `
     <div class="${itemClass}">
@@ -38,7 +38,7 @@ function renderCardRespuesta(r) {
     </div>`
 }
 
-function marcarVistoAOF(id) {
+function marcarVistoAOF (id) {
   const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
   if (!dataEl) return
 
@@ -59,7 +59,7 @@ function marcarVistoAOF(id) {
   }).catch(() => {})
 }
 
-function marcarVistoAOFSiAplica(id, respuestas) {
+function marcarVistoAOFSiAplica (id, respuestas) {
   const dataEl = document.getElementById(`oficio-data-${id}`) || document.getElementById(`oficio-data-mi-${id}`)
   if (!dataEl) return
   const data = JSON.parse(dataEl.textContent)
@@ -73,7 +73,7 @@ function marcarVistoAOFSiAplica(id, respuestas) {
   } else {
     const chips = document.querySelectorAll('#listaRespuestasModal .archivo-chip')
     chips.forEach(chip => {
-      chip.addEventListener('click', function onClick() {
+      chip.addEventListener('click', function onClick () {
         marcarVistoAOF(id)
         chip.removeEventListener('click', onClick)
       })
@@ -81,7 +81,7 @@ function marcarVistoAOFSiAplica(id, respuestas) {
   }
 }
 
-function abrirModalRespuestas(btn) {
+function abrirModalRespuestas (btn) {
   const id = btn.dataset.oficioId
   const respuestas = (window.__respuestas && window.__respuestas[id]) || []
   listaRespModal.innerHTML = respuestas.length
@@ -96,7 +96,7 @@ document.getElementById('btnRespuestasCerrar').addEventListener('click', () => m
 modalRespOverlay.addEventListener('click', e => { if (e.target === modalRespOverlay) modalRespOverlay.classList.remove('active') })
 
 // ── TAB / SIDEBAR ──
-function cambiarTab(tab, e) {
+function cambiarTab (tab, e) {
   if (e) e.preventDefault()
   const tabMap = {
     'oficios-pendientes': { panel: 'tabOfPendientesAof', nav: 'navOfPendientesAof', section: 'OficiosAof' },
@@ -145,263 +145,261 @@ function cambiarTab(tab, e) {
 }
 
 // ── ACTION DROPDOWN LOGIC ──
-let currentActionMenu = null;
+let currentActionMenu = null
 
-function toggleActionMenu(e, id) {
-  e.stopPropagation();
-  
+function toggleActionMenu (e, id) {
+  e.stopPropagation()
+
   // Close existing menu
   if (currentActionMenu) {
-    currentActionMenu.remove();
-    currentActionMenu = null;
+    currentActionMenu.remove()
+    currentActionMenu = null
   }
 
-  const btn = e.currentTarget;
-  const rect = btn.getBoundingClientRect();
-  
-  const menu = document.createElement('div');
-  menu.className = 'action-dropdown active';
-  menu.style.top = `${rect.bottom + window.scrollY}px`;
-  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+  const btn = e.currentTarget
+  const rect = btn.getBoundingClientRect()
 
-  const dataEl = document.getElementById(`oficio-data-${id}`);
-  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+  const menu = document.createElement('div')
+  menu.className = 'action-dropdown active'
+  menu.style.top = `${rect.bottom + window.scrollY}px`
+  menu.style.left = `${rect.left + window.scrollX - 100}px`
+
+  const dataEl = document.getElementById(`oficio-data-${id}`)
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {}
 
   // Actions based on data
-  const actions = [];
+  const actions = []
   if (data.archivoUrl) {
     actions.push({
       label: 'Ver oficio',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
       action: () => openFileViewer(data.archivoUrl, `Oficio ${data.noOficio}`)
-    });
+    })
   }
 
   // Check if it has responses (use window.__respuestas if available)
-  const respuestas = (window.__respuestas && window.__respuestas[id]) || [];
+  const respuestas = (window.__respuestas && window.__respuestas[id]) || []
   if (respuestas.length > 0) {
     actions.push({
       label: 'Ver respuestas',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
       action: () => {
-        const btnFake = document.createElement('button');
-        btnFake.dataset.oficioId = id;
-        abrirModalRespuestas(btnFake);
+        const btnFake = document.createElement('button')
+        btnFake.dataset.oficioId = id
+        abrirModalRespuestas(btnFake)
       }
-    });
+    })
   }
 
   actions.push({
     label: 'Editar',
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     action: () => abrirModalEditar(data)
-  });
+  })
 
   menu.innerHTML = actions.map((a, index) => `
     <button class="dropdown-item" data-index="${index}">
       ${a.icon} <span>${a.label}</span>
     </button>
-  `).join('');
+  `).join('')
 
   menu.addEventListener('click', (e) => {
-    const item = e.target.closest('.dropdown-item');
+    const item = e.target.closest('.dropdown-item')
     if (item) {
-      const index = item.dataset.index;
-      actions[index].action();
-      menu.remove();
-      currentActionMenu = null;
+      const index = item.dataset.index
+      actions[index].action()
+      menu.remove()
+      currentActionMenu = null
     }
-  });
+  })
 
-  document.body.appendChild(menu);
-  currentActionMenu = menu;
+  document.body.appendChild(menu)
+  currentActionMenu = menu
 }
 
 document.addEventListener('click', () => {
   if (currentActionMenu) {
-    currentActionMenu.remove();
-    currentActionMenu = null;
+    currentActionMenu.remove()
+    currentActionMenu = null
   }
-});
+})
 
 // ── PAGINATION ──
-const PAGE_SIZE = 10;
-let pageOf = 1;
-let pageAt = 1;
+const PAGE_SIZE = 10
+let pageOf = 1
+let pageAt = 1
 
-function renderUnifiedPagination(total, page, onPageChange) {
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  const container = document.getElementById('pageControlsUnified');
-  const info = document.getElementById('paginacionInfoUnified');
-  if (!container) return;
+function renderUnifiedPagination (total, page, onPageChange) {
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  const container = document.getElementById('pageControlsUnified')
+  const info = document.getElementById('paginacionInfoUnified')
+  if (!container) return
 
-  const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const end = Math.min(page * PAGE_SIZE, total);
+  const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const end = Math.min(page * PAGE_SIZE, total)
   if (info) {
     info.textContent = total > 0
       ? `Mostrando ${start}-${end} de ${total}`
-      : 'Mostrando 0 de 0';
+      : 'Mostrando 0 de 0'
   }
 
-  let html = `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>&laquo;</button>`;
+  let html = `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>&laquo;</button>`
 
-  let pageStart = Math.max(1, page - 3);
-  let pageEnd = Math.min(totalPages, page + 3);
+  const pageStart = Math.max(1, page - 3)
+  const pageEnd = Math.min(totalPages, page + 3)
   if (pageStart > 1) {
-    html += `<button class="page-btn" data-page="1">1</button>`;
-    if (pageStart > 2) html += `<span class="page-ellipsis">...</span>`;
+    html += '<button class="page-btn" data-page="1">1</button>'
+    if (pageStart > 2) html += '<span class="page-ellipsis">...</span>'
   }
   for (let i = pageStart; i <= pageEnd; i++) {
-    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`
   }
   if (pageEnd < totalPages) {
-    if (pageEnd < totalPages - 1) html += `<span class="page-ellipsis">...</span>`;
-    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+    if (pageEnd < totalPages - 1) html += '<span class="page-ellipsis">...</span>'
+    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`
   }
 
-  html += `<button class="page-btn" data-page="next" ${page >= totalPages ? 'disabled' : ''}>&raquo;</button>`;
+  html += `<button class="page-btn" data-page="next" ${page >= totalPages ? 'disabled' : ''}>&raquo;</button>`
 
-  container.innerHTML = html;
+  container.innerHTML = html
 
   container.querySelectorAll('.page-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      let newPage = page;
-      if (btn.dataset.page === 'prev') newPage = page - 1;
-      else if (btn.dataset.page === 'next') newPage = page + 1;
-      else newPage = parseInt(btn.dataset.page);
+      let newPage = page
+      if (btn.dataset.page === 'prev') newPage = page - 1
+      else if (btn.dataset.page === 'next') newPage = page + 1
+      else newPage = parseInt(btn.dataset.page)
       if (newPage >= 1 && newPage <= totalPages) {
-        onPageChange(newPage);
+        onPageChange(newPage)
       }
-    });
-  });
+    })
+  })
 }
 
 const searchOf = document.getElementById('searchOficios')
 const filterEstatusOf = document.getElementById('filterEstatusOf')
 const filterUnidadOf = document.getElementById('filterUnidadOf')
 
-function filtrarOficios(resetPage = true) {
-  if (resetPage) pageOf = 1;
+function filtrarOficios (resetPage = true) {
+  if (resetPage) pageOf = 1
 
-  const texto = searchOf.value.toLowerCase();
-  const estatus = filterEstatusOf.value;
-  const unidad = filterUnidadOf.value;
+  const texto = searchOf.value.toLowerCase()
+  const estatus = filterEstatusOf.value
+  const unidad = filterUnidadOf.value
 
-  const allRows = Array.from(document.querySelectorAll('.of-row'));
+  const allRows = Array.from(document.querySelectorAll('.of-row'))
   const filtered = allRows.filter(row => {
-    const matchTexto = !texto || row.dataset.search.includes(texto);
-    const matchEstatus = !estatus || row.dataset.estatus === estatus;
-    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
-    return matchTexto && matchEstatus && matchUnidad;
-  });
+    const matchTexto = !texto || row.dataset.search.includes(texto)
+    const matchEstatus = !estatus || row.dataset.estatus === estatus
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad)
+    return matchTexto && matchEstatus && matchUnidad
+  })
 
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pageOf > totalPages) pageOf = totalPages;
-  const start = (pageOf - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
+  const total = filtered.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageOf > totalPages) pageOf = totalPages
+  const start = (pageOf - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
 
-  allRows.forEach(row => { row.style.display = 'none'; });
-  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  allRows.forEach(row => { row.style.display = 'none' })
+  filtered.slice(start, end).forEach(row => { row.style.display = '' })
 
-  document.querySelectorAll('.respuestas-row').forEach(r => { r.style.display = 'none'; });
+  document.querySelectorAll('.respuestas-row').forEach(r => { r.style.display = 'none' })
 
   renderUnifiedPagination(total, pageOf, (np) => {
-    pageOf = np;
-    filtrarOficios(false);
-  });
+    pageOf = np
+    filtrarOficios(false)
+  })
 }
 
-searchOf.addEventListener('input', () => filtrarOficios(true));
-filterEstatusOf.addEventListener('change', () => filtrarOficios(true));
-filterUnidadOf.addEventListener('change', () => filtrarOficios(true));
+searchOf.addEventListener('input', () => filtrarOficios(true))
+filterEstatusOf.addEventListener('change', () => filtrarOficios(true))
+filterUnidadOf.addEventListener('change', () => filtrarOficios(true))
 
 const searchAt = document.getElementById('searchAtendidos')
 const filterUnidadAt = document.getElementById('filterUnidadAt')
 
-function filtrarAtendidos(resetPage = true) {
-  if (resetPage) pageAt = 1;
+function filtrarAtendidos (resetPage = true) {
+  if (resetPage) pageAt = 1
 
-  const texto = searchAt ? searchAt.value.toLowerCase() : '';
-  const unidad = filterUnidadAt ? filterUnidadAt.value : '';
+  const texto = searchAt ? searchAt.value.toLowerCase() : ''
+  const unidad = filterUnidadAt ? filterUnidadAt.value : ''
 
-  const allRows = Array.from(document.querySelectorAll('.at-row'));
+  const allRows = Array.from(document.querySelectorAll('.at-row'))
   const filtered = allRows.filter(row => {
-    const matchTexto = !texto || row.dataset.search.includes(texto);
-    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad);
-    return matchTexto && matchUnidad;
-  });
+    const matchTexto = !texto || row.dataset.search.includes(texto)
+    const matchUnidad = !unidad || (row.dataset.unidad || '').includes(unidad)
+    return matchTexto && matchUnidad
+  })
 
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pageAt > totalPages) pageAt = totalPages;
-  const start = (pageAt - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
+  const total = filtered.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageAt > totalPages) pageAt = totalPages
+  const start = (pageAt - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
 
-  allRows.forEach(row => { row.style.display = 'none'; });
-  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  allRows.forEach(row => { row.style.display = 'none' })
+  filtered.slice(start, end).forEach(row => { row.style.display = '' })
 
   renderUnifiedPagination(total, pageAt, (np) => {
-    pageAt = np;
-    filtrarAtendidos(false);
-  });
+    pageAt = np
+    filtrarAtendidos(false)
+  })
 }
 
-if (searchAt) searchAt.addEventListener('input', () => filtrarAtendidos(true));
-if (filterUnidadAt) filterUnidadAt.addEventListener('change', () => filtrarAtendidos(true));
-
-filtrarOficios(false);
+if (searchAt) searchAt.addEventListener('input', () => filtrarAtendidos(true))
+if (filterUnidadAt) filterUnidadAt.addEventListener('change', () => filtrarAtendidos(true))
 
 // ── FOLIO PAGINATION ──
-let pageFolPendAof = 1;
-let pageFolAtendAof = 1;
+let pageFolPendAof = 1
+let pageFolAtendAof = 1
 
-function filtrarFolPendAof(resetPage = true) {
-  if (resetPage) pageFolPendAof = 1;
+function filtrarFolPendAof (resetPage = true) {
+  if (resetPage) pageFolPendAof = 1
   const searchEl = document.getElementById('searchFolPendAof')
-  const texto = searchEl ? searchEl.value.toLowerCase() : '';
-  const allRows = Array.from(document.querySelectorAll('.fol-pend-row-aof'));
-  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pageFolPendAof > totalPages) pageFolPendAof = totalPages;
-  const start = (pageFolPendAof - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
-  allRows.forEach(row => { row.style.display = 'none'; });
-  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  const texto = searchEl ? searchEl.value.toLowerCase() : ''
+  const allRows = Array.from(document.querySelectorAll('.fol-pend-row-aof'))
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto))
+  const total = filtered.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageFolPendAof > totalPages) pageFolPendAof = totalPages
+  const start = (pageFolPendAof - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  filtered.slice(start, end).forEach(row => { row.style.display = '' })
   renderUnifiedPagination(total, pageFolPendAof, (np) => {
-    pageFolPendAof = np;
-    filtrarFolPendAof(false);
-  });
+    pageFolPendAof = np
+    filtrarFolPendAof(false)
+  })
 }
 
-function filtrarFolAtendAof(resetPage = true) {
-  if (resetPage) pageFolAtendAof = 1;
+function filtrarFolAtendAof (resetPage = true) {
+  if (resetPage) pageFolAtendAof = 1
   const searchEl = document.getElementById('searchFolAtendAof')
-  const texto = searchEl ? searchEl.value.toLowerCase() : '';
-  const allRows = Array.from(document.querySelectorAll('.fol-atend-row-aof'));
-  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto));
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-  if (pageFolAtendAof > totalPages) pageFolAtendAof = totalPages;
-  const start = (pageFolAtendAof - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
-  allRows.forEach(row => { row.style.display = 'none'; });
-  filtered.slice(start, end).forEach(row => { row.style.display = ''; });
+  const texto = searchEl ? searchEl.value.toLowerCase() : ''
+  const allRows = Array.from(document.querySelectorAll('.fol-atend-row-aof'))
+  const filtered = allRows.filter(row => !texto || row.dataset.search.includes(texto))
+  const total = filtered.length
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  if (pageFolAtendAof > totalPages) pageFolAtendAof = totalPages
+  const start = (pageFolAtendAof - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  allRows.forEach(row => { row.style.display = 'none' })
+  filtered.slice(start, end).forEach(row => { row.style.display = '' })
   renderUnifiedPagination(total, pageFolAtendAof, (np) => {
-    pageFolAtendAof = np;
-    filtrarFolAtendAof(false);
-  });
+    pageFolAtendAof = np
+    filtrarFolAtendAof(false)
+  })
 }
 
-document.getElementById('searchFolPendAof')?.addEventListener('input', () => filtrarFolPendAof(true));
-document.getElementById('searchFolAtendAof')?.addEventListener('input', () => filtrarFolAtendAof(true));
+document.getElementById('searchFolPendAof')?.addEventListener('input', () => filtrarFolPendAof(true))
+document.getElementById('searchFolAtendAof')?.addEventListener('input', () => filtrarFolAtendAof(true))
 
 // ── MI UNIDAD FOLIOS PAGINATION ──
 let pageMiFolPend = 1
 let pageMiFolAtend = 1
 
-function filtrarMiFolPend(resetPage = true) {
+function filtrarMiFolPend (resetPage = true) {
   if (resetPage) pageMiFolPend = 1
   const allRows = Array.from(document.querySelectorAll('.mi-fol-pend-row'))
   const total = allRows.length
@@ -417,7 +415,7 @@ function filtrarMiFolPend(resetPage = true) {
   })
 }
 
-function filtrarMiFolAtend(resetPage = true) {
+function filtrarMiFolAtend (resetPage = true) {
   if (resetPage) pageMiFolAtend = 1
   const allRows = Array.from(document.querySelectorAll('.mi-fol-atend-row'))
   const total = allRows.length
@@ -433,15 +431,12 @@ function filtrarMiFolAtend(resetPage = true) {
   })
 }
 
-filtrarFolPendAof(false);
-filtrarFolAtendAof(false);
-
 // ── CANCELAR FOLIO ──
 let cancelarFolioAOFGuardando = false
-async function cancelarFolioAOF(id) {
+async function cancelarFolioAOF (id) {
   if (cancelarFolioAOFGuardando) return
   cancelarFolioAOFGuardando = true
-  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) { cancelarFolioAOFGuardando = false; return; }
+  if (!confirm('¿Estás seguro de cancelar este folio? Esta acción no se puede deshacer.')) { cancelarFolioAOFGuardando = false; return }
   try {
     const res = await fetch(`/folios/${id}/cancelar`, { method: 'PUT' })
     const data = await res.json()
@@ -454,38 +449,38 @@ async function cancelarFolioAOF(id) {
 }
 
 const savedTabAOF = sessionStorage.getItem('aofActiveTab')
-if (savedTabAOF) cambiarTab(savedTabAOF, null)
+cambiarTab(savedTabAOF || 'oficios-pendientes', null)
 
 // ── FOLIO ACTION DROPDOWN (AOF) ──
-function toggleFolioActionMenuAof(e, id) {
-  e.stopPropagation();
+function toggleFolioActionMenuAof (e, id) {
+  e.stopPropagation()
   if (currentActionMenu) {
-    currentActionMenu.remove();
-    currentActionMenu = null;
+    currentActionMenu.remove()
+    currentActionMenu = null
   }
 
-  const btn = e.currentTarget;
-  const rect = btn.getBoundingClientRect();
-  const menu = document.createElement('div');
-  menu.className = 'action-dropdown active';
-  menu.style.top = `${rect.bottom + window.scrollY}px`;
-  menu.style.left = `${rect.left + window.scrollX - 100}px`;
+  const btn = e.currentTarget
+  const rect = btn.getBoundingClientRect()
+  const menu = document.createElement('div')
+  menu.className = 'action-dropdown active'
+  menu.style.top = `${rect.bottom + window.scrollY}px`
+  menu.style.left = `${rect.left + window.scrollX - 100}px`
 
-  const dataEl = document.getElementById(`folio-data-aof-${id}`) || document.getElementById(`folio-data-mi-${id}`);
-  const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-  const row = document.querySelector(`.folio-row-aof[data-id="${id}"], .mi-fol-row[data-id="${id}"]`);
-  const estatus = row && row.dataset.estatus;
-  const isAtendido = estatus === 'Atendido';
-  const isCancelado = estatus === 'Cancelado';
+  const dataEl = document.getElementById(`folio-data-aof-${id}`) || document.getElementById(`folio-data-mi-${id}`)
+  const data = dataEl ? JSON.parse(dataEl.textContent) : {}
+  const row = document.querySelector(`.folio-row-aof[data-id="${id}"], .mi-fol-row[data-id="${id}"]`)
+  const estatus = row && row.dataset.estatus
+  const isAtendido = estatus === 'Atendido'
+  const isCancelado = estatus === 'Cancelado'
 
-  const actions = [];
+  const actions = []
 
   if ((isAtendido || isCancelado) && data.archivoUrl) {
     actions.push({
       label: 'Ver Oficio',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
       action: () => openFileViewer(data.archivoUrl, `Folio ${data.noFolio}`)
-    });
+    })
   }
 
   if (estatus === 'Pendiente') {
@@ -493,12 +488,12 @@ function toggleFolioActionMenuAof(e, id) {
       label: 'Registrar entrega',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
       action: () => abrirModalEntrega(id)
-    });
+    })
     actions.push({
       label: 'Cancelar folio',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
       action: () => cancelarFolioAOF(id)
-    });
+    })
   }
 
   menu.innerHTML = actions.length
@@ -507,20 +502,20 @@ function toggleFolioActionMenuAof(e, id) {
         ${a.icon} <span>${a.label}</span>
       </button>
     `).join('')
-    : '<div class="dropdown-item" style="cursor:default;color:#9ca3af;font-style:italic">Sin acciones disponibles</div>';
+    : '<div class="dropdown-item" style="cursor:default;color:#9ca3af;font-style:italic">Sin acciones disponibles</div>'
 
   menu.addEventListener('click', (e) => {
-    const item = e.target.closest('.dropdown-item');
+    const item = e.target.closest('.dropdown-item')
     if (item && item.dataset.index !== undefined) {
-      const index = item.dataset.index;
-      actions[index].action();
-      menu.remove();
-      currentActionMenu = null;
+      const index = item.dataset.index
+      actions[index].action()
+      menu.remove()
+      currentActionMenu = null
     }
-  });
+  })
 
-  document.body.appendChild(menu);
-  currentActionMenu = menu;
+  document.body.appendChild(menu)
+  currentActionMenu = menu
 }
 
 // ── MODAL REGISTRAR ENTREGA (AOF) ──
@@ -529,7 +524,7 @@ let entregaFolioId = null
 let entregaArchivo = null
 let entregaGuardando = false
 
-function abrirModalEntrega(folioId) {
+function abrirModalEntrega (folioId) {
   entregaFolioId = folioId
   entregaArchivo = null
   document.getElementById('inputFechaEntrega').value = new Date().toISOString().split('T')[0]
@@ -540,7 +535,7 @@ function abrirModalEntrega(folioId) {
   modalEntregaOverlay.classList.add('active')
 }
 
-function cerrarModalEntrega() {
+function cerrarModalEntrega () {
   modalEntregaOverlay.classList.remove('active')
   entregaFolioId = null
   entregaArchivo = null
@@ -590,7 +585,7 @@ fileDropEntrega.addEventListener('drop', e => {
   }
 })
 
-function eliminarEntregaPDF() {
+function eliminarEntregaPDF () {
   entregaArchivo = null
   inputEntregaPDF.value = ''
   fileLabelEntrega.textContent = 'Arrastra el PDF aquí o haz clic para seleccionar'
@@ -646,7 +641,7 @@ let _folioAofUnidadIds = []
 let _folioAofSelectorTempIds = []
 let folioAofGuardando = false
 
-function abrirModalRegistrarFolioAof() {
+function abrirModalRegistrarFolioAof () {
   document.getElementById('inputFolAofNoFolio').value = ''
   document.getElementById('inputFolAofDestinatario').value = ''
   document.getElementById('inputFolAofDependencia').value = ''
@@ -662,7 +657,7 @@ function abrirModalRegistrarFolioAof() {
   }).catch(() => {})
 }
 
-function cerrarModalRegistrarFolioAof() {
+function cerrarModalRegistrarFolioAof () {
   modalRegFolioAof.classList.remove('active')
   _folioAofUnidadIds = []
   _folioAofSelectorTempIds = []
@@ -674,7 +669,7 @@ document.getElementById('btnRegistrarFolioAofCancelar').addEventListener('click'
 modalRegFolioAof.addEventListener('click', e => { if (e.target === modalRegFolioAof) cerrarModalRegistrarFolioAof() })
 
 // Folio AOF unit selector (reuses same modal but with different data)
-function abrirSelectorUnidadesFolios() {
+function abrirSelectorUnidadesFolios () {
   _folioAofSelectorTempIds = [..._folioAofUnidadIds]
   // Render the same selector list
   const list = document.getElementById('selectorList')
@@ -705,7 +700,7 @@ function abrirSelectorUnidadesFolios() {
   }
 }
 
-function refreshSelectorSelectionFolios() {
+function refreshSelectorSelectionFolios () {
   const todasItem = document.querySelector('#selectorList [data-value="__TODAS__"]')
   const items = document.querySelectorAll('#selectorList .selector-item:not([data-value="__TODAS__"])')
   const tempSet = new Set(_folioAofSelectorTempIds)
@@ -731,7 +726,6 @@ document.getElementById('selectorList').addEventListener('click', e => {
       else _folioAofSelectorTempIds.push(value)
     }
     refreshSelectorSelectionFolios()
-    return
   }
   // Otherwise use the original toggle (the one registered earlier still handles it via capture)
 })
@@ -790,7 +784,7 @@ document.getElementById('btnRegistrarFolioAofGuardar').addEventListener('click',
 let folioSolicitarAOFGuardando = false
 const modalSolicitarFolioAOF = document.getElementById('modalSolicitarFolioAOFOverlay')
 
-function abrirModalSolicitarFolioAOF() {
+function abrirModalSolicitarFolioAOF () {
   document.getElementById('inputSolicitarFolioAOFDestinatario').value = ''
   document.getElementById('inputSolicitarFolioAOFDependencia').value = ''
   document.getElementById('inputSolicitarFolioAOFCargo').value = ''
@@ -799,7 +793,7 @@ function abrirModalSolicitarFolioAOF() {
   modalSolicitarFolioAOF.classList.add('active')
 }
 
-function cerrarModalSolicitarFolioAOF() {
+function cerrarModalSolicitarFolioAOF () {
   modalSolicitarFolioAOF.classList.remove('active')
   folioSolicitarAOFGuardando = false
 }
@@ -852,7 +846,7 @@ const modalOverlay = document.getElementById('modalOficioOverlay')
 const fileDrop = document.getElementById('fileDrop')
 const inputArchivo = document.getElementById('inputArchivo')
 
-function updateFileDropUI(file) {
+function updateFileDropUI (file) {
   const children = Array.from(fileDrop.children)
   children.forEach(child => {
     if (child.id !== 'inputArchivo') fileDrop.removeChild(child)
@@ -862,14 +856,14 @@ function updateFileDropUI(file) {
     fileDrop.classList.add('has-file')
     const container = document.createElement('div')
     container.className = 'file-chip-remove-container'
-    
+
     const chip = document.createElement('div')
     chip.className = 'file-chip-single'
-    
+
     const info = document.createElement('div')
     info.className = 'file-info'
     info.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span>${file.name}</span>`
-    
+
     const removeBtn = document.createElement('button')
     removeBtn.className = 'chip-remove'
     removeBtn.innerHTML = '&times;'
@@ -879,7 +873,7 @@ function updateFileDropUI(file) {
       inputArchivo.value = ''
       updateFileDropUI(null)
     }
-    
+
     chip.appendChild(info)
     chip.appendChild(removeBtn)
     container.appendChild(chip)
@@ -897,11 +891,11 @@ function updateFileDropUI(file) {
     svg.setAttribute('stroke-linecap', 'round')
     svg.setAttribute('stroke-linejoin', 'round')
     svg.innerHTML = '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>'
-    
+
     const span = document.createElement('span')
     span.id = 'fileLabel'
     span.textContent = 'Seleccionar archivo PDF'
-    
+
     fileDrop.appendChild(svg)
     fileDrop.appendChild(span)
   }
@@ -1063,8 +1057,8 @@ document.getElementById('btnEditSelectCooresponsables').addEventListener('click'
 const cerrarModal = () => {
   modalOverlay.classList.remove('active')
   document.getElementById('modalOficioError').textContent = ''
-  ;['inputNoOficio','inputFechaOficio','inputFechaRecibo','inputFechaLimite',
-    'inputAsunto','inputRemitente','inputCargo','inputDependencia'].forEach(id => {
+  ;['inputNoOficio', 'inputFechaOficio', 'inputFechaRecibo', 'inputFechaLimite',
+    'inputAsunto', 'inputRemitente', 'inputCargo', 'inputDependencia'].forEach(id => {
     document.getElementById(id).value = ''
   })
   _unidadesSeleccionadas = []
@@ -1192,12 +1186,12 @@ document.getElementById('btnOficioRegistrar').addEventListener('click', async ()
 
 // ── FILE DROP EDITAR OFICIO ──
 const modalEditarOverlay = document.getElementById('modalEditarOverlay')
-const editFileDrop       = document.getElementById('editFileDrop')
-const editArchivo        = document.getElementById('editArchivo')
-let _oficioEditandoId    = null
-let editarGuardando      = false
+const editFileDrop = document.getElementById('editFileDrop')
+const editArchivo = document.getElementById('editArchivo')
+let _oficioEditandoId = null
+let editarGuardando = false
 
-function updateEditFileDropUI(file) {
+function updateEditFileDropUI (file) {
   const children = Array.from(editFileDrop.children)
   children.forEach(child => {
     if (child.id !== 'editArchivo') editFileDrop.removeChild(child)
@@ -1251,22 +1245,22 @@ function updateEditFileDropUI(file) {
   }
 }
 
-function abrirModalEditar(oficio) {
+function abrirModalEditar (oficio) {
   _oficioEditandoId = oficio.id
 
-  document.getElementById('editNoOficio').value     = oficio.noOficio    || ''
-  document.getElementById('editFechaOficio').value  = oficio.fechaOficio || ''
-  document.getElementById('editFechaRecibo').value  = oficio.fechaRecibo || ''
-  document.getElementById('editFechaLimite').value  = oficio.fechaLimite || ''
-  document.getElementById('editAsunto').value       = oficio.asunto      || ''
-  document.getElementById('editRemitente').value    = oficio.remitente   || ''
-  document.getElementById('editCargo').value        = oficio.cargo       || ''
-  document.getElementById('editDependencia').value  = oficio.dependencia || ''
+  document.getElementById('editNoOficio').value = oficio.noOficio || ''
+  document.getElementById('editFechaOficio').value = oficio.fechaOficio || ''
+  document.getElementById('editFechaRecibo').value = oficio.fechaRecibo || ''
+  document.getElementById('editFechaLimite').value = oficio.fechaLimite || ''
+  document.getElementById('editAsunto').value = oficio.asunto || ''
+  document.getElementById('editRemitente').value = oficio.remitente || ''
+  document.getElementById('editCargo').value = oficio.cargo || ''
+  document.getElementById('editDependencia').value = oficio.dependencia || ''
   _unidadesSeleccionadas = [...(oficio.responsableIds || oficio.unidadIds || [])]
   _cooresponsablesSeleccionadas = [...(oficio.cooresponsableIds || [])]
   updateUnidadesButton('edit-resp')
   updateUnidadesButton('edit-cooresp')
-  document.getElementById('editEstatus').value      = oficio.estatus     || 'Pendiente'
+  document.getElementById('editEstatus').value = oficio.estatus || 'Pendiente'
 
   const editChk = document.getElementById('editEsCorreo')
   if (editChk) editChk.checked = oficio.tipoArchivo === 1
@@ -1335,16 +1329,16 @@ document.addEventListener('click', e => {
 })
 
 document.getElementById('btnEditarGuardar').addEventListener('click', async () => {
-  const errorEl     = document.getElementById('modalEditarError')
-  const noOficio    = document.getElementById('editNoOficio').value.trim()
-  const asunto      = document.getElementById('editAsunto').value.trim()
-  const remitente   = document.getElementById('editRemitente').value.trim()
-  const unidadIds   = _unidadesSeleccionadas
+  const errorEl = document.getElementById('modalEditarError')
+  const noOficio = document.getElementById('editNoOficio').value.trim()
+  const asunto = document.getElementById('editAsunto').value.trim()
+  const remitente = document.getElementById('editRemitente').value.trim()
+  const unidadIds = _unidadesSeleccionadas
   const unidadAlias = unidadIds.map(id => {
     const item = document.querySelector(`#selectorList [data-value="${id}"]`)
     return item ? item.dataset.alias : id
   }).join(', ')
-  const esCorreo    = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
+  const esCorreo = document.getElementById('editEsCorreo')?.checked ? '1' : '0'
   const esConocimiento = document.getElementById('editEsConocimiento')?.checked ? '1' : '0'
 
   if (editarGuardando) return
@@ -1356,7 +1350,7 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     return
   }
 
-  document.getElementById('btnEditarText').style.display   = 'none'
+  document.getElementById('btnEditarText').style.display = 'none'
   document.getElementById('btnEditarLoader').style.display = 'inline-block'
   errorEl.textContent = ''
 
@@ -1370,19 +1364,19 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
     }).join(', ')
 
     const formData = new FormData()
-    formData.append('noOficio',    noOficio)
+    formData.append('noOficio', noOficio)
     formData.append('fechaOficio', document.getElementById('editFechaOficio').value)
     formData.append('fechaRecibo', document.getElementById('editFechaRecibo').value)
     formData.append('fechaLimite', document.getElementById('editFechaLimite').value)
-    formData.append('asunto',      asunto)
-    formData.append('remitente',   remitente)
-    formData.append('cargo',       document.getElementById('editCargo').value.trim())
+    formData.append('asunto', asunto)
+    formData.append('remitente', remitente)
+    formData.append('cargo', document.getElementById('editCargo').value.trim())
     formData.append('dependencia', document.getElementById('editDependencia').value.trim())
     allUnitIds.forEach(id => formData.append('unidadIds', id))
     formData.append('unidadAlias', allUnitAlias)
     responsableIds.forEach(id => formData.append('responsableIds', id))
     cooresponsableIds.forEach(id => formData.append('cooresponsableIds', id))
-    formData.append('estatus',     document.getElementById('editEstatus').value)
+    formData.append('estatus', document.getElementById('editEstatus').value)
     formData.append('tipoArchivo', esCorreo)
     formData.append('modo', esConocimiento)
     if (editArchivo.files[0]) formData.append('archivo', editArchivo.files[0])
@@ -1403,7 +1397,7 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
   } catch {
     errorEl.textContent = 'Error de conexión.'
   } finally {
-    document.getElementById('btnEditarText').style.display   = ''
+    document.getElementById('btnEditarText').style.display = ''
     document.getElementById('btnEditarLoader').style.display = 'none'
     editarGuardando = false
   }
@@ -1411,39 +1405,39 @@ document.getElementById('btnEditarGuardar').addEventListener('click', async () =
 
 // ── MI UNIDAD ACTION DROPDOWN ──
 const iconoTipoMiA = tipo => tipo === 'application/pdf'
-  ? `<span class="archivo-type-badge pdf">PDF</span>`
-  : `<span class="archivo-type-badge img">IMG</span>`
+  ? '<span class="archivo-type-badge pdf">PDF</span>'
+  : '<span class="archivo-type-badge img">IMG</span>'
 
-function renderMiRespuestaCard(r, esAclaracion = false) {
-  const fecha = r.fechaAtendido ? new Date(r.fechaAtendido).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : ''
+function renderMiRespuestaCard (r, esAclaracion = false) {
+  const fecha = r.fechaAtendido ? new Date(r.fechaAtendido).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
   let html = `<div class="respuesta-item${esAclaracion ? ' aclaracion-item' : ''}">`
-  html += `<div class="respuesta-body">`
-  html += `<div class="respuesta-header">`
+  html += '<div class="respuesta-body">'
+  html += '<div class="respuesta-header">'
   if (esAclaracion) {
-    html += `<span class="resp-alias aclaracion-label">Nota aclaratoria</span>`
+    html += '<span class="resp-alias aclaracion-label">Nota aclaratoria</span>'
   } else {
     html += `<span class="resp-alias">${r.unidadAlias || '—'}</span>`
   }
   if (fecha) html += `<span class="resp-fecha">${fecha}</span>`
-  html += `</div>`
+  html += '</div>'
   if (r.comentario) {
     html += `<p class="resp-comentario${esAclaracion ? ' aclaracion-text' : ''}">"${r.comentario}"</p>`
   }
   if (r.archivos && r.archivos.length > 0) {
-    html += `<div class="resp-archivos">`
+    html += '<div class="resp-archivos">'
     html += r.archivos.map(a => {
       const typeClass = a.tipo === 'application/pdf' ? 'archivo-chip-pdf' : 'archivo-chip-img'
       return `<a href="javascript:void(0)" onclick="openFileViewer('${a.url}', '${a.nombre}')" class="archivo-chip ${typeClass}">${iconoTipoMiA(a.tipo)} <span>${a.nombre}</span></a>`
     }).join('')
-    html += `</div>`
+    html += '</div>'
   }
-  html += `</div></div>`
+  html += '</div></div>'
   return html
 }
 
 let marcarEnteradoGuardando = false
 
-function abrirEvidenciasMi(id) {
+function abrirEvidenciasMi (id) {
   const todasResp = (window.__respuestasMi && window.__respuestasMi[id]) || []
   const lista = document.getElementById('listaEvidenciasMiModal')
   const overlay = document.getElementById('modalEvidenciasMiOverlay')
@@ -1471,7 +1465,7 @@ function abrirEvidenciasMi(id) {
   } else {
     const chips = document.querySelectorAll('#listaEvidenciasMiModal .archivo-chip')
     chips.forEach(chip => {
-      chip.addEventListener('click', function onClick() {
+      chip.addEventListener('click', function onClick () {
         marcarVistoAOF(id)
         chip.removeEventListener('click', onClick)
       })
@@ -1483,7 +1477,7 @@ document.getElementById('modalEvidenciasMiClose')?.addEventListener('click', () 
 document.getElementById('btnEvidenciasMiCerrar')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))
 document.getElementById('modalEvidenciasMiOverlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.classList.remove('active') })
 
-function toggleActionMenuMi(e, id) {
+function toggleActionMenuMi (e, id) {
   e.stopPropagation()
   if (currentActionMenu) {
     currentActionMenu.remove()
@@ -1616,10 +1610,10 @@ if (modalMiRespOverlay) {
   const listaMi = document.getElementById('listaArchivosMiResponder')
   const tiposMi = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
   const iconoTipoMi = tipo => tipo === 'application/pdf'
-    ? `<span class="archivo-type-badge pdf">PDF</span>`
-    : `<span class="archivo-type-badge img">IMG</span>`
+    ? '<span class="archivo-type-badge pdf">PDF</span>'
+    : '<span class="archivo-type-badge img">IMG</span>'
 
-  function renderListaMiResp() {
+  function renderListaMiResp () {
     listaMi.innerHTML = ''
     miRespArchivos.forEach((file, i) => {
       const chip = document.createElement('div')
@@ -1638,7 +1632,7 @@ if (modalMiRespOverlay) {
       : 'Arrastra archivos aquí o haz clic para seleccionar'
   }
 
-  function agregarArchivosMi(nuevos) {
+  function agregarArchivosMi (nuevos) {
     const errorEl = document.getElementById('modalMiResponderError')
     for (const file of nuevos) {
       if (!tiposMi.includes(file.type)) {
@@ -1652,7 +1646,7 @@ if (modalMiRespOverlay) {
     renderListaMiResp()
   }
 
-  function abrirModalResponderMi(id, comentario = '', archivosJson = '[]', yaRespondio = false) {
+  function abrirModalResponderMi (id, comentario = '', archivosJson = '[]', yaRespondio = false) {
     miRespId = id
     modalMiRespOverlay.style.display = ''
     document.getElementById('modalMiRespTitulo').textContent = yaRespondio ? 'Editar Respuesta' : 'Responder Oficio'
@@ -1697,7 +1691,7 @@ if (modalMiRespOverlay) {
     agregarArchivosMi(Array.from(e.dataTransfer.files))
   })
 
-  function cerrarMiResponder() {
+  function cerrarMiResponder () {
     modalMiRespOverlay.classList.remove('active')
     modalMiRespOverlay.style.display = 'none'
     miRespId = null
@@ -1754,10 +1748,10 @@ if (modalAclaracionMiOverlay) {
   const listaAclMi = document.getElementById('listaArchivosAclaracionMi')
   const tiposAclMi = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
   const iconoTipoAclMi = tipo => tipo === 'application/pdf'
-    ? `<span class="archivo-type-badge pdf">PDF</span>`
-    : `<span class="archivo-type-badge img">IMG</span>`
+    ? '<span class="archivo-type-badge pdf">PDF</span>'
+    : '<span class="archivo-type-badge img">IMG</span>'
 
-  function renderListaAclaracionMi() {
+  function renderListaAclaracionMi () {
     listaAclMi.innerHTML = ''
     aclaracionMiArchivos.forEach((file, i) => {
       const chip = document.createElement('div')
@@ -1776,7 +1770,7 @@ if (modalAclaracionMiOverlay) {
       : 'Arrastra archivos aquí o haz clic para seleccionar'
   }
 
-  function agregarArchivosAclaracionMi(nuevos) {
+  function agregarArchivosAclaracionMi (nuevos) {
     const errorEl = document.getElementById('modalAclaracionMiError')
     for (const file of nuevos) {
       if (!tiposAclMi.includes(file.type)) {
@@ -1790,7 +1784,7 @@ if (modalAclaracionMiOverlay) {
     renderListaAclaracionMi()
   }
 
-  function abrirModalAclaracionMi(oficioId) {
+  function abrirModalAclaracionMi (oficioId) {
     aclaracionMiOficioId = oficioId
     aclaracionMiArchivos = []
     document.getElementById('inputAclaracionMiComentario').value = ''
@@ -1799,7 +1793,7 @@ if (modalAclaracionMiOverlay) {
     modalAclaracionMiOverlay.classList.add('active')
   }
 
-  function cerrarModalAclaracionMi() {
+  function cerrarModalAclaracionMi () {
     modalAclaracionMiOverlay.classList.remove('active')
     aclaracionMiOficioId = null
     aclaracionMiArchivos = []

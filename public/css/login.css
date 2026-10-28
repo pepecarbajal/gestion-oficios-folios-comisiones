@@ -153,3 +153,25 @@ button[type="submit"]:active {
 .toggle-password[aria-pressed="true"] .icon-eye-off {
   display: block;
 }
+
+/* Botón de login mientras se envía */
+button[type="submit"].is-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: progress;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}

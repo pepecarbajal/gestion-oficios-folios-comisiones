@@ -16,6 +16,7 @@ import { errorHandler } from './middlewares/error-handler.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app = express()
+app.disable('x-powered-by')
 
 initFirebase()
 

@@ -45,8 +45,11 @@ setInterval(pruneOldEntries, 30 * 60 * 1000)
 export const securityHeaders = (req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff')
   res.set('X-Frame-Options', 'DENY')
-  res.set('X-XSS-Protection', '1; mode=block')
+  res.set('X-XSS-Protection', '0')
   res.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()')
+  res.set('Cross-Origin-Opener-Policy', 'same-origin')
+  res.set('Cross-Origin-Resource-Policy', 'same-origin')
 
   if (process.env.NODE_ENV === 'production') {
     res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')

@@ -15,6 +15,7 @@ import { dashboard } from '../../controllers/dashboard.controller.js'
 
 export function createTestApp({ user, mockAuth = true } = {}) {
   const app = express()
+  app.disable('x-powered-by')
 
   app.set('view engine', 'ejs')
   app.set('views', './views')

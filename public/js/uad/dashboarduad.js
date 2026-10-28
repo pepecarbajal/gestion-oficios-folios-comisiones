@@ -89,8 +89,6 @@ function abrirEvidencias (id, comentario = '', archivos = []) {
 
 document.getElementById('modalEvidenciasClose').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
 document.getElementById('btnEvidenciasCerrar').addEventListener('click', () => modalEvidOverlay.classList.remove('active'))
-modalEvidOverlay.addEventListener('click', e => { if (e.target === modalEvidOverlay) modalEvidOverlay.classList.remove('active') })
-
 function abrirModalResponder (oficioId, comentario = '', archivos = '[]', yaRespondio = 'false') {
   oficioRespId = oficioId
   const isAlreadyAnswered = yaRespondio === 'true'
@@ -636,8 +634,6 @@ const cerrarModal = () => {
 
 document.getElementById('modalRespuestaClose').addEventListener('click', cerrarModal)
 document.getElementById('btnRespuestaCancelar').addEventListener('click', cerrarModal)
-modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) cerrarModal() })
-
 document.querySelectorAll('.btn-responder').forEach(btn => {
   btn.addEventListener('click', () => {
     oficioRespId = btn.dataset.id
@@ -775,8 +771,6 @@ dropAcl.addEventListener('drop', e => {
 
 document.getElementById('modalAclaracionClose').addEventListener('click', cerrarModalAclaracion)
 document.getElementById('btnAclaracionCancelar').addEventListener('click', cerrarModalAclaracion)
-modalAclaracionOverlay.addEventListener('click', e => { if (e.target === modalAclaracionOverlay) cerrarModalAclaracion() })
-
 document.getElementById('btnAclaracionGuardar').addEventListener('click', async () => {
   const comentario = document.getElementById('inputAclaracionComentario').value.trim()
   const errorEl = document.getElementById('modalAclaracionError')
@@ -827,8 +821,6 @@ function cerrarModalSolicitarFolio () {
 
 document.getElementById('modalSolicitarFolioClose').addEventListener('click', cerrarModalSolicitarFolio)
 document.getElementById('btnSolicitarFolioCancelar').addEventListener('click', cerrarModalSolicitarFolio)
-modalSolicitarFolioOverlay.addEventListener('click', e => { if (e.target === modalSolicitarFolioOverlay) cerrarModalSolicitarFolio() })
-
 document.getElementById('btnSolicitarFolioGuardar').addEventListener('click', async () => {
   if (folioSolicitarGuardando) return
   folioSolicitarGuardando = true
@@ -894,8 +886,6 @@ function cerrarModalEntrega () {
 
 document.getElementById('modalEntregaClose').addEventListener('click', cerrarModalEntrega)
 document.getElementById('btnEntregaCancelar').addEventListener('click', cerrarModalEntrega)
-modalEntregaOverlay.addEventListener('click', e => { if (e.target === modalEntregaOverlay) cerrarModalEntrega() })
-
 const fileDropEntrega = document.getElementById('fileDropEntrega')
 const inputEntregaPDF = document.getElementById('inputEntregaPDF')
 const fileLabelEntrega = document.getElementById('fileLabelEntrega')

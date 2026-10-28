@@ -93,8 +93,6 @@ function abrirModalRespuestas (btn) {
 
 document.getElementById('modalRespuestasClose').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
 document.getElementById('btnRespuestasCerrar').addEventListener('click', () => modalRespOverlay.classList.remove('active'))
-modalRespOverlay.addEventListener('click', e => { if (e.target === modalRespOverlay) modalRespOverlay.classList.remove('active') })
-
 // ── TAB / SIDEBAR ──
 function cambiarTab (tab, e) {
   if (e) e.preventDefault()
@@ -544,8 +542,6 @@ function cerrarModalEntrega () {
 
 document.getElementById('modalEntregaClose').addEventListener('click', cerrarModalEntrega)
 document.getElementById('btnEntregaCancelar').addEventListener('click', cerrarModalEntrega)
-modalEntregaOverlay.addEventListener('click', e => { if (e.target === modalEntregaOverlay) cerrarModalEntrega() })
-
 const fileDropEntrega = document.getElementById('fileDropEntrega')
 const inputEntregaPDF = document.getElementById('inputEntregaPDF')
 const fileLabelEntrega = document.getElementById('fileLabelEntrega')
@@ -666,8 +662,6 @@ function cerrarModalRegistrarFolioAof () {
 
 document.getElementById('modalRegistrarFolioAofClose').addEventListener('click', cerrarModalRegistrarFolioAof)
 document.getElementById('btnRegistrarFolioAofCancelar').addEventListener('click', cerrarModalRegistrarFolioAof)
-modalRegFolioAof.addEventListener('click', e => { if (e.target === modalRegFolioAof) cerrarModalRegistrarFolioAof() })
-
 // Folio AOF unit selector (reuses same modal but with different data)
 function abrirSelectorUnidadesFolios () {
   _folioAofSelectorTempIds = [..._folioAofUnidadIds]
@@ -800,8 +794,6 @@ function cerrarModalSolicitarFolioAOF () {
 
 document.getElementById('modalSolicitarFolioAOFClose').addEventListener('click', cerrarModalSolicitarFolioAOF)
 document.getElementById('btnSolicitarFolioAOFCancelar').addEventListener('click', cerrarModalSolicitarFolioAOF)
-modalSolicitarFolioAOF.addEventListener('click', e => { if (e.target === modalSolicitarFolioAOF) cerrarModalSolicitarFolioAOF() })
-
 document.getElementById('btnSolicitarFolioAOFGuardar').addEventListener('click', async () => {
   if (folioSolicitarAOFGuardando) return
   folioSolicitarAOFGuardando = true
@@ -1035,9 +1027,6 @@ function aplicarSelectorUnidades () {
 document.getElementById('modalSelectorClose').addEventListener('click', () => cerrarSelectorUnidades(true))
 document.getElementById('btnSelectorCancelar').addEventListener('click', () => cerrarSelectorUnidades(true))
 document.getElementById('btnSelectorAplicar').addEventListener('click', aplicarSelectorUnidades)
-document.getElementById('modalSelectorUnidades').addEventListener('click', e => {
-  if (e.target === e.currentTarget) cerrarSelectorUnidades(true)
-})
 
 document.getElementById('searchUnidadesSelector').addEventListener('input', renderSelectorItems)
 
@@ -1086,8 +1075,6 @@ document.getElementById('inputEsConocimiento')?.addEventListener('change', toggl
 document.getElementById('btnNuevoOficio').addEventListener('click', () => modalOverlay.classList.add('active'))
 document.getElementById('modalOficioClose').addEventListener('click', cerrarModal)
 document.getElementById('btnOficioCancelar').addEventListener('click', cerrarModal)
-modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) cerrarModal() })
-
 fileDrop.addEventListener('click', () => inputArchivo.click())
 inputArchivo.addEventListener('change', () => {
   const file = inputArchivo.files[0]
@@ -1294,8 +1281,6 @@ const cerrarModalEditar = () => {
 
 document.getElementById('modalEditarClose').addEventListener('click', cerrarModalEditar)
 document.getElementById('btnEditarCancelar').addEventListener('click', cerrarModalEditar)
-modalEditarOverlay.addEventListener('click', e => { if (e.target === modalEditarOverlay) cerrarModalEditar() })
-
 editFileDrop.addEventListener('click', () => editArchivo.click())
 editArchivo.addEventListener('change', () => {
   const file = editArchivo.files[0]
@@ -1475,8 +1460,6 @@ function abrirEvidenciasMi (id) {
 
 document.getElementById('modalEvidenciasMiClose')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))
 document.getElementById('btnEvidenciasMiCerrar')?.addEventListener('click', () => document.getElementById('modalEvidenciasMiOverlay')?.classList.remove('active'))
-document.getElementById('modalEvidenciasMiOverlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.classList.remove('active') })
-
 function toggleActionMenuMi (e, id) {
   e.stopPropagation()
   if (currentActionMenu) {
@@ -1702,8 +1685,6 @@ if (modalMiRespOverlay) {
 
   document.getElementById('modalMiResponderClose').addEventListener('click', cerrarMiResponder)
   document.getElementById('btnMiResponderCancelar').addEventListener('click', cerrarMiResponder)
-  modalMiRespOverlay.addEventListener('click', e => { if (e.target === modalMiRespOverlay) cerrarMiResponder() })
-
   document.getElementById('btnMiResponderGuardar').addEventListener('click', async () => {
     const comentario = document.getElementById('inputMiResponderComentario').value.trim()
     const errorEl = document.getElementById('modalMiResponderError')
@@ -1815,8 +1796,6 @@ if (modalAclaracionMiOverlay) {
 
   document.getElementById('modalAclaracionMiClose').addEventListener('click', cerrarModalAclaracionMi)
   document.getElementById('btnAclaracionMiCancelar').addEventListener('click', cerrarModalAclaracionMi)
-  modalAclaracionMiOverlay.addEventListener('click', e => { if (e.target === modalAclaracionMiOverlay) cerrarModalAclaracionMi() })
-
   document.getElementById('btnAclaracionMiGuardar').addEventListener('click', async () => {
     const comentario = document.getElementById('inputAclaracionMiComentario').value.trim()
     const errorEl = document.getElementById('modalAclaracionMiError')

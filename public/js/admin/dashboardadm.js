@@ -174,8 +174,6 @@ if (overlay) {
   const btnCancelar = document.getElementById('btnCancelar')
   if (btnCancelar) btnCancelar.addEventListener('click', cerrarModal)
   
-  overlay.addEventListener('click', e => { if (e.target === overlay) cerrarModal() })
-  
   const btnAgregar = document.getElementById('btnAgregar')
   if (btnAgregar) {
     let agregarGuardando = false
@@ -225,8 +223,6 @@ if (editOverlay) {
   
   const btnEditCancelar = document.getElementById('btnEditCancelar')
   if (btnEditCancelar) btnEditCancelar.addEventListener('click', cerrarModalEdit)
-  
-  editOverlay.addEventListener('click', e => { if (e.target === editOverlay) cerrarModalEdit() })
   
   document.querySelectorAll('.btn-editar').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -293,8 +289,6 @@ if (uadOverlay) {
   const btnUadCancelar = document.getElementById('btnUadCancelar')
   if (btnUadCancelar) btnUadCancelar.addEventListener('click', cerrarUadModal)
   
-  uadOverlay.addEventListener('click', e => { if (e.target === uadOverlay) cerrarUadModal() })
-  
   const btnUadAgregar = document.getElementById('btnUadAgregar')
   if (btnUadAgregar) {
     let uadAgregarGuardando = false
@@ -339,8 +333,6 @@ if (uadEditOverlay) {
   
   const btnUadEditCancelar = document.getElementById('btnUadEditCancelar')
   if (btnUadEditCancelar) btnUadEditCancelar.addEventListener('click', cerrarUadEditModal)
-  
-  uadEditOverlay.addEventListener('click', e => { if (e.target === uadEditOverlay) cerrarUadEditModal() })
   
   document.querySelectorAll('.btn-editar-uad').forEach(btn => {
     btn.addEventListener('click', () => {

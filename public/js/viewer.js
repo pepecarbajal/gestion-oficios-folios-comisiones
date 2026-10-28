@@ -8,13 +8,6 @@ if (viewerOverlay && viewerClose) {
         viewerOverlay.classList.remove('active');
         viewerBody.innerHTML = ''; // Clear content when closing
     });
-
-    viewerOverlay.addEventListener('click', (e) => {
-        if (e.target === viewerOverlay) {
-            viewerOverlay.classList.remove('active');
-            viewerBody.innerHTML = '';
-        }
-    });
 }
 
 window.openFileViewer = function(url, fileName = 'Archivo') {

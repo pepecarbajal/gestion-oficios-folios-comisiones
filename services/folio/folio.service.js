@@ -114,7 +114,7 @@ export const registrarEntregaFolio = async (id, datos, archivo, auditInfo) => {
     usuarioId: auditInfo.usuarioId,
     usuarioEmail: null,
     rol: auditInfo.rol,
-    detalle: { folioId: id, fechaEntrega: datos.fechaEntrega },
+    detalle: { folioId: id, noFolio: folio.noFolio, fechaEntrega: datos.fechaEntrega },
     ip: auditInfo.ip
   })
 
@@ -135,7 +135,7 @@ export const cancelarFolioService = async (id, auditInfo) => {
     usuarioId: auditInfo.usuarioId,
     usuarioEmail: null,
     rol: auditInfo.rol,
-    detalle: { folioId: id },
+    detalle: { folioId: id, noFolio: folio.noFolio },
     ip: auditInfo.ip
   })
 

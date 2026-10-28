@@ -318,7 +318,7 @@
                 <option value="">Todos los usuarios</option>
                 <% auditUsers.forEach(u => { %>
                   <option value="<%= u.id %>">
-                    <%= u.email %> — <%= u.rol %>
+                    <%= u.nombre %> — <%= u.email %> (<%= u.rol %>)
                   </option>
                 <% }) %>
               </select>
@@ -338,7 +338,7 @@
               </thead>
               <tbody>
                 <% logs.forEach(log => { %>
-                  <tr class="<%= log.accion === 'LOGIN_FAIL' ? 'row-error' : '' %>">
+                  <tr class="<%= log.esError ? 'row-error' : '' %>">
                     <td class="fecha-cell">
                       <%= new Date(log.timestamp).toLocaleString('es-MX', {
                         day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
@@ -346,31 +346,13 @@
                     </td>
                     <td>
                       <span class="user-badge" data-user-id="<%= log.usuarioId || '' %>">
-                        <%= log.usuarioId || '—' %>
+                        <%= log.usuarioNombre || (log.usuarioId ? 'Usuario eliminado' : 'Sin sesión') %>
                       </span>
                       <span class="user-email"><%= log.usuarioEmail || '—' %></span>
                     </td>
                     <td><%= log.rol || '—' %></td>
-                    <td class="accion-cell"><%= log.accion %></td>
-                    <td class="detalle-cell">
-                      <% if (log.accion === 'LOGIN_FAIL' && log.detalle?.razon) { %>
-                        <%= log.detalle.razon %>
-                      <% } else if (log.accion === 'OFICIO_REGISTRADO' && log.detalle?.noOficio) { %>
-                        <%= log.detalle.noOficio %><%= log.detalle.asunto ? ' - ' + log.detalle.asunto : '' %>
-                      <% } else if (log.accion === 'OFICIO_EDITADO' && log.detalle?.noOficio) { %>
-                        <%= log.detalle.noOficio %>
-                      <% } else if (log.accion === 'OFICIO_ESTATUS_CAMBIADO' && log.detalle?.noOficio) { %>
-                        <%= log.detalle.noOficio %> → <%= log.detalle.estatusNuevo || '' %>
-                      <% } else if (log.accion === 'RESPUESTA_UAD_GUARDADA' && log.detalle?.noOficio) { %>
-                        <%= log.detalle.noOficio %>
-                      <% } else if (log.accion === 'USUARIO_CREADO' && log.detalle?.nuevoUsuarioEmail) { %>
-                        <%= log.detalle.nuevoUsuarioEmail %> (<%= log.detalle.nuevoRol %>)
-                      <% } else if (log.accion === 'USUARIO_EDITADO' && log.detalle?.usuarioEditado) { %>
-                        <%= log.detalle.usuarioEditado %>
-                      <% } else { %>
-                        —
-                      <% } %>
-                    </td>
+                    <td class="accion-cell" title="<%= log.accion %>"><%= log.accionLabel %></td>
+                    <td class="detalle-cell"><%= log.detalleTexto %></td>
                     <td class="ip-cell"><%= log.ip || '—' %></td>
                   </tr>
                 <% }) %>

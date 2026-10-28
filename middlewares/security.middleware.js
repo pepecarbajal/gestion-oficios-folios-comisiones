@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { getIp } from '../utils/ip.js'
 
 const loginAttempts = new Map()
 const WINDOW_MS = 15 * 60 * 1000
@@ -13,7 +14,7 @@ function pruneOldEntries () {
 
 export const loginLimiter = (req, res, next) => {
   pruneOldEntries()
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown'
+  const ip = getIp(req) || 'unknown'
   const now = Date.now()
   const entry = loginAttempts.get(ip)
 

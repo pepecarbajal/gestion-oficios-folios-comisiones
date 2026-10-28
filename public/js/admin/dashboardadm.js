@@ -24,42 +24,37 @@ function assignUserColors () {
   })
 }
 
+// Escapa texto antes de meterlo al HTML (evita que un log con
+// etiquetas <script>, <img onerror>, etc. se ejecute en el navegador).
+function escapeHtml (value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]))
+}
+
 function renderAuditTable (logs) {
   const tbody = document.querySelector('#auditTable tbody')
   if (!tbody) return
-  if (!logs.length) {
+  if (!Array.isArray(logs) || !logs.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros.</td></tr>'
     return
   }
   tbody.innerHTML = logs.map(log => {
-    const isError = log.accion === 'LOGIN_FAIL'
     const ts = new Date(log.timestamp)
     const fecha = ts.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })
     const hora = ts.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-    const uid = log.usuarioId || ''
-    const uidDisplay = uid || '—'
+    const nombre = log.usuarioNombre || (log.usuarioId ? 'Usuario eliminado' : 'Sin sesión')
 
-    let detalle = '—'
-    if (log.accion === 'LOGIN_FAIL' && log.detalle?.razon) detalle = log.detalle.razon
-    else if (log.detalle?.noOficio) {
-      detalle = log.detalle.noOficio
-      if (log.detalle.asunto) detalle += ' - ' + log.detalle.asunto
-    } else if (log.accion === 'USUARIO_CREADO' && log.detalle?.nuevoUsuarioEmail) {
-      detalle = log.detalle.nuevoUsuarioEmail + ' (' + (log.detalle.nuevoRol || '') + ')'
-    } else if (log.accion === 'USUARIO_EDITADO' && log.detalle?.usuarioEditado) {
-      detalle = log.detalle.usuarioEditado
-    }
-
-    return `<tr class="${isError ? 'row-error' : ''}">
-      <td class="fecha-cell">${fecha} ${hora}</td>
+    return `<tr class="${log.esError ? 'row-error' : ''}">
+      <td class="fecha-cell">${escapeHtml(fecha)} ${escapeHtml(hora)}</td>
       <td>
-        <span class="user-badge" data-user-id="${uid}">${uidDisplay}</span>
-        <span class="user-email">${log.usuarioEmail || '—'}</span>
+        <span class="user-badge" data-user-id="${escapeHtml(log.usuarioId || '')}">${escapeHtml(nombre)}</span>
+        <span class="user-email">${escapeHtml(log.usuarioEmail || '—')}</span>
       </td>
-      <td>${log.rol || '—'}</td>
-      <td class="accion-cell">${log.accion}</td>
-      <td class="detalle-cell">${detalle}</td>
-      <td class="ip-cell">${log.ip || '—'}</td>
+      <td>${escapeHtml(log.rol || '—')}</td>
+      <td class="accion-cell" title="${escapeHtml(log.accion)}">${escapeHtml(log.accionLabel || log.accion)}</td>
+      <td class="detalle-cell">${escapeHtml(log.detalleTexto || '—')}</td>
+      <td class="ip-cell">${escapeHtml(log.ip || '—')}</td>
     </tr>`
   }).join('')
   assignUserColors()
@@ -86,6 +81,7 @@ function initAuditFilters () {
 
     try {
       const res = await fetch(`/api/auditoria?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const logs = await res.json()
       renderAuditTable(logs)
     } catch {

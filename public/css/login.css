@@ -44,7 +44,8 @@ label {
 }
 
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+.password-wrapper input {
   width: 100%;
   padding: 12px 16px;
   border: 1.5px solid #e2e8f0;
@@ -57,12 +58,14 @@ input[type="password"] {
 }
 
 input[type="email"]::placeholder,
-input[type="password"]::placeholder {
+input[type="password"]::placeholder,
+.password-wrapper input::placeholder {
   color: #a0aec0;
 }
 
 input[type="email"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus,
+.password-wrapper input:focus {
   border-color: #1e3a5f;
   box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
   background-color: #ffffff;
@@ -99,4 +102,54 @@ button[type="submit"]:active {
   padding: 10px 14px;
   font-size: 0.875rem;
   margin-bottom: 16px;
+}
+
+/* Mostrar / ocultar contraseña */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 48px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.toggle-password:hover {
+  color: #1e3a5f;
+  background-color: rgba(30, 58, 95, 0.08);
+}
+
+.toggle-password:focus-visible {
+  outline: 2px solid #1e3a5f;
+  outline-offset: 1px;
+}
+
+.toggle-password .icon-eye-off {
+  display: none;
+}
+
+.toggle-password[aria-pressed="true"] .icon-eye {
+  display: none;
+}
+
+.toggle-password[aria-pressed="true"] .icon-eye-off {
+  display: block;
 }

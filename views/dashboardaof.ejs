@@ -685,7 +685,7 @@
                        <% if (misAclaracionesMi.length > 0) { %>
                          <div class="aclaraciones-list">
                            <% misAclaracionesMi.forEach(a => { %>
-                             <div class="aclaracion-item-inline">
+                             <div class="aclaracion-item-inline" title="<%= a.comentario %>">
                                <span class="aclaracion-label">Nota aclaratoria: </span>
                                <span><%= a.comentario %></span>
                              </div>
